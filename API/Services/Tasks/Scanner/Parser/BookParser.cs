@@ -5,10 +5,10 @@ namespace API.Services.Tasks.Scanner.Parser;
 
 public class BookParser(IDirectoryService directoryService, IBookService bookService, BasicParser basicParser) : DefaultParser(directoryService)
 {
-    public override ParserInfo Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo comicInfo = null)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo comicInfo = null, bool extractChapters = false)
     {
         var info = bookService.ParseInfo(filePath);
-        if (info == null) return null;
+        if (info == null) return [];
 
         info.ComicInfo = comicInfo;
 
@@ -35,18 +35,21 @@ public class BookParser(IDirectoryService directoryService, IBookService bookSer
             }
             else
             {
-                var info2 = basicParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Book, comicInfo);
-                info.Merge(info2);
-                if (hasVolumeInSeries && info2 != null && Parser.ParseVolume(info2.Series, type)
+                var info2 = basicParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Book, comicInfo, extractChapters);
+                if (info2.Length > 0) {
+                    info.Merge(info2[0]);
+                }
+                
+                if (hasVolumeInSeries && info2.Length > 0 && Parser.ParseVolume(info2[0].Series, type)
                         .Equals(Parser.LooseLeafVolume))
                 {
                     // Override the Series name so it groups appropriately
-                    info.Series = info2.Series;
+                    info.Series = info2[0].Series;
                 }
             }
         }
 
-        return string.IsNullOrEmpty(info.Series) ? null : info;
+        return string.IsNullOrEmpty(info.Series) ? [] : [info];
     }
 
     /// <summary>

@@ -12,6 +12,7 @@ using API.Entities;
 using API.Entities.Enums;
 using API.Extensions;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using Docnet.Core;
 using Docnet.Core.Converters;
 using Docnet.Core.Models;
@@ -846,7 +847,7 @@ public class BookService : IBookService
                         Format = MangaFormat.Epub,
                         Filename = Path.GetFileName(filePath),
                         Title = specialName?.Trim() ?? string.Empty,
-                        FullFilePath = Parser.NormalizePath(filePath),
+                        FileMetadata = new FileMetadata(filePath).Normalized(),
                         IsSpecial = Parser.HasSpecialMarker(filePath),
                         Series = series.Trim(),
                         SeriesSort = series.Trim(),
@@ -868,7 +869,7 @@ public class BookService : IBookService
                 Format = MangaFormat.Epub,
                 Filename = Path.GetFileName(filePath),
                 Title = epubBook.Title.Trim(),
-                FullFilePath = Parser.NormalizePath(filePath),
+                FileMetadata = new FileMetadata(filePath).Normalized(),
                 IsSpecial = Parser.HasSpecialMarker(filePath),
                 Series = epubBook.Title.Trim(),
                 Volumes = Parser.LooseLeafVolume,
@@ -987,7 +988,7 @@ public class BookService : IBookService
     /// <returns></returns>
     public async Task<ICollection<BookChapterItem>> GenerateTableOfContents(Chapter chapter)
     {
-        using var book = await EpubReader.OpenBookAsync(chapter.Files.ElementAt(0).FilePath, BookReaderOptions);
+        using var book = await EpubReader.OpenBookAsync(chapter.Files.ElementAt(0).FileMetadata.Path, BookReaderOptions);
         var mappings = await CreateKeyToPageMappingAsync(book);
 
         var navItems = await book.GetNavigationAsync();

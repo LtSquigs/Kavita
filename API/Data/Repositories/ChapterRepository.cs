@@ -170,6 +170,7 @@ public class ChapterRepository : IChapterRepository
     {
         return await _context.MangaFile
             .Where(c => chapterId == c.ChapterId)
+            .Include(f => f.Chapter)
             .AsNoTracking()
             .ToListAsync();
     }

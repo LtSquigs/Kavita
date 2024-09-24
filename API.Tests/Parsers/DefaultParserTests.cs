@@ -3,6 +3,7 @@ using System.IO.Abstractions.TestingHelpers;
 using API.Entities.Enums;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -34,13 +35,13 @@ public class DefaultParserTests
     public void ParseFromFallbackFolders_FallbackShouldParseSeries(string rootDir, string inputPath, string expectedSeries)
     {
         var actual = _defaultParser.Parse(inputPath, rootDir, rootDir, LibraryType.Manga, null);
-        if (actual == null)
+        if (actual.Length <= 0)
         {
-            Assert.NotNull(actual);
+            Assert.NotEmpty(actual);
             return;
         }
 
-        Assert.Equal(expectedSeries, actual.Series);
+        Assert.Equal(expectedSeries, actual[0].Series);
     }
 
     [Theory]
@@ -74,7 +75,9 @@ public class DefaultParserTests
         fs.AddFile(inputFile, new MockFileData(""));
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fs);
         var parser = new BasicParser(ds, new ImageParser(ds));
-        var actual = parser.Parse(inputFile, rootDirectory, rootDirectory, LibraryType.Manga, null);
+        var actuals = parser.Parse(inputFile, rootDirectory, rootDirectory, LibraryType.Manga, null);
+        Assert.NotEmpty(actuals);
+        var actual = actuals[0];
         _defaultParser.ParseFromFallbackFolders(inputFile, rootDirectory, LibraryType.Manga, ref actual);
         Assert.Equal(expectedParseInfo, actual.Series);
     }
@@ -90,7 +93,9 @@ public class DefaultParserTests
         fs.AddFile(inputFile, new MockFileData(""));
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fs);
         var parser = new BasicParser(ds, new ImageParser(ds));
-        var actual = parser.Parse(inputFile, rootDirectory, rootDirectory, LibraryType.Manga, null);
+        var actuals = parser.Parse(inputFile, rootDirectory, rootDirectory, LibraryType.Manga, null);
+        Assert.NotEmpty(actuals);
+        var actual = actuals[0];
         _defaultParser.ParseFromFallbackFolders(inputFile, rootDirectory, LibraryType.Manga, ref actual);
         Assert.Equal(expectedParseInfo, actual.Series);
     }
@@ -112,7 +117,7 @@ public class DefaultParserTests
          {
              Series = "Mujaki no Rakuen", Volumes = "12",
              Chapters = "76", Filename = "Mujaki no Rakuen Vol12 ch76.cbz", Format = MangaFormat.Archive,
-             FullFilePath = filepath
+             FileMetadata = new FileMetadata(filepath)
          });
 
          filepath = @"E:/Manga/Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen/Vol 1.cbz";
@@ -120,7 +125,7 @@ public class DefaultParserTests
         {
             Series = "Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen", Volumes = "1",
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Vol 1.cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/Beelzebub/Beelzebub_01_[Noodles].zip";
@@ -128,7 +133,7 @@ public class DefaultParserTests
         {
             Series = "Beelzebub", Volumes = Parser.LooseLeafVolume,
             Chapters = "1", Filename = "Beelzebub_01_[Noodles].zip", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         // Note: Lots of duplicates here. I think I can move them to the ParserTests itself
@@ -137,7 +142,7 @@ public class DefaultParserTests
         {
             Series = "Ichinensei ni Nacchattara", Volumes = "1",
             Chapters = "1", Filename = "Ichinensei_ni_Nacchattara_v01_ch01_[Taruby]_v1.1.zip", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/Tenjo Tenge (Color)/Tenjo Tenge {Full Contact Edition} v01 (2011) (Digital) (ASTC).cbz";
@@ -145,7 +150,7 @@ public class DefaultParserTests
         {
             Series = "Tenjo Tenge {Full Contact Edition}", Volumes = "1", Edition = "",
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Tenjo Tenge {Full Contact Edition} v01 (2011) (Digital) (ASTC).cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/Akame ga KILL! ZERO (2016-2019) (Digital) (LuCaZ)/Akame ga KILL! ZERO v01 (2016) (Digital) (LuCaZ).cbz";
@@ -153,7 +158,7 @@ public class DefaultParserTests
         {
             Series = "Akame ga KILL! ZERO", Volumes = "1", Edition = "",
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Akame ga KILL! ZERO v01 (2016) (Digital) (LuCaZ).cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/Dorohedoro/Dorohedoro v01 (2010) (Digital) (LostNerevarine-Empire).cbz";
@@ -161,7 +166,7 @@ public class DefaultParserTests
         {
             Series = "Dorohedoro", Volumes = "1", Edition = "",
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Dorohedoro v01 (2010) (Digital) (LostNerevarine-Empire).cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/APOSIMZ/APOSIMZ 040 (2020) (Digital) (danke-Empire).cbz";
@@ -169,7 +174,7 @@ public class DefaultParserTests
         {
             Series = "APOSIMZ", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
             Chapters = "40", Filename = "APOSIMZ 040 (2020) (Digital) (danke-Empire).cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/Corpse Party Musume/Kedouin Makoto - Corpse Party Musume, Chapter 09.cbz";
@@ -177,7 +182,7 @@ public class DefaultParserTests
         {
             Series = "Kedouin Makoto - Corpse Party Musume", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
             Chapters = "9", Filename = "Kedouin Makoto - Corpse Party Musume, Chapter 09.cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/Goblin Slayer/Goblin Slayer - Brand New Day 006.5 (2019) (Digital) (danke-Empire).cbz";
@@ -185,7 +190,7 @@ public class DefaultParserTests
         {
             Series = "Goblin Slayer - Brand New Day", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
             Chapters = "6.5", Filename = "Goblin Slayer - Brand New Day 006.5 (2019) (Digital) (danke-Empire).cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         });
 
         filepath = @"E:/Manga/Summer Time Rendering/Specials/Record 014 (between chapter 083 and ch084) SP11.cbr";
@@ -193,7 +198,7 @@ public class DefaultParserTests
         {
             Series = "Summer Time Rendering", Volumes = API.Services.Tasks.Scanner.Parser.Parser.SpecialVolume, Edition = "",
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Record 014 (between chapter 083 and ch084) SP11.cbr", Format = MangaFormat.Archive,
-            FullFilePath = filepath, IsSpecial = true
+            FileMetadata = new FileMetadata(filepath), IsSpecial = true
         });
 
         filepath = @"E:/Manga/Seraph of the End/Seraph of the End - Vampire Reign 093 (2020) (Digital) (LuCaZ).cbz";
@@ -201,7 +206,7 @@ public class DefaultParserTests
         {
           Series = "Seraph of the End - Vampire Reign", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
           Chapters = "93", Filename = "Seraph of the End - Vampire Reign 093 (2020) (Digital) (LuCaZ).cbz", Format = MangaFormat.Archive,
-          FullFilePath = filepath, IsSpecial = false
+          FileMetadata = new FileMetadata(filepath), IsSpecial = false
         });
 
         filepath = @"E:/Manga/Kono Subarashii Sekai ni Bakuen wo!/Vol. 00 Ch. 000.cbz";
@@ -209,7 +214,7 @@ public class DefaultParserTests
         {
           Series = "Kono Subarashii Sekai ni Bakuen wo!", Volumes = "0", Edition = "",
           Chapters = "0", Filename = "Vol. 00 Ch. 000.cbz", Format = MangaFormat.Archive,
-          FullFilePath = filepath, IsSpecial = false
+          FileMetadata = new FileMetadata(filepath), IsSpecial = false
         });
 
         filepath = @"E:/Manga/Toukyou Akazukin/Vol. 01 Ch. 001.cbz";
@@ -217,7 +222,7 @@ public class DefaultParserTests
         {
           Series = "Toukyou Akazukin", Volumes = "1", Edition = "",
           Chapters = "1", Filename = "Vol. 01 Ch. 001.cbz", Format = MangaFormat.Archive,
-          FullFilePath = filepath, IsSpecial = false
+          FileMetadata = new FileMetadata(filepath), IsSpecial = false
         });
 
         // If an image is cover exclusively, ignore it
@@ -229,7 +234,7 @@ public class DefaultParserTests
         {
             Series = "The Beginning After the End", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
             Chapters = "1", Filename = "Chapter 001.cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         });
 
         filepath = @"E:/Manga/Air Gear/Air Gear Omnibus v01 (2016) (Digital) (Shadowcat-Empire).cbz";
@@ -237,7 +242,7 @@ public class DefaultParserTests
         {
             Series = "Air Gear", Volumes = "1", Edition = "Omnibus",
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Air Gear Omnibus v01 (2016) (Digital) (Shadowcat-Empire).cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         });
 
         filepath = @"E:/Manga/Harrison, Kim - The Good, The Bad, and the Undead - Hollows Vol 2.5.epub";
@@ -245,19 +250,20 @@ public class DefaultParserTests
         {
             Series = "Harrison, Kim - The Good, The Bad, and the Undead - Hollows", Volumes = "2.5", Edition = "",
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Harrison, Kim - The Good, The Bad, and the Undead - Hollows Vol 2.5.epub", Format = MangaFormat.Epub,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         });
 
         foreach (var file in expected.Keys)
         {
             var expectedInfo = expected[file];
-            var actual = _defaultParser.Parse(file, rootPath, rootPath, LibraryType.Manga, null);
+            var actuals = _defaultParser.Parse(file, rootPath, rootPath, LibraryType.Manga, null);
             if (expectedInfo == null)
             {
-                Assert.Null(actual);
+                Assert.Empty(actuals);
                 continue;
             }
-            Assert.NotNull(actual);
+            Assert.NotEmpty(actuals);
+            var actual = actuals[0];
             _testOutputHelper.WriteLine($"Validating {file}");
             Assert.Equal(expectedInfo.Format, actual.Format);
             _testOutputHelper.WriteLine("Format ✓");
@@ -271,7 +277,7 @@ public class DefaultParserTests
             _testOutputHelper.WriteLine("Edition ✓");
             Assert.Equal(expectedInfo.Filename, actual.Filename);
             _testOutputHelper.WriteLine("Filename ✓");
-            Assert.Equal(expectedInfo.FullFilePath, actual.FullFilePath);
+            Assert.Equal(expectedInfo.FileMetadata, actual.FileMetadata);
             _testOutputHelper.WriteLine("FullFilePath ✓");
         }
     }
@@ -287,10 +293,11 @@ public class DefaultParserTests
         {
             Series = "Monster #8", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
             Chapters = "8", Filename = "13.jpg", Format = MangaFormat.Image,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         };
-        var actual2 = _defaultParser.Parse(filepath, @"E:/Manga/Monster #8", "E:/Manga", LibraryType.Manga, null);
-        Assert.NotNull(actual2);
+        var actuals = _defaultParser.Parse(filepath, @"E:/Manga/Monster #8", "E:/Manga", LibraryType.Manga, null);
+        Assert.NotEmpty(actuals);
+        var actual2 = actuals[0];
         _testOutputHelper.WriteLine($"Validating {filepath}");
         Assert.Equal(expectedInfo2.Format, actual2.Format);
         _testOutputHelper.WriteLine("Format ✓");
@@ -304,7 +311,7 @@ public class DefaultParserTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expectedInfo2.Filename, actual2.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expectedInfo2.FullFilePath, actual2.FullFilePath);
+        Assert.Equal(expectedInfo2.FileMetadata, actual2.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
 
         filepath = @"E:/Manga/Extra layer for no reason/Just Images the second/Vol19/ch. 186/Vol. 19 p106.gif";
@@ -312,11 +319,12 @@ public class DefaultParserTests
         {
             Series = "Just Images the second", Volumes = "19", Edition = "",
             Chapters = "186", Filename = "Vol. 19 p106.gif", Format = MangaFormat.Image,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         };
 
-        actual2 = _defaultParser.Parse(filepath, @"E:/Manga/Extra layer for no reason/", "E:/Manga",LibraryType.Manga, null);
-        Assert.NotNull(actual2);
+        actuals = _defaultParser.Parse(filepath, @"E:/Manga/Extra layer for no reason/", "E:/Manga",LibraryType.Manga, null);
+        Assert.NotEmpty(actuals);
+        actual2 = actuals[0];
         _testOutputHelper.WriteLine($"Validating {filepath}");
         Assert.Equal(expectedInfo2.Format, actual2.Format);
         _testOutputHelper.WriteLine("Format ✓");
@@ -330,7 +338,7 @@ public class DefaultParserTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expectedInfo2.Filename, actual2.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expectedInfo2.FullFilePath, actual2.FullFilePath);
+        Assert.Equal(expectedInfo2.FileMetadata, actual2.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
 
         filepath = @"E:/Manga/Extra layer for no reason/Just Images the second/Blank Folder/Vol19/ch. 186/Vol. 19 p106.gif";
@@ -338,10 +346,12 @@ public class DefaultParserTests
         {
             Series = "Just Images the second", Volumes = "19", Edition = "",
             Chapters = "186", Filename = "Vol. 19 p106.gif", Format = MangaFormat.Image,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         };
 
-        actual2 = _defaultParser.Parse(filepath, @"E:/Manga/Extra layer for no reason/", "E:/Manga", LibraryType.Manga, null);
+        actuals = _defaultParser.Parse(filepath, @"E:/Manga/Extra layer for no reason/", "E:/Manga", LibraryType.Manga, null);
+        Assert.NotEmpty(actuals);
+        actual2 = actuals[0];
         Assert.NotNull(actual2);
         _testOutputHelper.WriteLine($"Validating {filepath}");
         Assert.Equal(expectedInfo2.Format, actual2.Format);
@@ -356,7 +366,7 @@ public class DefaultParserTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expectedInfo2.Filename, actual2.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expectedInfo2.FullFilePath, actual2.FullFilePath);
+        Assert.Equal(expectedInfo2.FileMetadata, actual2.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
     }
 
@@ -380,10 +390,12 @@ public class DefaultParserTests
         {
             Series = "Foo 50", Volumes = "1",
             Chapters = "50", Filename = "Foo 50 v1.cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         };
 
-        var actual = parser.Parse(filepath, rootPath, rootPath, LibraryType.Manga, null);
+        var actuals = parser.Parse(filepath, rootPath, rootPath, LibraryType.Manga, null);
+        Assert.NotEmpty(actuals);
+        var actual = actuals[0];
 
         Assert.NotNull(actual);
         _testOutputHelper.WriteLine($"Validating {filepath}");
@@ -399,7 +411,7 @@ public class DefaultParserTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expected.Filename, actual.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expected.FullFilePath, actual.FullFilePath);
+        Assert.Equal(expected.FileMetadata, actual.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
         Assert.Equal(expected.IsSpecial, actual.IsSpecial);
         _testOutputHelper.WriteLine("IsSpecial ✓");
@@ -409,10 +421,12 @@ public class DefaultParserTests
         {
             Series = "Foo 50", Volumes = API.Services.Tasks.Scanner.Parser.Parser.SpecialVolume, IsSpecial = true,
             Chapters = "50", Filename = "Foo 50 SP01.cbz", Format = MangaFormat.Archive,
-            FullFilePath = filepath
+            FileMetadata = new FileMetadata(filepath)
         };
 
-        actual = parser.Parse(filepath, rootPath, rootPath, LibraryType.Manga, null);
+        actuals = parser.Parse(filepath, rootPath, rootPath, LibraryType.Manga, null);
+        Assert.NotEmpty(actuals);
+        actual = actuals[0];
         Assert.NotNull(actual);
         _testOutputHelper.WriteLine($"Validating {filepath}");
         Assert.Equal(expected.Format, actual.Format);
@@ -427,7 +441,7 @@ public class DefaultParserTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expected.Filename, actual.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expected.FullFilePath, actual.FullFilePath);
+        Assert.Equal(expected.FileMetadata, actual.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
         Assert.Equal(expected.IsSpecial, actual.IsSpecial);
         _testOutputHelper.WriteLine("IsSpecial ✓");
@@ -444,7 +458,7 @@ public class DefaultParserTests
              {
                  Series = "Teen Titans", Volumes = API.Services.Tasks.Scanner.Parser.Parser.SpecialVolume,
                  Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter, Filename = "Teen Titans v1 Annual 01 (1967) SP01.cbr", Format = MangaFormat.Archive,
-                 FullFilePath = filepath
+                 FileMetadata = new FileMetadata(filepath)
              });
 
              // Fallback test with bad naming
@@ -453,7 +467,7 @@ public class DefaultParserTests
              {
                  Series = "Babe", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
                  Chapters = "1", Filename = "Babe 01.cbr", Format = MangaFormat.Archive,
-                 FullFilePath = filepath, IsSpecial = false
+                 FileMetadata = new FileMetadata(filepath), IsSpecial = false
              });
 
              filepath = @"E:/Comics/Comics/Publisher/Batman the Detective (2021)/Batman the Detective - v6 - 11 - (2021).cbr";
@@ -461,7 +475,7 @@ public class DefaultParserTests
              {
                  Series = "Batman the Detective", Volumes = "6", Edition = "",
                  Chapters = "11", Filename = "Batman the Detective - v6 - 11 - (2021).cbr", Format = MangaFormat.Archive,
-                 FullFilePath = filepath, IsSpecial = false
+                 FileMetadata = new FileMetadata(filepath), IsSpecial = false
              });
 
              filepath = @"E:/Comics/Comics/Batman - The Man Who Laughs #1 (2005)/Batman - The Man Who Laughs #1 (2005).cbr";
@@ -469,19 +483,20 @@ public class DefaultParserTests
              {
                  Series = "Batman - The Man Who Laughs", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
                  Chapters = "1", Filename = "Batman - The Man Who Laughs #1 (2005).cbr", Format = MangaFormat.Archive,
-                 FullFilePath = filepath, IsSpecial = false
+                 FileMetadata = new FileMetadata(filepath), IsSpecial = false
              });
 
             foreach (var file in expected.Keys)
             {
                 var expectedInfo = expected[file];
-                var actual = _defaultParser.Parse(file, rootPath, rootPath, LibraryType.Comic, null);
+                var actuals = _defaultParser.Parse(file, rootPath, rootPath, LibraryType.Comic, null);
                 if (expectedInfo == null)
                 {
-                    Assert.Null(actual);
+                    Assert.Empty(actuals);
                     continue;
                 }
-                Assert.NotNull(actual);
+                Assert.NotEmpty(actuals);
+                var actual = actuals[0];
                 _testOutputHelper.WriteLine($"Validating {file}");
                 Assert.Equal(expectedInfo.Format, actual.Format);
                 _testOutputHelper.WriteLine("Format ✓");
@@ -495,7 +510,7 @@ public class DefaultParserTests
                 _testOutputHelper.WriteLine("Edition ✓");
                 Assert.Equal(expectedInfo.Filename, actual.Filename);
                 _testOutputHelper.WriteLine("Filename ✓");
-                Assert.Equal(expectedInfo.FullFilePath, actual.FullFilePath);
+                Assert.Equal(expectedInfo.FileMetadata, actual.FileMetadata);
                 _testOutputHelper.WriteLine("FullFilePath ✓");
             }
         }

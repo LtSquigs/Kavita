@@ -1,15 +1,17 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using API.Data.Metadata;
 using API.Entities.Enums;
+using API.Structs;
 
 namespace API.Services.Tasks.Scanner.Parser;
 #nullable enable
 
 public class ImageParser(IDirectoryService directoryService) : DefaultParser(directoryService)
 {
-    public override ParserInfo? Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool extractChapters = false)
     {
-        if (type != LibraryType.Image || !Parser.IsImage(filePath)) return null;
+        if (type != LibraryType.Image || !Parser.IsImage(filePath)) return [];
 
         var directoryName = directoryService.FileSystem.DirectoryInfo.New(rootPath).Name;
         var fileName = directoryService.FileSystem.Path.GetFileNameWithoutExtension(filePath);
@@ -21,7 +23,7 @@ public class ImageParser(IDirectoryService directoryService) : DefaultParser(dir
             ComicInfo = comicInfo,
             Format = MangaFormat.Image,
             Filename = Path.GetFileName(filePath),
-            FullFilePath = Parser.NormalizePath(filePath),
+            FileMetadata = new FileMetadata(filePath).Normalized(),
             Title = fileName,
         };
         ParseFromFallbackFolders(filePath, libraryRoot, LibraryType.Image, ref ret);
@@ -38,7 +40,7 @@ public class ImageParser(IDirectoryService directoryService) : DefaultParser(dir
             ret.Series = Parser.CleanTitle(directoryName, replaceSpecials: false);
         }
 
-        return string.IsNullOrEmpty(ret.Series) ? null : ret;
+        return string.IsNullOrEmpty(ret.Series) ? [] : [ret];
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using System.IO;
 using API.Entities;
 using API.Entities.Enums;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 
 namespace API.Helpers.Builders;
 
@@ -11,16 +12,16 @@ public class MangaFileBuilder : IEntityBuilder<MangaFile>
     private readonly MangaFile _mangaFile;
     public MangaFile Build() => _mangaFile;
 
-    public MangaFileBuilder(string filePath, MangaFormat format, int pages = 0)
+    public MangaFileBuilder(FileMetadata fileMetadata, MangaFormat format, int pages = 0)
     {
         _mangaFile = new MangaFile()
         {
-            FilePath = Parser.NormalizePath(filePath),
+            FileMetadata = fileMetadata.Normalized(),
             Format = format,
             Pages = pages,
-            LastModified = File.GetLastWriteTime(filePath),
-            LastModifiedUtc = File.GetLastWriteTimeUtc(filePath),
-            FileName = Parser.RemoveExtensionIfSupported(filePath)
+            LastModified = File.GetLastWriteTime(fileMetadata.Path),
+            LastModifiedUtc = File.GetLastWriteTimeUtc(fileMetadata.Path),
+            FileName = Parser.RemoveExtensionIfSupported(fileMetadata.Path)
         };
     }
 

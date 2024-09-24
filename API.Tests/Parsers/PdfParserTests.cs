@@ -33,11 +33,12 @@ public class PdfParserTests
     [Fact]
     public void Parse_Book_SeriesWithDirectoryName()
     {
-        var actual = _parser.Parse("C:/Books/A Dictionary of Japanese Food - Ingredients and Culture/A Dictionary of Japanese Food - Ingredients and Culture.pdf",
+        var actuals = _parser.Parse("C:/Books/A Dictionary of Japanese Food - Ingredients and Culture/A Dictionary of Japanese Food - Ingredients and Culture.pdf",
             "C:/Books/A Dictionary of Japanese Food - Ingredients and Culture/",
             RootDirectory, LibraryType.Book, null);
 
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actuals);
+        var actual = actuals[0];
         Assert.Equal("A Dictionary of Japanese Food - Ingredients and Culture", actual.Series);
         Assert.Equal(Parser.DefaultChapter, actual.Chapters);
         Assert.True(actual.IsSpecial);

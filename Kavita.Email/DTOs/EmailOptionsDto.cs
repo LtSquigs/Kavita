@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace Skeleton.DTOs;
 
@@ -11,5 +12,5 @@ public class EmailOptionsDto
     /// <summary>
     /// Filenames to attach
     /// </summary>
-    public IList<string> Attachments { get; set; }
+    public IList<KeyValuePair<string, Stream>> Attachments { get; set; }
 }

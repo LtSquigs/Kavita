@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using API.Data;
@@ -28,12 +29,14 @@ public class DeviceService : IDeviceService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<DeviceService> _logger;
     private readonly IEmailService _emailService;
+    private readonly IArchiveService _archiveService;
 
-    public DeviceService(IUnitOfWork unitOfWork, ILogger<DeviceService> logger, IEmailService emailService)
+    public DeviceService(IUnitOfWork unitOfWork, ILogger<DeviceService> logger, IEmailService emailService, IArchiveService archiveService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _emailService = emailService;
+        _archiveService = archiveService;
     }
 
     public async Task<Device?> Create(CreateDeviceDto dto, AppUser userWithDevices)
@@ -137,7 +140,13 @@ public class DeviceService : IDeviceService
         var success = await _emailService.SendFilesToEmail(new SendToDto()
         {
             DestinationEmail = device.EmailAddress!,
-            FilePaths = files.Select(m => m.FilePath)
+            FileStreams = files.Select(async f => {
+                if (f.Format == MangaFormat.Archive) {
+                    var stream = await _archiveService.CreateZipStream(f.FileMetadata);
+                    return new KeyValuePair<string, Stream>(f.GetDownloadName(), stream);
+                }
+                return new KeyValuePair<string, Stream>(f.GetDownloadName(), File.OpenRead(f.FileMetadata.Path));
+            }).Select(f => f.Result)
         });
 
         return success;

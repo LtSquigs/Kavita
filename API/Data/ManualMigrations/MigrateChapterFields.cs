@@ -60,7 +60,7 @@ public static class MigrateChapterFields
             "Running MigrateChapterFields migration - Updating all MangaFiles");
         foreach (var mangaFile in dataContext.MangaFile)
         {
-            mangaFile.FileName = Parser.RemoveExtensionIfSupported(mangaFile.FilePath);
+            mangaFile.FileName = Parser.RemoveExtensionIfSupported(mangaFile.FileMetadata.Path);
         }
 
         var looseLeafChapters = await dataContext.Chapter.Where(c => c.Number == "0").ToListAsync();

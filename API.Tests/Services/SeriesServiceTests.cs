@@ -18,6 +18,7 @@ using API.Services;
 using API.Services.Plus;
 using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
+using API.Structs;
 using Hangfire;
 using Hangfire.InMemory;
 using Microsoft.Extensions.Caching.Memory;
@@ -984,7 +985,7 @@ public class SeriesServiceTests : AbstractDbTest
 
     private static Series CreateSeriesMock()
     {
-        var file = new MangaFileBuilder("Test.cbz", MangaFormat.Archive, 1).Build();
+        var file = new MangaFileBuilder(new FileMetadata("Test.cbz"), MangaFormat.Archive, 1).Build();
 
         var series = new SeriesBuilder("Test")
             .WithVolume(new VolumeBuilder(Parser.LooseLeafVolume)
@@ -1017,7 +1018,7 @@ public class SeriesServiceTests : AbstractDbTest
     [Fact]
     public void GetFirstChapterForMetadata_BookWithOnlyVolumeNumbers_Test()
     {
-        var file = new MangaFileBuilder("Test.cbz", MangaFormat.Epub, 1).Build();
+        var file = new MangaFileBuilder(new FileMetadata("Test.cbz"), MangaFormat.Epub, 1).Build();
 
         var series = new SeriesBuilder("Test")
             .WithVolume(new VolumeBuilder("1")
@@ -1062,7 +1063,7 @@ public class SeriesServiceTests : AbstractDbTest
         var series = CreateSeriesMock();
         var files = new List<MangaFile>
         {
-            new MangaFileBuilder("Test.cbz", MangaFormat.Archive, 1).Build()
+            new MangaFileBuilder(new FileMetadata("Test.cbz"), MangaFormat.Archive, 1).Build()
         };
         series.Volumes[2].Chapters = new List<Chapter>
         {
@@ -1079,7 +1080,7 @@ public class SeriesServiceTests : AbstractDbTest
     [Fact]
     public void GetFirstChapterForMetadata_NonBook_ShouldReturnChapter1_WhenFirstVolumeIs3()
     {
-        var file = new MangaFileBuilder("Test.cbz", MangaFormat.Archive, 1).Build();
+        var file = new MangaFileBuilder(new FileMetadata("Test.cbz"), MangaFormat.Archive, 1).Build();
 
         var series = new SeriesBuilder("Test")
             .WithVolume(new VolumeBuilder(Parser.LooseLeafVolume)
@@ -1442,7 +1443,7 @@ public class SeriesServiceTests : AbstractDbTest
             .WithSeries(new SeriesBuilder("Test Series")
                 .WithVolume(new VolumeBuilder(Parser.LooseLeafVolume)
                     .WithChapter(new ChapterBuilder("1").WithFile(
-                        new MangaFileBuilder($"{DataDirectory}1.zip", MangaFormat.Archive)
+                        new MangaFileBuilder(new FileMetadata($"{DataDirectory}1.zip"), MangaFormat.Archive)
                             .WithPages(1)
                             .Build()
                         ).Build())
@@ -1665,7 +1666,7 @@ public class SeriesServiceTests : AbstractDbTest
                 })
                 .WithVolume(new VolumeBuilder(Parser.LooseLeafVolume)
                     .WithChapter(new ChapterBuilder("1").WithFile(
-                        new MangaFileBuilder($"{DataDirectory}1.zip", MangaFormat.Archive)
+                        new MangaFileBuilder(new FileMetadata($"{DataDirectory}1.zip"), MangaFormat.Archive)
                             .WithPages(1)
                             .Build()
                     ).Build())

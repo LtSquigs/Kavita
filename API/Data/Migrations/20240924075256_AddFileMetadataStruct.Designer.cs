@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20240924075256_AddFileMetadataStruct")]
+    partial class AddFileMetadataStruct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -732,8 +735,8 @@ namespace API.Data.Migrations
                     b.Property<string>("AlternateSeries")
                         .HasColumnType("TEXT");
 
-                    b.Property<float>("AvgHoursToRead")
-                        .HasColumnType("REAL");
+                    b.Property<int>("AvgHoursToRead")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("CharacterLocked")
                         .HasColumnType("INTEGER");
@@ -1825,8 +1828,8 @@ namespace API.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<float>("AvgHoursToRead")
-                        .HasColumnType("REAL");
+                    b.Property<int>("AvgHoursToRead")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("CoverImage")
                         .HasColumnType("TEXT");
@@ -2056,8 +2059,8 @@ namespace API.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<float>("AvgHoursToRead")
-                        .HasColumnType("REAL");
+                    b.Property<int>("AvgHoursToRead")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("CoverImage")
                         .HasColumnType("TEXT");

@@ -50,7 +50,7 @@ public class BookController : BaseApiController
             case MangaFormat.Epub:
             {
                 var mangaFile = (await _unitOfWork.ChapterRepository.GetFilesForChapterAsync(chapterId))[0];
-                using var book = await EpubReader.OpenBookAsync(mangaFile.FilePath, BookService.BookReaderOptions);
+                using var book = await EpubReader.OpenBookAsync(mangaFile.FileMetadata.Path, BookService.BookReaderOptions);
                 bookTitle = book.Title;
                 break;
             }
@@ -60,7 +60,7 @@ public class BookController : BaseApiController
                 if (string.IsNullOrEmpty(bookTitle))
                 {
                     // Override with filename
-                    bookTitle = Path.GetFileNameWithoutExtension(mangaFile.FilePath);
+                    bookTitle = Path.GetFileNameWithoutExtension(mangaFile.FileMetadata.Path);
                 }
 
                 break;
@@ -102,7 +102,7 @@ public class BookController : BaseApiController
         var chapter = await _unitOfWork.ChapterRepository.GetChapterAsync(chapterId);
         if (chapter == null) return BadRequest(await _localizationService.Get("en", "chapter-doesnt-exist"));
 
-        using var book = await EpubReader.OpenBookAsync(chapter.Files.ElementAt(0).FilePath, BookService.BookReaderOptions);
+        using var book = await EpubReader.OpenBookAsync(chapter.Files.ElementAt(0).FileMetadata.Path, BookService.BookReaderOptions);
         var key = BookService.CoalesceKeyForAnyFile(book, file);
 
         if (!book.Content.AllFiles.ContainsLocalFileRefWithKey(key)) return BadRequest(await _localizationService.Get("en", "file-missing"));

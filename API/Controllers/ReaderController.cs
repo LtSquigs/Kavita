@@ -239,7 +239,7 @@ public class ReaderController : BaseApiController
             ChapterNumber = dto.ChapterNumber,
             VolumeNumber = dto.VolumeNumber,
             VolumeId = dto.VolumeId,
-            FileName = Path.GetFileName(mangaFile.FilePath),
+            FileName = Path.GetFileName(mangaFile.FileMetadata.Path),
             SeriesName = dto.SeriesName,
             SeriesFormat = dto.SeriesFormat,
             SeriesId = dto.SeriesId,

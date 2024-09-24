@@ -18,7 +18,7 @@ public class DeviceServiceDbTests : AbstractDbTest
 
     public DeviceServiceDbTests() : base()
     {
-        _deviceService = new DeviceService(_unitOfWork, _logger, Substitute.For<IEmailService>());
+        _deviceService = new DeviceService(_unitOfWork, _logger, Substitute.For<IEmailService>(), Substitute.For<IArchiveService>());
     }
 
     protected override async Task ResetDb()

@@ -16,6 +16,7 @@ using API.Services.Plus;
 using API.Services.Tasks.Metadata;
 using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
+using API.Structs;
 using Hangfire;
 using Kavita.Common;
 using Microsoft.EntityFrameworkCore;
@@ -304,7 +305,7 @@ public class ProcessSeries : IProcessSeries
     private async Task UpdateSeriesFolderPath(IEnumerable<ParserInfo> parsedInfos, Library library, Series series)
     {
         var libraryFolders = library.Folders.Select(l => Parser.Parser.NormalizePath(l.Path)).ToList();
-        var seriesFiles = parsedInfos.Select(f => Parser.Parser.NormalizePath(f.FullFilePath)).ToList();
+        var seriesFiles = parsedInfos.Select(f => Parser.Parser.NormalizePath(f.FileMetadata.Path)).ToList();
         var seriesDirs = _directoryService.FindHighestDirectoriesFromFiles(libraryFolders, seriesFiles);
         if (seriesDirs.Keys.Count == 0)
         {
@@ -342,7 +343,7 @@ public class ProcessSeries : IProcessSeries
 
         var firstFile = firstChapter?.Files.FirstOrDefault();
         if (firstFile == null) return;
-        if (Parser.Parser.IsPdf(firstFile.FilePath)) return;
+        if (Parser.Parser.IsPdf(firstFile.FileMetadata.Path)) return;
 
         var chapters = series.Volumes.SelectMany(volume => volume.Chapters).ToList();
 
@@ -681,7 +682,7 @@ public class ProcessSeries : IProcessSeries
                 if (firstFile == null || _cacheHelper.IsFileUnmodifiedSinceCreationOrLastScan(chapter, forceUpdate, firstFile)) continue;
                 try
                 {
-                    var firstChapterInfo = infos.SingleOrDefault(i => i.FullFilePath.Equals(firstFile.FilePath));
+                    var firstChapterInfo = infos.SingleOrDefault(i => i.FileMetadata.isSameFile(firstFile.FileMetadata));
                     await UpdateChapterFromComicInfo(chapter, firstChapterInfo?.ComicInfo, forceUpdate);
                 }
                 catch (Exception ex)
@@ -702,7 +703,7 @@ public class ProcessSeries : IProcessSeries
             var deletedVolumes = series.Volumes.Except(nonDeletedVolumes);
             foreach (var volume in deletedVolumes)
             {
-                var file = volume.Chapters.FirstOrDefault()?.Files?.FirstOrDefault()?.FilePath ?? string.Empty;
+                var file = volume.Chapters.FirstOrDefault()?.Files?.FirstOrDefault()?.FileMetadata.Path ?? string.Empty;
                 if (!string.IsNullOrEmpty(file) && _directoryService.FileSystem.File.Exists(file))
                 {
                     // This can happen when file is renamed and volume is removed
@@ -732,7 +733,7 @@ public class ProcessSeries : IProcessSeries
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "{FileName} mapped as '{Series} - Vol {Volume} Ch {Chapter}' is a duplicate, skipping", info.FullFilePath, info.Series, info.Volumes, info.Chapters);
+                _logger.LogError(ex, "{FileName} mapped as '{Series} - Vol {Volume} Ch {Chapter}' is a duplicate, skipping", info.FileMetadata, info.Series, info.Volumes, info.Chapters);
                 continue;
             }
 
@@ -790,8 +791,8 @@ public class ProcessSeries : IProcessSeries
             {
                 // Ensure we remove any files that no longer exist AND order
                 existingChapter.Files = existingChapter.Files
-                    .Where(f => parsedInfos.Any(p => Parser.Parser.NormalizePath(p.FullFilePath) == Parser.Parser.NormalizePath(f.FilePath)))
-                    .OrderByNatural(f => f.FilePath)
+                    .Where(f => parsedInfos.Any(p => p.FileMetadata.isSameFile(f.FileMetadata)))
+                    .OrderByNatural(f => f.FileMetadata.Path)
                     .ToList();
                 existingChapter.Pages = existingChapter.Files.Sum(f => f.Pages);
             }
@@ -801,25 +802,24 @@ public class ProcessSeries : IProcessSeries
     private void AddOrUpdateFileForChapter(Chapter chapter, ParserInfo info, bool forceUpdate = false)
     {
         chapter.Files ??= new List<MangaFile>();
-        var existingFile = chapter.Files.SingleOrDefault(f => f.FilePath == info.FullFilePath);
-        var fileInfo = _directoryService.FileSystem.FileInfo.New(info.FullFilePath);
+        var existingFile = chapter.Files.SingleOrDefault(f => f.FileMetadata.isSameFile(info.FileMetadata));
+        var fileInfo = _directoryService.FileSystem.FileInfo.New(info.FileMetadata.Path);
         if (existingFile != null)
         {
             existingFile.Format = info.Format;
-            if (!forceUpdate && !_fileService.HasFileBeenModifiedSince(existingFile.FilePath, existingFile.LastModified) && existingFile.Pages != 0) return;
-            existingFile.Pages = _readingItemService.GetNumberOfPages(info.FullFilePath, info.Format);
+            if (!forceUpdate && !_fileService.HasFileBeenModifiedSince(existingFile.FileMetadata, existingFile.LastModified) && existingFile.Pages != 0) return;
+            existingFile.Pages = _readingItemService.GetNumberOfPages(info.FileMetadata, info.Format);
             existingFile.Extension = fileInfo.Extension.ToLowerInvariant();
-            existingFile.FileName = Parser.Parser.RemoveExtensionIfSupported(existingFile.FilePath);
-            existingFile.FilePath = Parser.Parser.NormalizePath(existingFile.FilePath);
-            existingFile.Bytes = fileInfo.Length;
+            existingFile.FileName = Parser.Parser.RemoveExtensionIfSupported(existingFile.FileMetadata.Path);
+            existingFile.FileMetadata = info.FileMetadata.Normalized();
+            existingFile.Bytes = info.FileMetadata.FileSize != -1 ? info.FileMetadata.FileSize : fileInfo.Length;
             // We skip updating DB here with last modified time so that metadata refresh can do it
         }
         else
         {
-
-            var file = new MangaFileBuilder(info.FullFilePath, info.Format, _readingItemService.GetNumberOfPages(info.FullFilePath, info.Format))
+            var file = new MangaFileBuilder(info.FileMetadata, info.Format, _readingItemService.GetNumberOfPages(info.FileMetadata, info.Format))
                 .WithExtension(fileInfo.Extension)
-                .WithBytes(fileInfo.Length)
+                .WithBytes(info.FileMetadata.FileSize != -1 ? info.FileMetadata.FileSize : fileInfo.Length)
                 .Build();
             chapter.Files.Add(file);
         }
@@ -832,7 +832,7 @@ public class ProcessSeries : IProcessSeries
         if (firstFile == null ||
             _cacheHelper.IsFileUnmodifiedSinceCreationOrLastScan(chapter, forceUpdate, firstFile)) return;
 
-        _logger.LogTrace("[ScannerService] Read ComicInfo for {File}", firstFile.FilePath);
+        _logger.LogTrace("[ScannerService] Read ComicInfo for {File}", firstFile.FileMetadata);
 
         if (!chapter.AgeRatingLocked)
         {

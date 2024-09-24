@@ -7,6 +7,7 @@ using System.Linq;
 using API.Archive;
 using API.Entities.Enums;
 using API.Services;
+using API.Structs;
 using EasyCaching.Core;
 using Microsoft.Extensions.Logging;
 using NetVips;
@@ -57,7 +58,7 @@ public class ArchiveServiceTests
     public void IsValidArchiveTest(string archivePath, bool expected)
     {
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/Archives");
-        Assert.Equal(expected, _archiveService.IsValidArchive(Path.Join(testDirectory, archivePath)));
+        Assert.Equal(expected, _archiveService.IsValidArchive(new FileMetadata(Path.Join(testDirectory, archivePath))));
     }
 
     [Theory]
@@ -76,7 +77,7 @@ public class ArchiveServiceTests
     {
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/Archives");
         var sw = Stopwatch.StartNew();
-        Assert.Equal(expected, _archiveService.GetNumberOfPagesFromArchive(Path.Join(testDirectory, archivePath)));
+        Assert.Equal(expected, _archiveService.GetNumberOfPagesFromArchive(new FileMetadata(Path.Join(testDirectory, archivePath), "")));
         _testOutputHelper.WriteLine($"Processed Original in {sw.ElapsedMilliseconds} ms");
     }
 
@@ -95,7 +96,7 @@ public class ArchiveServiceTests
         var sw = Stopwatch.StartNew();
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/Archives");
 
-        Assert.Equal(expected, _archiveService.CanOpen(Path.Join(testDirectory, archivePath)));
+        Assert.Equal(expected, _archiveService.CanOpen(new FileMetadata(Path.Join(testDirectory, archivePath))));
         _testOutputHelper.WriteLine($"Processed Original in {sw.ElapsedMilliseconds} ms");
     }
 
@@ -117,7 +118,7 @@ public class ArchiveServiceTests
         _directoryService.ClearAndDeleteDirectory(extractDirectory);
 
         var sw = Stopwatch.StartNew();
-        _archiveService.ExtractArchive(Path.Join(testDirectory, archivePath), extractDirectory);
+        _archiveService.ExtractArchive(new FileMetadata(Path.Join(testDirectory, archivePath)), extractDirectory);
         var di1 = new DirectoryInfo(extractDirectory);
         Assert.Equal(expectedFileCount, di1.Exists ? _directoryService.GetFiles(extractDirectory, searchOption:SearchOption.AllDirectories).Count() : 0);
         _testOutputHelper.WriteLine($"Processed in {sw.ElapsedMilliseconds} ms");
@@ -173,13 +174,13 @@ public class ArchiveServiceTests
         var testDirectory = Path.GetFullPath(Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/CoverImages"));
         var expectedBytes = Image.Thumbnail(Path.Join(testDirectory, expectedOutputFile), 320).WriteToBuffer(".png");
 
-        archiveService.Configure().CanOpen(Path.Join(testDirectory, inputFile)).Returns(ArchiveLibrary.Default);
+        archiveService.Configure().CanOpen(new FileMetadata(Path.Join(testDirectory, inputFile))).Returns(ArchiveLibrary.Default);
 
         var outputDir = Path.Join(testDirectory, "output");
         _directoryService.ClearDirectory(outputDir);
         _directoryService.ExistOrCreate(outputDir);
 
-        var coverImagePath = archiveService.GetCoverImage(Path.Join(testDirectory, inputFile),
+        var coverImagePath = archiveService.GetCoverImage(new FileMetadata(Path.Join(testDirectory, inputFile)),
             Path.GetFileNameWithoutExtension(inputFile) + "_output", outputDir, EncodeFormat.PNG);
         var actual = File.ReadAllBytes(Path.Join(outputDir, coverImagePath));
 
@@ -208,8 +209,8 @@ public class ArchiveServiceTests
         _directoryService.ClearDirectory(outputDir);
         _directoryService.ExistOrCreate(outputDir);
 
-        archiveService.Configure().CanOpen(Path.Join(testDirectory, inputFile)).Returns(ArchiveLibrary.SharpCompress);
-        var coverOutputFile = archiveService.GetCoverImage(Path.Join(testDirectory, inputFile),
+        archiveService.Configure().CanOpen(new FileMetadata(Path.Join(testDirectory, inputFile))).Returns(ArchiveLibrary.SharpCompress);
+        var coverOutputFile = archiveService.GetCoverImage(new FileMetadata(Path.Join(testDirectory, inputFile)),
             Path.GetFileNameWithoutExtension(inputFile), outputDir, EncodeFormat.PNG);
         var actualBytes = File.ReadAllBytes(Path.Join(outputDir, coverOutputFile));
         var expectedBytes = File.ReadAllBytes(Path.Join(testDirectory, expectedOutputFile));
@@ -231,7 +232,7 @@ public class ArchiveServiceTests
         var inputPath = Path.GetFullPath(Path.Join(testDirectory, inputFile));
         var outputPath = Path.Join(testDirectory, Path.GetFileNameWithoutExtension(inputFile) + "_output");
         new DirectoryInfo(outputPath).Create();
-        var expectedImage = archiveService.GetCoverImage(inputPath, inputFile, outputPath, EncodeFormat.PNG);
+        var expectedImage = archiveService.GetCoverImage(new FileMetadata(inputPath), inputFile, outputPath, EncodeFormat.PNG);
         Assert.Equal("cover.jpg", expectedImage);
         new DirectoryInfo(outputPath).Delete();
     }
@@ -245,7 +246,7 @@ public class ArchiveServiceTests
         var archive = Path.Join(testDirectory, "ComicInfo.zip");
         const string summaryInfo = "By all counts, Ryouta Sakamoto is a loser when he's not holed up in his room, bombing things into oblivion in his favorite online action RPG. But his very own uneventful life is blown to pieces when he's abducted and taken to an uninhabited island, where he soon learns the hard way that he's being pitted against others just like him in a explosives-riddled death match! How could this be happening? Who's putting them up to this? And why!? The name, not to mention the objective, of this very real survival game is eerily familiar to Ryouta, who has mastered its virtual counterpart-BTOOOM! Can Ryouta still come out on top when he's playing for his life!?";
 
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
         Assert.NotNull(comicInfo);
         Assert.Equal(summaryInfo, comicInfo.Summary);
     }
@@ -256,7 +257,7 @@ public class ArchiveServiceTests
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/ComicInfos");
         var archive = Path.Join(testDirectory, "Umlaut.zip");
 
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
         Assert.NotNull(comicInfo);
         Assert.Equal("Belladonna", comicInfo.Series);
     }
@@ -267,7 +268,7 @@ public class ArchiveServiceTests
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/ComicInfos");
         var archive = Path.Join(testDirectory, "ComicInfo_authors.zip");
 
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
         Assert.NotNull(comicInfo);
         Assert.Equal("Junya Inoue", comicInfo.Writer);
     }
@@ -281,7 +282,7 @@ public class ArchiveServiceTests
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/ComicInfos");
         var archive = Path.Join(testDirectory, filename);
 
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
         Assert.NotNull(comicInfo);
         Assert.Equal("BTOOOM!", comicInfo.Series);
     }
@@ -292,7 +293,7 @@ public class ArchiveServiceTests
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/ComicInfos");
         var archive = Path.Join(testDirectory, "ComicInfo_outside_root.zip");
 
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
         Assert.NotNull(comicInfo);
         Assert.Equal("BTOOOM! - Duplicate", comicInfo.Series);
     }
@@ -303,7 +304,7 @@ public class ArchiveServiceTests
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/ComicInfos");
         var archive = Path.Join(testDirectory, "ComicInfo_outside_root_SharpCompress.cb7");
 
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
         Assert.NotNull(comicInfo);
         Assert.Equal("Fire Punch", comicInfo.Series);
     }
@@ -317,7 +318,7 @@ public class ArchiveServiceTests
     {
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/ComicInfos");
         var archive = Path.Join(testDirectory, "ComicInfo.zip");
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
 
         Assert.NotNull(comicInfo);
         Assert.Equal("Yen Press", comicInfo.Publisher);
@@ -341,7 +342,7 @@ public class ArchiveServiceTests
     {
         var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ArchiveService/ComicInfos");
         var archive = Path.Join(testDirectory, "ComicInfo2.zip");
-        var comicInfo = _archiveService.GetComicInfo(archive);
+        var comicInfo = _archiveService.GetComicInfo(new FileMetadata(archive));
 
         Assert.NotNull(comicInfo);
         Assert.Equal("Hellboy", comicInfo.Series);
@@ -367,7 +368,7 @@ public class ArchiveServiceTests
     [InlineData(new [] {"001.txt", "002.txt", "a.jpg"}, "Test.zip", "a.jpg")]
     public void FindCoverImageFilename(string[] filenames, string archiveName, string expected)
     {
-        Assert.Equal(expected, ArchiveService.FindCoverImageFilename(archiveName, filenames));
+        Assert.Equal(expected, ArchiveService.FindCoverImageFilename(new FileMetadata(archiveName), filenames));
     }
 
 

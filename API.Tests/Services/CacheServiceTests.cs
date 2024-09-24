@@ -12,6 +12,7 @@ using API.Helpers.Builders;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
+using API.Structs;
 using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.Sqlite;
@@ -32,32 +33,32 @@ internal class MockReadingItemServiceForCacheService : IReadingItemService
         _directoryService = directoryService;
     }
 
-    public ComicInfo GetComicInfo(string filePath)
+    public ComicInfo GetComicInfo(FileMetadata filePath)
     {
         return null;
     }
 
-    public int GetNumberOfPages(string filePath, MangaFormat format)
+    public int GetNumberOfPages(FileMetadata filePath, MangaFormat format)
     {
         return 1;
     }
 
-    public string GetCoverImage(string fileFilePath, string fileName, MangaFormat format, EncodeFormat encodeFormat, CoverImageSize size = CoverImageSize.Default)
+    public string GetCoverImage(FileMetadata fileFilePath, string fileName, MangaFormat format, EncodeFormat encodeFormat, CoverImageSize size = CoverImageSize.Default)
     {
         return string.Empty;
     }
 
-    public void Extract(string fileFilePath, string targetDirectory, MangaFormat format, int imageCount = 1)
+    public void Extract(FileMetadata fileFilePath, string targetDirectory, MangaFormat format, int imageCount = 1)
     {
         throw new System.NotImplementedException();
     }
 
-    public ParserInfo Parse(string path, string rootPath, string libraryRoot, LibraryType type)
+    public ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool extractChapters)
     {
         throw new System.NotImplementedException();
     }
 
-    public ParserInfo ParseFile(string path, string rootPath, string libraryRoot, LibraryType type)
+    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool extractChapters)
     {
         throw new System.NotImplementedException();
     }
@@ -164,7 +165,7 @@ public class CacheServiceTests
         var s = new SeriesBuilder("Test").Build();
         var v = new VolumeBuilder("1").Build();
         var c = new ChapterBuilder("1")
-                .WithFile(new MangaFileBuilder($"{DataDirectory}Test v1.zip", MangaFormat.Archive).Build())
+                .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}Test v1.zip"), MangaFormat.Archive).Build())
                 .Build();
         v.Chapters.Add(c);
         s.Volumes.Add(v);
@@ -259,8 +260,8 @@ public class CacheServiceTests
             Substitute.For<IBookmarkService>());
 
         var c = new ChapterBuilder("1")
-            .WithFile(new MangaFileBuilder($"{DataDirectory}1.epub", MangaFormat.Epub).Build())
-            .WithFile(new MangaFileBuilder($"{DataDirectory}2.epub", MangaFormat.Epub).Build())
+            .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}1.epub"), MangaFormat.Epub).Build())
+            .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}2.epub"), MangaFormat.Epub).Build())
             .Build();
         cs.GetCachedFile(c);
         Assert.Same($"{DataDirectory}1.epub", cs.GetCachedFile(c));
@@ -316,11 +317,11 @@ public class CacheServiceTests
 
         var c = new ChapterBuilder("1")
             .WithId(1)
-            .WithFile(new MangaFileBuilder($"{DataDirectory}1.zip", MangaFormat.Archive)
+            .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}1.zip"), MangaFormat.Archive)
                 .WithPages(10)
                 .WithId(1)
                 .Build())
-            .WithFile(new MangaFileBuilder($"{DataDirectory}2.zip", MangaFormat.Archive)
+            .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}2.zip"), MangaFormat.Archive)
                 .WithPages(5)
                 .WithId(2)
                 .Build())
@@ -360,7 +361,7 @@ public class CacheServiceTests
 
         var c = new ChapterBuilder("1")
             .WithId(1)
-            .WithFile(new MangaFileBuilder($"{DataDirectory}1.zip", MangaFormat.Archive)
+            .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}1.zip"), MangaFormat.Archive)
                 .WithPages(10)
                 .WithId(1)
                 .Build())
@@ -402,11 +403,11 @@ public class CacheServiceTests
 
         var c = new ChapterBuilder("1")
             .WithId(1)
-            .WithFile(new MangaFileBuilder($"{DataDirectory}1.zip", MangaFormat.Archive)
+            .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}1.zip"), MangaFormat.Archive)
                 .WithPages(10)
                 .WithId(1)
                 .Build())
-            .WithFile(new MangaFileBuilder($"{DataDirectory}2.zip", MangaFormat.Archive)
+            .WithFile(new MangaFileBuilder(new FileMetadata($"{DataDirectory}2.zip"), MangaFormat.Archive)
                 .WithPages(5)
                 .WithId(2)
                 .Build())

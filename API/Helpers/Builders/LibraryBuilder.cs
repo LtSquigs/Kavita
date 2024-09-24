@@ -91,4 +91,9 @@ public class LibraryBuilder : IEntityBuilder<Library>
         _library.AllowScrobbling = allowScrobbling;
         return this;
     }
+    public LibraryBuilder WithExtractChaptersFromVolumes(bool extractChaptersFromVolumes)
+    {
+        _library.ExtractChaptersFromVolumes = extractChaptersFromVolumes;
+        return this;
+    }
 }

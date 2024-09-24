@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using API.Entities.Enums;
 using API.Entities.Interfaces;
+using API.Structs;
 
 namespace API.Entities;
 
@@ -17,9 +18,9 @@ public class MangaFile : IEntityDate
     /// </summary>
     public string FileName { get; set; }
     /// <summary>
-    /// Absolute path to the archive file
+    /// Metadata about the file used to access it
     /// </summary>
-    public required string FilePath { get; set; }
+    public required FileMetadata FileMetadata { get; set; }
     /// <summary>
     /// Number of pages for the given file
     /// </summary>
@@ -61,14 +62,31 @@ public class MangaFile : IEntityDate
     /// </summary>
     public void UpdateLastModified()
     {
-        if (FilePath == null) return;
-        LastModified = File.GetLastWriteTime(FilePath);
-        LastModifiedUtc = File.GetLastWriteTimeUtc(FilePath);
+        LastModified = File.GetLastWriteTime(FileMetadata.Path);
+        LastModifiedUtc = File.GetLastWriteTimeUtc(FileMetadata.Path);
     }
 
     public void UpdateLastFileAnalysis()
     {
         LastFileAnalysis = DateTime.Now;
         LastFileAnalysisUtc = DateTime.UtcNow;
+    }
+
+    public string GetDownloadName()
+    {
+        if (FileMetadata.HasPageRange() && Chapter != null) {
+            return Path.GetFileNameWithoutExtension(FileMetadata.Path) + " Chapter " + Chapter.GetNumberTitle() + Path.GetExtension(FileMetadata.Path);
+        }
+        return Path.GetFileName(FileMetadata.Path);
+    }
+
+    public MangaFile VolumeFile()
+    {
+        return new MangaFile() {
+            FileName = FileName,
+            FileMetadata = new FileMetadata(FileMetadata.Path),
+            Format = Format,
+            Extension = Extension
+        };
     }
 }

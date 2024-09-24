@@ -150,10 +150,10 @@ public class CacheService : ICacheService
     public string GetCachedFile(Chapter chapter)
     {
         var extractPath = GetCachePath(chapter.Id);
-        var path = Path.Join(extractPath, _directoryService.FileSystem.Path.GetFileName(chapter.Files.First().FilePath));
+        var path = Path.Join(extractPath, _directoryService.FileSystem.Path.GetFileName(chapter.Files.First().FileMetadata.Path));
         if (!(_directoryService.FileSystem.FileInfo.New(path).Exists))
         {
-            path = chapter.Files.First().FilePath;
+            path = chapter.Files.First().FileMetadata.Path;
         }
         return path;
     }
@@ -205,10 +205,10 @@ public class CacheService : ICacheService
         if (files.Count > 0 && files[0].Format == MangaFormat.Image)
         {
             // Check if all the files are Images. If so, do a directory copy, else do the normal copy
-            if (files.All(f => f.Format == MangaFormat.Image))
+            if (files.All(f => f.Format == MangaFormat.Image && !f.FileMetadata.HasPageRange()))
             {
                 _directoryService.ExistOrCreate(extractPath);
-                _directoryService.CopyFilesToDirectory(files.Select(f => f.FilePath), extractPath);
+                _directoryService.CopyFilesToDirectory(files.Select(f => f.FileMetadata.Path), extractPath);
             }
             else
             {
@@ -218,7 +218,7 @@ public class CacheService : ICacheService
                     {
                         extraPath = file.Id + string.Empty;
                     }
-                    _readingItemService.Extract(file.FilePath, Path.Join(extractPath, extraPath), MangaFormat.Image, files.Count);
+                    _readingItemService.Extract(file.FileMetadata, Path.Join(extractPath, extraPath), MangaFormat.Image, files.Count);
                 }
                 _directoryService.Flatten(extractDi.FullName);
             }
@@ -235,25 +235,25 @@ public class CacheService : ICacheService
             switch (file.Format)
             {
                 case MangaFormat.Archive:
-                    _readingItemService.Extract(file.FilePath, Path.Join(extractPath, extraPath), file.Format);
+                    _readingItemService.Extract(file.FileMetadata, Path.Join(extractPath, extraPath), file.Format, 1);
                     break;
                 case MangaFormat.Epub:
                 case MangaFormat.Pdf:
                 {
-                    if (!_directoryService.FileSystem.File.Exists(files[0].FilePath))
+                    if (!_directoryService.FileSystem.File.Exists(files[0].FileMetadata.Path))
                     {
-                        _logger.LogError("{File} does not exist on disk", files[0].FilePath);
-                        throw new KavitaException($"{files[0].FilePath} does not exist on disk");
+                        _logger.LogError("{File} does not exist on disk", files[0].FileMetadata);
+                        throw new KavitaException($"{files[0].FileMetadata} does not exist on disk");
                     }
                     if (extractPdfImages)
                     {
-                        _readingItemService.Extract(file.FilePath, Path.Join(extractPath, extraPath), file.Format);
+                        _readingItemService.Extract(file.FileMetadata, Path.Join(extractPath, extraPath), file.Format);
                         break;
                     }
                     removeNonImages = false;
 
                     _directoryService.ExistOrCreate(extractPath);
-                    _directoryService.CopyFileToDirectory(files[0].FilePath, extractPath);
+                    _directoryService.CopyFileToDirectory(files[0].FileMetadata.Path, extractPath);
                     break;
                 }
             }

@@ -6,6 +6,7 @@ using API.Entities.Enums;
 using API.Extensions;
 using API.Services.Tasks.Scanner;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 
 namespace API.Tests.Helpers;
 
@@ -18,7 +19,7 @@ public static class ParserInfoFactory
             Chapters = chapters,
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = Path.Join(@"/manga/", filename),
+            FileMetadata = new FileMetadata(Path.Join(@"/manga/", filename)),
             Filename = filename,
             IsSpecial = isSpecial,
             Title = Path.GetFileNameWithoutExtension(filename),

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using API.Services;
+using API.Structs;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -295,7 +296,7 @@ public class DirectoryServiceTests
 
 
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fileSystem);
-        var fileSize = ds.GetTotalSize(fileSystem.AllFiles);
+        var fileSize = ds.GetTotalSize(fileSystem.AllFiles.Select(f => new FileMetadata(f)));
         Assert.True(fileSize > 0);
     }
     #endregion

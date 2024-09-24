@@ -97,9 +97,9 @@ public class MetadataService : IMetadataService
         }
 
 
-        _logger.LogDebug("[MetadataService] Generating cover image for {File}", firstFile.FilePath);
+        _logger.LogDebug("[MetadataService] Generating cover image for {File}", firstFile.FileMetadata);
 
-        chapter.CoverImage = _readingItemService.GetCoverImage(firstFile.FilePath,
+        chapter.CoverImage = _readingItemService.GetCoverImage(firstFile.FileMetadata,
             ImageService.GetChapterFormat(chapter.Id, chapter.VolumeId), firstFile.Format, encodeFormat, coverImageSize);
 
         _imageService.UpdateColorScape(chapter);

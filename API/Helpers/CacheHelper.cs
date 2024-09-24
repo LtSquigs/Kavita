@@ -2,6 +2,7 @@
 using API.Entities;
 using API.Entities.Interfaces;
 using API.Services;
+using API.Structs;
 
 namespace API.Helpers;
 #nullable enable
@@ -42,11 +43,11 @@ public class CacheHelper : ICacheHelper
         bool isCoverLocked = false)
     {
 
-        var fileExists = !string.IsNullOrEmpty(coverPath) && _fileService.Exists(coverPath);
+        var fileExists = !string.IsNullOrEmpty(coverPath) && _fileService.Exists(new FileMetadata(coverPath));
         if (isCoverLocked && fileExists) return false;
         if (forceUpdate) return true;
         if (firstFile == null) return true;
-        return (_fileService.HasFileBeenModifiedSince(firstFile.FilePath, firstFile.LastModified)) || !fileExists;
+        return (_fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, firstFile.LastModified)) || !fileExists;
     }
 
     /// <summary>
@@ -60,8 +61,8 @@ public class CacheHelper : ICacheHelper
     {
         return firstFile != null &&
                (!forceUpdate &&
-                !(_fileService.HasFileBeenModifiedSince(firstFile.FilePath, chapter.Created)
-                  || _fileService.HasFileBeenModifiedSince(firstFile.FilePath, firstFile.LastModified)));
+                !(_fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, chapter.Created)
+                  || _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, firstFile.LastModified)));
     }
 
     /// <summary>
@@ -75,8 +76,8 @@ public class CacheHelper : ICacheHelper
     {
         if (firstFile == null) return false;
         if (forceUpdate) return true;
-        return _fileService.HasFileBeenModifiedSince(firstFile.FilePath, lastScan)
-               || _fileService.HasFileBeenModifiedSince(firstFile.FilePath, firstFile.LastModified);
+        return _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, lastScan)
+               || _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, firstFile.LastModified);
     }
 
     /// <summary>
@@ -86,6 +87,6 @@ public class CacheHelper : ICacheHelper
     /// <returns></returns>
     public bool CoverImageExists(string path)
     {
-        return !string.IsNullOrEmpty(path) && _fileService.Exists(path);
+        return !string.IsNullOrEmpty(path) && _fileService.Exists(new FileMetadata(path));
     }
 }

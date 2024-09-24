@@ -42,7 +42,12 @@ public class LibraryDto
     /// <summary>
     /// Include library series in Search
     /// </summary>
-    public bool IncludeInSearch { get; set; } = true;
+    public bool IncludeInSearch { get; set; } = false;
+    /// <summary>
+    /// When scanning the library, attempts to extract chapters from volume files using bookmarks
+    /// entry names, or table of contents.
+    /// </summary>
+    public bool ExtractChaptersFromVolumes { get; set; } = false;
     /// <summary>
     /// Should this library allow Scrobble events to emit from it
     /// </summary>

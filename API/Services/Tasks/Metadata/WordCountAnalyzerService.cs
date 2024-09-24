@@ -175,11 +175,11 @@ public class WordCountAnalyzerService : IWordCountAnalyzerService
                     var fileCounter = 1;
                     foreach (var file in chapter.Files)
                     {
-                        var filePath = file.FilePath;
+                        var filePath = file.FileMetadata;
                         var pageCounter = 1;
                         try
                         {
-                            using var book = await EpubReader.OpenBookAsync(filePath, BookService.BookReaderOptions);
+                            using var book = await EpubReader.OpenBookAsync(filePath.Path, BookService.BookReaderOptions);
 
                             var totalPages = book.Content.Html.Local;
                             foreach (var bookPage in totalPages)
@@ -189,8 +189,8 @@ public class WordCountAnalyzerService : IWordCountAnalyzerService
 
                                 await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
                                     MessageFactory.WordCountAnalyzerProgressEvent(series.LibraryId, progress,
-                                        ProgressEventType.Updated, useFileName ? filePath : series.Name));
-                                sum += await GetWordCountFromHtml(bookPage, filePath);
+                                        ProgressEventType.Updated, useFileName ? filePath.Path : series.Name));
+                                sum += await GetWordCountFromHtml(bookPage, filePath.Path);
                                 pageCounter++;
                             }
 
@@ -201,7 +201,7 @@ public class WordCountAnalyzerService : IWordCountAnalyzerService
                             _logger.LogError(ex, "There was an error reading an epub file for word count, series skipped");
                             await _eventHub.SendMessageAsync(MessageFactory.Error,
                                 MessageFactory.ErrorEvent("There was an issue counting words on an epub",
-                                    $"{series.Name} - {file.FilePath}"));
+                                    $"{series.Name} - {file.FileMetadata}"));
                             return;
                         }
 

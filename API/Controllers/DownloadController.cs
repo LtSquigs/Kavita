@@ -7,8 +7,10 @@ using API.Data;
 using API.DTOs.Downloads;
 using API.Entities;
 using API.Extensions;
+using API.Helpers.Builders;
 using API.Services;
 using API.SignalR;
+using API.Structs;
 using Kavita.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -59,7 +61,7 @@ public class DownloadController : BaseApiController
     public async Task<ActionResult<long>> GetVolumeSize(int volumeId)
     {
         var files = await _unitOfWork.VolumeRepository.GetFilesForVolume(volumeId);
-        return Ok(_directoryService.GetTotalSize(files.Select(c => c.FilePath)));
+        return Ok(_directoryService.GetTotalSize(files.Select(c => c.FileMetadata)));
     }
 
     /// <summary>
@@ -71,7 +73,7 @@ public class DownloadController : BaseApiController
     public async Task<ActionResult<long>> GetChapterSize(int chapterId)
     {
         var files = await _unitOfWork.ChapterRepository.GetFilesForChapterAsync(chapterId);
-        return Ok(_directoryService.GetTotalSize(files.Select(c => c.FilePath)));
+        return Ok(_directoryService.GetTotalSize(files.Select(c => c.FileMetadata)));
     }
 
     /// <summary>
@@ -83,7 +85,7 @@ public class DownloadController : BaseApiController
     public async Task<ActionResult<long>> GetSeriesSize(int seriesId)
     {
         var files = await _unitOfWork.SeriesRepository.GetFilesForSeries(seriesId);
-        return Ok(_directoryService.GetTotalSize(files.Select(c => c.FilePath)));
+        return Ok(_directoryService.GetTotalSize(files.Select(c => c.FileMetadata)));
     }
 
 
@@ -100,6 +102,16 @@ public class DownloadController : BaseApiController
         var volume = await _unitOfWork.VolumeRepository.GetVolumeByIdAsync(volumeId);
         if (volume == null) return BadRequest(await _localizationService.Translate(User.GetUserId(), "volume-doesnt-exist"));
         var files = await _unitOfWork.VolumeRepository.GetFilesForVolume(volumeId);
+        // A volume can be made up of extracted chapters, so we group by path
+        files = files.GroupBy(f => f.FileMetadata.Path).Select(f => {
+            var firstFile = f.First();
+            if (firstFile.FileMetadata.HasPageRange()) {
+                return firstFile.VolumeFile();
+            }
+
+            return firstFile;
+        }).ToList();
+
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(volume.SeriesId);
         try
         {
@@ -118,10 +130,10 @@ public class DownloadController : BaseApiController
         return await _accountService.HasDownloadPermission(user);
     }
 
-    private PhysicalFileResult GetFirstFileDownload(IEnumerable<MangaFile> files)
+    private async Task<FileResult> GetFirstFileDownload(IEnumerable<MangaFile> files)
     {
-        var (zipFile, contentType, fileDownloadName) = _downloadService.GetFirstFileDownload(files);
-        return PhysicalFile(zipFile, contentType, Uri.EscapeDataString(fileDownloadName), true);
+        var (zipFile, contentType, fileDownloadName) = await _downloadService.GetFirstFileDownload(files);
+        return File(zipFile, contentType, Uri.EscapeDataString(fileDownloadName), true);
     }
 
     /// <summary>
@@ -162,10 +174,10 @@ public class DownloadController : BaseApiController
                 await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
                     MessageFactory.DownloadProgressEvent(username,
                         filename, $"Downloading {filename}",1F, "ended"));
-                return GetFirstFileDownload(files);
+                return await GetFirstFileDownload(files);
             }
 
-            var filePath = _archiveService.CreateZipFromFoldersForDownload(files.Select(c => c.FilePath).ToList(), tempFolder, ProgressCallback);
+            var filePath = _archiveService.CreateZipFromFoldersForDownload(files.ToList(), tempFolder, ProgressCallback);
             await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
                 MessageFactory.DownloadProgressEvent(username,
                     filename, "Download Complete", 1F, "ended"));
@@ -195,6 +207,14 @@ public class DownloadController : BaseApiController
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(seriesId);
         if (series == null) return BadRequest("Invalid Series");
         var files = await _unitOfWork.SeriesRepository.GetFilesForSeries(seriesId);
+        files = files.GroupBy(f => f.FileMetadata.Path).Select(f => {
+            var firstFile = f.First();
+            if (firstFile.FileMetadata.HasPageRange()) {
+                return firstFile.VolumeFile();
+            }
+
+            return firstFile;
+        }).ToList();
         try
         {
             return await DownloadFiles(files, $"download_{User.GetUsername()}_s{seriesId}", $"{series.Name}.zip");

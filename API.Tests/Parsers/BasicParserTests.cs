@@ -2,7 +2,10 @@
 using API.Entities.Enums;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
+using Castle.Core.Logging;
+using EasyCaching.Core;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -31,7 +34,9 @@ public class BasicParserTests
         fileSystem.AddFile("C:/Books/Batman/Batman #1.cbz", new MockFileData(""));
 
         var ds = new DirectoryService(_dsLogger, fileSystem);
-        _parser = new BasicParser(ds, new ImageParser(ds));
+        var _is = new ImageService(null, ds, Substitute.For<IEasyCachingProviderFactory>());
+        var _as = new ArchiveService(new NullLogger<ArchiveService>(), ds, _is, Substitute.For<IMediaErrorService>());
+        _parser = new BasicParser(ds, new ImageParser(ds), _as);
     }
 
     #region Parse_Books
@@ -72,12 +77,12 @@ public class BasicParserTests
     {
         var actual = _parser.Parse("C:/Books/Mujaki no Rakuen/Mujaki no Rakuen Vol12 ch76.cbz", "C:/Books/Mujaki no Rakuen/",
             RootDirectory, LibraryType.Manga, null);
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actual);
 
-        Assert.Equal("Mujaki no Rakuen", actual.Series);
-        Assert.Equal("12", actual.Volumes);
-        Assert.Equal("76", actual.Chapters);
-        Assert.False(actual.IsSpecial);
+        Assert.Equal("Mujaki no Rakuen", actual[0].Series);
+        Assert.Equal("12", actual[0].Volumes);
+        Assert.Equal("76", actual[0].Chapters);
+        Assert.False(actual[0].IsSpecial);
     }
 
     /// <summary>
@@ -89,12 +94,12 @@ public class BasicParserTests
         var actual = _parser.Parse("C:/Books/Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen/Vol 1.cbz",
             "C:/Books/Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen/",
             RootDirectory, LibraryType.Manga, null);
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actual);
 
-        Assert.Equal("Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen", actual.Series);
-        Assert.Equal("1", actual.Volumes);
-        Assert.Equal(Parser.DefaultChapter, actual.Chapters);
-        Assert.False(actual.IsSpecial);
+        Assert.Equal("Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen", actual[0].Series);
+        Assert.Equal("1", actual[0].Volumes);
+        Assert.Equal(Parser.DefaultChapter, actual[0].Chapters);
+        Assert.False(actual[0].IsSpecial);
     }
 
     /// <summary>
@@ -106,12 +111,12 @@ public class BasicParserTests
         var actual = _parser.Parse("C:/Books/Beelzebub/Beelzebub_01_[Noodles].zip",
             "C:/Books/Beelzebub/",
             RootDirectory, LibraryType.Manga, null);
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actual);
 
-        Assert.Equal("Beelzebub", actual.Series);
-        Assert.Equal(Parser.LooseLeafVolume, actual.Volumes);
-        Assert.Equal("1", actual.Chapters);
-        Assert.False(actual.IsSpecial);
+        Assert.Equal("Beelzebub", actual[0].Series);
+        Assert.Equal(Parser.LooseLeafVolume, actual[0].Volumes);
+        Assert.Equal("1", actual[0].Chapters);
+        Assert.False(actual[0].IsSpecial);
     }
 
     /// <summary>
@@ -123,12 +128,12 @@ public class BasicParserTests
         var actual = _parser.Parse("C:/Books/Summer Time Rendering/Specials/Record 014 (between chapter 083 and ch084) SP11.cbr",
             "C:/Books/Summer Time Rendering/",
             RootDirectory, LibraryType.Manga, null);
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actual);
 
-        Assert.Equal("Summer Time Rendering", actual.Series);
-        Assert.Equal(Parser.SpecialVolume, actual.Volumes);
-        Assert.Equal(Parser.DefaultChapter, actual.Chapters);
-        Assert.True(actual.IsSpecial);
+        Assert.Equal("Summer Time Rendering", actual[0].Series);
+        Assert.Equal(Parser.SpecialVolume, actual[0].Volumes);
+        Assert.Equal(Parser.DefaultChapter, actual[0].Chapters);
+        Assert.True(actual[0].IsSpecial);
     }
 
 
@@ -141,13 +146,13 @@ public class BasicParserTests
         var actual = _parser.Parse("C:/Books/Summer Time Rendering/Specials/Volume Omake.cbr",
             "C:/Books/Summer Time Rendering/",
             RootDirectory, LibraryType.Manga, null);
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actual);
 
-        Assert.Equal("Summer Time Rendering", actual.Series);
-        Assert.Equal("Volume Omake", actual.Title);
-        Assert.Equal(Parser.SpecialVolume, actual.Volumes);
-        Assert.Equal(Parser.DefaultChapter, actual.Chapters);
-        Assert.True(actual.IsSpecial);
+        Assert.Equal("Summer Time Rendering", actual[0].Series);
+        Assert.Equal("Volume Omake", actual[0].Title);
+        Assert.Equal(Parser.SpecialVolume, actual[0].Volumes);
+        Assert.Equal(Parser.DefaultChapter, actual[0].Chapters);
+        Assert.True(actual[0].IsSpecial);
     }
 
     /// <summary>
@@ -159,13 +164,13 @@ public class BasicParserTests
         var actual = _parser.Parse("C:/Books/Air Gear/Air Gear Omnibus v01 (2016) (Digital) (Shadowcat-Empire).cbz",
             "C:/Books/Air Gear/",
             RootDirectory, LibraryType.Manga, null);
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actual);
 
-        Assert.Equal("Air Gear", actual.Series);
-        Assert.Equal("1", actual.Volumes);
-        Assert.Equal(Parser.DefaultChapter, actual.Chapters);
-        Assert.False(actual.IsSpecial);
-        Assert.Equal("Omnibus", actual.Edition);
+        Assert.Equal("Air Gear", actual[0].Series);
+        Assert.Equal("1", actual[0].Volumes);
+        Assert.Equal(Parser.DefaultChapter, actual[0].Chapters);
+        Assert.False(actual[0].IsSpecial);
+        Assert.Equal("Omnibus", actual[0].Edition);
     }
 
     #endregion
@@ -180,11 +185,11 @@ public class BasicParserTests
         var actual = _parser.Parse("C:/Books/Epubs/Harrison, Kim - The Good, The Bad, and the Undead - Hollows Vol 2.5.epub",
             "C:/Books/Epubs/",
             RootDirectory, LibraryType.Manga, null);
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actual);
 
-        Assert.Equal("Harrison, Kim - The Good, The Bad, and the Undead - Hollows", actual.Series);
-        Assert.Equal("2.5", actual.Volumes);
-        Assert.Equal(Parser.DefaultChapter, actual.Chapters);
+        Assert.Equal("Harrison, Kim - The Good, The Bad, and the Undead - Hollows", actual[0].Series);
+        Assert.Equal("2.5", actual[0].Volumes);
+        Assert.Equal(Parser.DefaultChapter, actual[0].Chapters);
     }
 
     #endregion

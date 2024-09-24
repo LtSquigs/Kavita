@@ -1,12 +1,13 @@
 ﻿using System.IO;
 using API.Data.Metadata;
 using API.Entities.Enums;
+using API.Structs;
 
 namespace API.Services.Tasks.Scanner.Parser;
 
 public class PdfParser(IDirectoryService directoryService) : DefaultParser(directoryService)
 {
-    public override ParserInfo Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo comicInfo = null)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo comicInfo = null, bool extractChapters = false)
     {
         var fileName = directoryService.FileSystem.Path.GetFileNameWithoutExtension(filePath);
         var ret = new ParserInfo
@@ -14,7 +15,7 @@ public class PdfParser(IDirectoryService directoryService) : DefaultParser(direc
             Filename = Path.GetFileName(filePath),
             Format = Parser.ParseFormat(filePath),
             Title = Parser.RemoveExtensionIfSupported(fileName)!,
-            FullFilePath = Parser.NormalizePath(filePath),
+            FileMetadata = new FileMetadata(filePath).Normalized(),
             Series = string.Empty,
             ComicInfo = comicInfo,
             Chapters = Parser.ParseChapter(fileName, type)
@@ -87,7 +88,7 @@ public class PdfParser(IDirectoryService directoryService) : DefaultParser(direc
             ret.Volumes = $"{Parser.SpecialVolumeNumber}";
         }
 
-        return string.IsNullOrEmpty(ret.Series) ? null : ret;
+        return string.IsNullOrEmpty(ret.Series) ? [] : [ret];
     }
 
     /// <summary>

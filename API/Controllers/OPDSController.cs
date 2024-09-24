@@ -22,6 +22,7 @@ using API.Extensions;
 using API.Helpers;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using AutoMapper;
 using Kavita.Common;
 using Microsoft.AspNetCore.Authorization;
@@ -1016,8 +1017,8 @@ public class OpdsController : BaseApiController
         }
 
         var files = await _unitOfWork.ChapterRepository.GetFilesForChapterAsync(chapterId);
-        var (zipFile, contentType, fileDownloadName) = _downloadService.GetFirstFileDownload(files);
-        return PhysicalFile(zipFile, contentType, fileDownloadName, true);
+        var (zipFile, contentType, fileDownloadName) = await _downloadService.GetFirstFileDownload(files);
+        return File(zipFile, contentType, fileDownloadName, true);
     }
 
     private static ContentResult CreateXmlResult(string xml)
@@ -1147,10 +1148,10 @@ public class OpdsController : BaseApiController
     {
         var fileSize =
             mangaFile.Bytes > 0 ? DirectoryService.GetHumanReadableBytes(mangaFile.Bytes) :
-            DirectoryService.GetHumanReadableBytes(_directoryService.GetTotalSize(new List<string>()
-                {mangaFile.FilePath}));
-        var fileType = _downloadService.GetContentTypeFromFile(mangaFile.FilePath);
-        var filename = Uri.EscapeDataString(Path.GetFileName(mangaFile.FilePath));
+            DirectoryService.GetHumanReadableBytes(_directoryService.GetTotalSize(new List<FileMetadata>()
+                {mangaFile.FileMetadata}));
+        var fileType = _downloadService.GetContentTypeFromFile(mangaFile.FileMetadata.Path);
+        var filename = Uri.EscapeDataString(Path.GetFileName(mangaFile.FileMetadata.Path));
         var libraryType = await _unitOfWork.LibraryRepository.GetLibraryTypeAsync(series.LibraryId);
         var volume = await _unitOfWork.VolumeRepository.GetVolumeDtoAsync(volumeId, userId);
 

@@ -579,8 +579,50 @@ public static class Parser
             MatchOptions, RegexTimeout),
     };
 
-    private static readonly Regex[] MangaChapterRegex = new[]
+    public static readonly Regex[] BookmarkRegex = new[]
     {
+        new Regex(
+            @"(บทที่|ตอนที่)\.?(\s|_)?(?<Chapter>\d+)\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        new Regex(
+            @"(\b|_)(c|ch)(\.?\s?)(?<Chapter>(\d+(\.\d)?)(-c?\d+(\.\d)?)?)\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        // Green Worldz - Chapter 027, Kimi no Koto ga Daidaidaidaidaisuki na 100-nin no Kanojo Chapter 11-10
+        new Regex(
+            @"Chapter\s(?<Chapter>\d+(?:\.?[\d-]+)?)\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        // Russian Chapter: Главы n -> Chapter n
+        new Regex(
+            @"(Глава|глава|Главы|Глава)(\.?)(\s|_)?(?<Chapter>\d+(?:.\d+|-\d+)?)\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        // Yumekui-Merry_DKThias_Chapter21.zip
+        new Regex(
+            @"Chapter(?<Chapter>\d+(-\d+)?)\s*[-:,]?\s+(?<Title>.+)$", //(?:.\d+|-\d+)?
+            MatchOptions, RegexTimeout),
+        // Vol 1 Chapter 2
+        new Regex(
+            @"(Chp|Chapter)\.?(\s|_)?(?<Chapter>\d+)\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        // Chinese Chapter: 第n话 -> Chapter n, 【TFO汉化&Petit汉化】迷你偶像漫画第25话
+        new Regex(
+            @"第(?<Chapter>\d+)话\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        // Korean Chapter: 제n화 -> Chapter n, 가디언즈 오브 갤럭시 죽음의 보석.E0008.7화#44
+        new Regex(
+            @"제?(?<Chapter>\d+\.?\d+)(회|화|장)\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        // Korean Chapter: 第10話 -> Chapter n, [ハレム]ナナとカオル ～高校生のSMごっこ～　第1話
+        new Regex(
+            @"第?(?<Chapter>\d+(?:\.\d+|-\d+)?)話\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+        // Russian Chapter: n Главa -> Chapter n
+        new Regex(
+            @"(?!Том)(?<!Том\.)\s\d+(\s|_)?(?<Chapter>\d+(?:\.\d+|-\d+)?)(\s|_)(Глава|глава|Главы|Глава)\s*[-:,]?\s+(?<Title>.+)$",
+            MatchOptions, RegexTimeout),
+    };
+
+    private static readonly Regex[] MangaChapterRegex =
+    [
         // Thai Chapter: บทที่ n -> Chapter n, ตอนที่ n -> Chapter n, เล่ม n -> Volume n, เล่มที่ n -> Volume n
         new Regex(
             @"(?<Volume>((เล่ม|เล่มที่))?(\s|_)?\.?\d+)(\s|_)(บทที่|ตอนที่)\.?(\s|_)?(?<Chapter>\d+)",
@@ -646,7 +688,7 @@ public static class Parser
         new Regex(
             @"(?!Том)(?<!Том\.)\s\d+(\s|_)?(?<Chapter>\d+(?:\.\d+|-\d+)?)(\s|_)(Глава|глава|Главы|Глава)",
             MatchOptions, RegexTimeout),
-    };
+    ];
 
     private static readonly Regex MangaEditionRegex = new Regex(
         // Tenjo Tenge {Full Contact Edition} v01 (2011) (Digital) (ASTC).cbz
@@ -886,6 +928,23 @@ public static class Parser
         };
     }
 
+    public static string ParseBookmarkTitle(string bookmark, LibraryType type)
+    {
+        foreach (var regex in BookmarkRegex)
+        {
+            var matches = regex.Matches(bookmark);
+            foreach (var groups in matches.Select(match => match.Groups))
+            {
+                if (!groups["Title"].Success || groups["Title"] == Match.Empty) continue;
+
+                var value = groups["Title"].Value;
+
+                return CleanTitle(value);
+            }
+        }
+
+        return string.Empty;
+    }
     private static string ParseMangaChapter(string filename)
     {
         foreach (var regex in MangaChapterRegex)
@@ -933,7 +992,7 @@ public static class Parser
         return DefaultChapter;
     }
 
-    private static string RemoveEditionTagHolders(string title)
+    public static string RemoveEditionTagHolders(string title)
     {
         title = CleanupRegex.Replace(title, string.Empty);
 

@@ -7,6 +7,7 @@ using API.Entities.Enums;
 using API.Helpers;
 using API.Helpers.Builders;
 using API.Services;
+using API.Structs;
 using Xunit;
 
 namespace API.Tests.Helpers;
@@ -54,7 +55,7 @@ public class CacheHelperTests
     public void ShouldUpdateCoverImage_OnFirstRun()
     {
 
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(DateTime.Now)
             .Build();
         Assert.True(_cacheHelper.ShouldUpdateCoverImage(null, file, DateTime.Now.Subtract(TimeSpan.FromMinutes(1)),
@@ -65,7 +66,7 @@ public class CacheHelperTests
     public void ShouldUpdateCoverImage_ShouldNotUpdateOnSecondRunWithCoverImageSetNotLocked()
     {
         // Represents first run
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(DateTime.Now)
             .Build();
         Assert.False(_cacheHelper.ShouldUpdateCoverImage(_testCoverPath, file, DateTime.Now.Subtract(TimeSpan.FromMinutes(1)),
@@ -76,7 +77,7 @@ public class CacheHelperTests
     public void ShouldUpdateCoverImage_ShouldNotUpdateOnSecondRunWithCoverImageSetNotLocked_2()
     {
         // Represents first run
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(DateTime.Now)
             .Build();
         Assert.False(_cacheHelper.ShouldUpdateCoverImage(_testCoverPath, file, DateTime.Now,
@@ -87,7 +88,7 @@ public class CacheHelperTests
     public void ShouldUpdateCoverImage_ShouldNotUpdateOnSecondRunWithCoverImageSetLocked()
     {
         // Represents first run
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(DateTime.Now)
             .Build();
         Assert.False(_cacheHelper.ShouldUpdateCoverImage(_testCoverPath, file, DateTime.Now.Subtract(TimeSpan.FromMinutes(1)),
@@ -98,7 +99,7 @@ public class CacheHelperTests
     public void ShouldUpdateCoverImage_ShouldNotUpdateOnSecondRunWithCoverImageSetLocked_Modified()
     {
         // Represents first run
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(DateTime.Now)
             .Build();
         Assert.False(_cacheHelper.ShouldUpdateCoverImage(_testCoverPath, file, DateTime.Now.Subtract(TimeSpan.FromMinutes(1)),
@@ -122,7 +123,7 @@ public class CacheHelperTests
         var cacheHelper = new CacheHelper(fileService);
 
         var created = DateTime.Now.Subtract(TimeSpan.FromHours(1));
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(DateTime.Now.Subtract(TimeSpan.FromMinutes(1)))
             .Build();
 
@@ -151,7 +152,7 @@ public class CacheHelperTests
             .WithCreated(filesystemFile.LastWriteTime.DateTime)
             .Build();
 
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(filesystemFile.LastWriteTime.DateTime)
             .Build();
         Assert.True(cacheHelper.IsFileUnmodifiedSinceCreationOrLastScan(chapter, false, file));
@@ -178,7 +179,7 @@ public class CacheHelperTests
             .WithCreated(filesystemFile.LastWriteTime.DateTime)
             .Build();
 
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(filesystemFile.LastWriteTime.DateTime)
             .Build();
 
@@ -206,7 +207,7 @@ public class CacheHelperTests
             .WithCreated(filesystemFile.LastWriteTime.DateTime)
             .Build();
 
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(filesystemFile.LastWriteTime.DateTime)
             .Build();
         Assert.False(cacheHelper.IsFileUnmodifiedSinceCreationOrLastScan(chapter, true, file));
@@ -234,7 +235,7 @@ public class CacheHelperTests
             .WithCreated(DateTime.Now.Subtract(TimeSpan.FromMinutes(10)))
             .Build();
 
-        var file = new MangaFileBuilder(TestCoverArchive, MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(TestCoverArchive), MangaFormat.Archive)
             .WithLastModified(filesystemFile.LastWriteTime.DateTime)
             .Build();
         Assert.False(cacheHelper.IsFileUnmodifiedSinceCreationOrLastScan(chapter, false, file));
@@ -261,7 +262,7 @@ public class CacheHelperTests
             .WithCreated(DateTime.Now.Subtract(TimeSpan.FromMinutes(10)))
             .Build();
 
-        var file = new MangaFileBuilder(Path.Join(TestCoverImageDirectory, TestCoverArchive), MangaFormat.Archive)
+        var file = new MangaFileBuilder(new FileMetadata(Path.Join(TestCoverImageDirectory, TestCoverArchive)), MangaFormat.Archive)
             .WithLastModified(filesystemFile.LastWriteTime.DateTime)
             .Build();
 

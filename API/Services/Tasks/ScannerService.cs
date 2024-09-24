@@ -120,7 +120,7 @@ public class ScannerService : IScannerService
 
         foreach (var file in missingExtensions)
         {
-            var fileInfo = _directoryService.FileSystem.FileInfo.New(file.FilePath);
+            var fileInfo = _directoryService.FileSystem.FileInfo.New(file.FileMetadata.Path);
             if (!fileInfo.Exists)continue;
             file.Extension = fileInfo.Extension.ToLowerInvariant();
             file.Bytes = fileInfo.Length;
@@ -231,12 +231,12 @@ public class ScannerService : IScannerService
         {
             // We don't care if it's multiple due to new scan loop enforcing all in one root directory
             var files = await _unitOfWork.SeriesRepository.GetFilesForSeries(seriesId);
-            var seriesDirs = _directoryService.FindHighestDirectoriesFromFiles(libraryPaths, files.Select(f => f.FilePath).ToList());
+            var seriesDirs = _directoryService.FindHighestDirectoriesFromFiles(libraryPaths, files.Select(f => f.FileMetadata.Path).ToList());
             if (seriesDirs.Keys.Count == 0)
             {
                 _logger.LogCritical("Scan Series has files spread outside a main series folder. Defaulting to library folder (this is expensive)");
                 await _eventHub.SendMessageAsync(MessageFactory.Info, MessageFactory.InfoEvent($"{series.Name} is not organized well and scan series will be expensive!", "Scan Series has files spread outside a main series folder. Defaulting to library folder (this is expensive)"));
-                seriesDirs = _directoryService.FindHighestDirectoriesFromFiles(libraryPaths, files.Select(f => f.FilePath).ToList());
+                seriesDirs = _directoryService.FindHighestDirectoriesFromFiles(libraryPaths, files.Select(f => f.FileMetadata.Path).ToList());
             }
 
             folderPath = seriesDirs.Keys.FirstOrDefault();
@@ -282,7 +282,7 @@ public class ScannerService : IScannerService
         {
              var seriesFiles = (await _unitOfWork.SeriesRepository.GetFilesForSeries(series.Id));
              if (!string.IsNullOrEmpty(series.FolderPath) &&
-                 !seriesFiles.Where(f => f.FilePath.Contains(series.FolderPath)).Any(m => File.Exists(m.FilePath)))
+                 !seriesFiles.Where(f => f.FileMetadata.Path.Contains(series.FolderPath)).Any(m => File.Exists(m.FileMetadata.Path)))
              {
                  try
                  {
@@ -359,7 +359,7 @@ public class ScannerService : IScannerService
     private async Task<ScanCancelReason> ShouldScanSeries(int seriesId, Library library, IList<string> libraryPaths, Series series, bool bypassFolderChecks = false)
     {
         var seriesFolderPaths = (await _unitOfWork.SeriesRepository.GetFilesForSeries(seriesId))
-            .Select(f => _directoryService.FileSystem.FileInfo.New(f.FilePath).Directory?.FullName ?? string.Empty)
+            .Select(f => _directoryService.FileSystem.FileInfo.New(f.FileMetadata.Path).Directory?.FullName ?? string.Empty)
             .Where(f => !string.IsNullOrEmpty(f))
             .Distinct()
             .ToList();

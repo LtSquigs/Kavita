@@ -155,6 +155,9 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
         builder.Entity<AppUserCollection>()
             .Property(b => b.AgeRating)
             .HasDefaultValue(AgeRating.Unknown);
+
+        builder.Entity<MangaFile>()
+            .ComplexProperty(c => c.FileMetadata, c => { c.IsRequired(); });
     }
 
     #nullable enable

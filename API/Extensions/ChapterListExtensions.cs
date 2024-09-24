@@ -31,13 +31,13 @@ public static class ChapterListExtensions
     /// <returns></returns>
     public static Chapter? GetChapterByRange(this IEnumerable<Chapter> chapters, ParserInfo info)
     {
-        var normalizedPath = Parser.NormalizePath(info.FullFilePath);
+        var normalizedPath = info.FileMetadata.Normalized().ID();
         var specialTreatment = info.IsSpecialInfo();
         // NOTE: This can fail to find the chapter when Range is "1.0" as the chapter will store it as "1" hence why we need to emulate a Chapter
         var fakeChapter = new ChapterBuilder(info.Chapters, info.Chapters).Build();
         fakeChapter.UpdateFrom(info);
         return specialTreatment
-             ? chapters.FirstOrDefault(c => c.Range == Parser.RemoveExtensionIfSupported(info.Filename) || c.Files.Select(f => Parser.NormalizePath(f.FilePath)).Contains(normalizedPath))
+            ? chapters.FirstOrDefault(c => c.Range == Parser.RemoveExtensionIfSupported(info.Filename) || c.Files.Select(f => f.FileMetadata.Normalized().ID()).Contains(normalizedPath))
              : chapters.FirstOrDefault(c => c.Range == fakeChapter.GetNumberTitle()); // BUG: TODO: On non-english locales, for floats, the range will be 20,5 but the NumberTitle will return 20.5
     }
 

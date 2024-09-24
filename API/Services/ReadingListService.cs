@@ -17,6 +17,7 @@ using API.Helpers;
 using API.Helpers.Builders;
 using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
+using API.Structs;
 using Kavita.Common;
 using Microsoft.Extensions.Logging;
 
@@ -447,11 +448,11 @@ public class ReadingListService : IReadingListService
             var pairs = new List<Tuple<string, string>>();
             if (!string.IsNullOrEmpty(chapter.StoryArc))
             {
-                pairs.AddRange(GeneratePairs(chapter.Files.FirstOrDefault()!.FilePath, chapter.StoryArc, chapter.StoryArcNumber));
+                pairs.AddRange(GeneratePairs(chapter.Files.FirstOrDefault()!.FileMetadata, chapter.StoryArc, chapter.StoryArcNumber));
             }
             if (!string.IsNullOrEmpty(chapter.AlternateSeries))
             {
-                pairs.AddRange(GeneratePairs(chapter.Files.FirstOrDefault()!.FilePath, chapter.AlternateSeries, chapter.AlternateNumber));
+                pairs.AddRange(GeneratePairs(chapter.Files.FirstOrDefault()!.FileMetadata, chapter.AlternateSeries, chapter.AlternateNumber));
             }
 
             foreach (var arcPair in pairs)
@@ -482,7 +483,7 @@ public class ReadingListService : IReadingListService
                 {
                     if (order == int.MaxValue)
                     {
-                        _logger.LogWarning("{Filename} has a missing StoryArcNumber/AlternativeNumber but list already exists with this item. Skipping item", chapter.Files.FirstOrDefault()?.FilePath);
+                        _logger.LogWarning("{Filename} has a missing StoryArcNumber/AlternativeNumber but list already exists with this item. Skipping item", chapter.Files.FirstOrDefault()?.FileMetadata);
                     }
                     else
                     {
@@ -507,7 +508,7 @@ public class ReadingListService : IReadingListService
         }
     }
 
-    private IEnumerable<Tuple<string, string>> GeneratePairs(string filename, string storyArc, string storyArcNumbers)
+    private IEnumerable<Tuple<string, string>> GeneratePairs(FileMetadata fileMetadata, string storyArc, string storyArcNumbers)
     {
         var data = new List<Tuple<string, string>>();
         if (string.IsNullOrEmpty(storyArc)) return data;
@@ -516,7 +517,7 @@ public class ReadingListService : IReadingListService
         var arcNumbers = storyArcNumbers.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         if (arcNumbers.Count(s => !string.IsNullOrEmpty(s)) != arcs.Length)
         {
-            _logger.LogWarning("There is a mismatch on StoryArc and StoryArcNumber for {FileName}", filename);
+            _logger.LogWarning("There is a mismatch on StoryArc and StoryArcNumber for {FileName}", fileMetadata);
         }
 
         var maxPairs = Math.Max(arcs.Length, arcNumbers.Length);

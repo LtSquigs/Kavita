@@ -89,7 +89,7 @@ public static class MigrateProgressExport
                     VolumeLookupName = psvcm.volume.Name,
                     ChapterRange = psvcm.chapter.Range,
                     MangaFileName = psvcm.mangaFile.FileName,
-                    MangaFilePath = psvcm.mangaFile.FilePath,
+                    MangaFilePath = psvcm.mangaFile.FileMetadata.Path,
                     AppUserName = appUser.UserName,
                     AppUserId = appUser.Id,
                     PagesRead = psvcm.progress.PagesRead,

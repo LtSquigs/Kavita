@@ -6,6 +6,7 @@ using API.Entities.Enums;
 using API.Extensions;
 using API.Helpers.Builders;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using Xunit;
 
 namespace API.Tests.Extensions;
@@ -22,7 +23,7 @@ public class ChapterListExtensionsTests
 
     private static MangaFile CreateFile(string file, MangaFormat format)
     {
-        return new MangaFileBuilder(file, format).Build();
+        return new MangaFileBuilder(new FileMetadata(file), format).Build();
     }
 
     [Fact]
@@ -33,7 +34,7 @@ public class ChapterListExtensionsTests
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter,
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             Filename = "darker than black.cbz",
             IsSpecial = false,
             Series = "darker than black",
@@ -60,7 +61,7 @@ public class ChapterListExtensionsTests
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume,
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             Filename = "darker than black.cbz",
             IsSpecial = true,
             Series = "darker than black",
@@ -86,7 +87,7 @@ public class ChapterListExtensionsTests
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume,
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/detective comics #001.cbz",
+            FileMetadata = new FileMetadata("/manga/detective comics #001.cbz"),
             Filename = "detective comics #001.cbz",
             IsSpecial = true,
             Series = "detective comics",
@@ -113,7 +114,7 @@ public class ChapterListExtensionsTests
             Chapters = "1",
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/detective comics  #001.cbz",
+            FileMetadata = new FileMetadata("/manga/detective comics  #001.cbz"),
             Filename = "detective comics  #001.cbz",
             IsSpecial = false,
             Series = "detective comics",

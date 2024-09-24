@@ -1,6 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using API.Data.Metadata;
 using API.Entities.Enums;
+using API.Structs;
+using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Bcpg;
 
 namespace API.Services.Tasks.Scanner.Parser;
 #nullable enable
@@ -9,17 +15,17 @@ namespace API.Services.Tasks.Scanner.Parser;
 /// This is the basic parser for handling Manga/Comic/Book libraries. This was previously DefaultParser before splitting each parser
 /// into their own classes.
 /// </summary>
-public class BasicParser(IDirectoryService directoryService, IDefaultParser imageParser) : DefaultParser(directoryService)
+public class BasicParser(IDirectoryService directoryService, IDefaultParser imageParser, IArchiveService? archiveService = null, ILogger? logger = null) : DefaultParser(directoryService)
 {
-    public override ParserInfo? Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool extractChapters = false)
     {
         var fileName = directoryService.FileSystem.Path.GetFileNameWithoutExtension(filePath);
         // TODO: Potential Bug: This will return null, but on Image libraries, if all images, we would want to include this.
-        if (type != LibraryType.Image && Parser.IsCoverImage(directoryService.FileSystem.Path.GetFileName(filePath))) return null;
+        if (type != LibraryType.Image && Parser.IsCoverImage(directoryService.FileSystem.Path.GetFileName(filePath))) return [];
 
         if (Parser.IsImage(filePath))
         {
-            return imageParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Image, comicInfo);
+            return imageParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Image, comicInfo, extractChapters);
         }
 
         var ret = new ParserInfo()
@@ -27,7 +33,7 @@ public class BasicParser(IDirectoryService directoryService, IDefaultParser imag
             Filename = Path.GetFileName(filePath),
             Format = Parser.ParseFormat(filePath),
             Title = Parser.RemoveExtensionIfSupported(fileName)!,
-            FullFilePath = Parser.NormalizePath(filePath),
+            FileMetadata = new FileMetadata(filePath).Normalized(),
             Series = string.Empty,
             ComicInfo = comicInfo
         };
@@ -107,7 +113,22 @@ public class BasicParser(IDirectoryService directoryService, IDefaultParser imag
             ret.Volumes = Parser.SpecialVolume;
         }
 
-        return ret.Series == string.Empty ? null : ret;
+        if (ret.Series == string.Empty) {
+            return [];
+        }
+
+        if (extractChapters) {
+            List<PageInfo>? pages = null;
+            if (Parser.IsArchive(filePath) && archiveService != null) {
+                pages = archiveService.GetPages(new FileMetadata(filePath));
+            }
+
+            if (pages != null) {
+                return ExtractChapters(ret, type, pages);
+            }
+        }
+
+        return [ret];
     }
 
     /// <summary>
@@ -120,4 +141,6 @@ public class BasicParser(IDirectoryService directoryService, IDefaultParser imag
     {
         return type != LibraryType.ComicVine && type != LibraryType.Image;
     }
+
+    
 }

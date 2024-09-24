@@ -473,9 +473,9 @@ public class SeriesRepository : ISeriesRepository
             if (await _userManager.IsInRoleAsync(user, PolicyConstants.AdminRole))
             {
                 result.Files = await _context.MangaFile
-                    .Where(m => EF.Functions.Like(m.FilePath, $"%{searchQuery}%") && fileIds.Contains(m.Id))
+                    .Where(m => EF.Functions.Like(m.FileMetadata.Path, $"%{searchQuery}%") && fileIds.Contains(m.Id))
                     .AsSplitQuery()
-                    .OrderBy(f => f.FilePath)
+                    .OrderBy(f => f.FileMetadata.Path)
                     .Take(maxRecords)
                     .ProjectTo<MangaFileDto>(_mapper.ConfigurationProvider)
                     .ToListAsync();

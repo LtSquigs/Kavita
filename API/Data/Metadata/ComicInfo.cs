@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Xml.Serialization;
 using API.Entities;
 using API.Entities.Enums;
 using API.Services;
@@ -10,6 +12,31 @@ using Nager.ArticleNumber;
 
 namespace API.Data.Metadata;
 #nullable enable
+
+public class Page {
+    [XmlAttribute]
+    public int Image { get; set; } = 0;
+    [XmlAttribute]
+    public string Type { get; set; } = "";
+    [XmlAttribute]
+    public bool DoublePage { get; set; } = false;
+    [XmlAttribute]
+    public long ImageSize { get; set; } = 0;
+    [XmlAttribute]
+    public string Key { get; set; } = string.Empty;
+    [XmlAttribute]
+    public string Bookmark { get; set; } = string.Empty;
+    [XmlAttribute]
+    public int ImageWidth { get; set; } = -1;
+    [XmlAttribute]
+    public int ImageHeight { get; set; } = -1;
+    public PageType GetPageType()
+    {
+        if (string.IsNullOrEmpty(Type)) return PageType.Story;
+        return Enum.GetValues<PageType>()
+            .SingleOrDefault(t => t.ToDescription().ToUpperInvariant().Equals(Type.ToUpperInvariant()), PageType.Story);
+    }
+}
 
 /// <summary>
 /// A representation of a ComicInfo.xml file
@@ -131,7 +158,7 @@ public class ComicInfo
     public string Characters { get; set; } = string.Empty;
     public string Teams { get; set; } = string.Empty;
     public string Locations { get; set; } = string.Empty;
-
+    public Page[] Pages { get; set; } = [];
 
     public static AgeRating ConvertAgeRatingToEnum(string value)
     {
@@ -216,5 +243,9 @@ public class ComicInfo
         return 0;
     }
 
-
+    public ComicInfo Clone()
+    {
+        var clone = MemberwiseClone() as ComicInfo;
+        return clone;
+    }
 }

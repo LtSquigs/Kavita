@@ -1,5 +1,6 @@
 ﻿using System;
 using API.Entities.Enums;
+using API.Structs;
 
 namespace API.DTOs;
 
@@ -9,7 +10,7 @@ public class MangaFileDto
     /// <summary>
     /// Absolute path to the archive file (normalized)
     /// </summary>
-    public string FilePath { get; init; } = default!;
+    public FileMetadata FileMetadata { get; init; } = default!;
     /// <summary>
     /// Number of pages for the given file
     /// </summary>

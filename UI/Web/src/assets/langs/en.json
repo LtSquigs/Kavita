@@ -333,7 +333,7 @@
         "token-valid": "Token Valid",
         "token-expired": "Token Expired",
         "no-token-set": "No Token Set",
-        "token-set":  "Token Set",
+        "token-set": "Token Set",
         "generate": "Generate",
         "generic-instructions": "Fill out information about different External Services you have to allow Kavita+ to interact with them.",
         "instructions": "First time users should click on \"{{scrobbling-providers.generate}}\" below to allow Kavita+ to talk with {{service}}. Once you authorize the program, copy and paste the token in the input below. You can regenerate your token at any time.",
@@ -439,7 +439,6 @@
         "last-90-days": "Last 90 Days",
         "last-year": "Last Year",
         "all-time": "All Time"
-
     },
 
     "device-platform-pipe": {
@@ -949,6 +948,8 @@
         "include-in-dashboard-tooltip": "Should series from the library be included on the Dashboard. This affects all streams, like On Deck, Recently Updated, Recently Added, or any custom additions.",
         "include-in-search-label": "Include in Search",
         "include-in-search-tooltip": "Should series and any derived information (genres, people, files) from the library be included in search results.",
+        "extract-chapters-volume-label": "Parse Chapters From Volume Archives",
+        "extract-chapters-volume-tooltip": "Try to parse chapters from within comic book archives. Requires forced scan after changing.",
         "force-scan": "Force Scan",
         "force-scan-tooltip": "This will force a scan on the library, treating like a fresh scan",
         "reset": "{{common.reset}}",
@@ -1118,7 +1119,6 @@
         "open-external": "Open External"
     },
 
-
     "manage-media-issues": {
         "description-part-1": "This table contains issues found during scan or reading of your media. You can clear it at any time and use Library (Force) Scan to perform analysis. A list of some common errors and what they mean can be found on the ",
         "description-part-2": "wiki.",
@@ -1283,7 +1283,6 @@
         "host-name-tooltip": "{{manage-email-settings.host-name-tooltip}}",
         "host-name-validation": "{{manage-email-settings.host-name-validation}}",
 
-
         "reset-to-default": "{{common.reset-to-default}}",
         "reset": "{{common.reset}}",
         "save": "{{common.save}}",
@@ -1344,7 +1343,6 @@
         "daily": "Daily",
         "weekly": "Weekly",
         "custom": "Custom",
-
 
         "convert-media-task": "Convert Media to Target Encoding",
         "convert-media-task-desc": "Runs a long-running task which will convert all kavita-managed media to the target encoding. This is slow (especially on ARM devices).",
@@ -1451,7 +1449,6 @@
         "quick-reads": "Quick Reads",
         "on-deck": "{{dashboard.on-deck-title}}"
     },
-
 
     "settings": {
         "account-section-title": "Account",
@@ -1571,7 +1568,6 @@
         "double-click": "double click",
         "close-reader": "Close reader",
         "toggle-menu": "Toggle Menu"
-
     },
 
     "grouped-typeahead": {
@@ -2484,7 +2480,6 @@
         "pdf-dark": "Dark"
     },
 
-
     "validation": {
         "required-field": "This field is required",
         "valid-email": "This must be a valid email",
@@ -2572,5 +2567,4 @@
         "chapter-nums": "Chapters",
         "volume-nums": "Volumes"
     }
-
 }

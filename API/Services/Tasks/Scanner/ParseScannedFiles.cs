@@ -338,7 +338,7 @@ public class ParseScannedFiles
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "[ScannerService] Multiple series detected for {SeriesName} ({File})! This is critical to fix! There should only be 1", info.Series, info.FullFilePath);
+            _logger.LogCritical(ex, "[ScannerService] Multiple series detected for {SeriesName} ({File})! This is critical to fix! There should only be 1", info.Series, info.FileMetadata);
             var values = scannedSeries.Where(p =>
                 (p.Key.NormalizedName.ToNormalized() == normalizedSeries ||
                  p.Key.NormalizedName.ToNormalized() == normalizedLocalSeries) &&
@@ -427,7 +427,7 @@ public class ParseScannedFiles
             {
                 _logger.LogError(ex,
                     "[ScannerService] There was an exception that occurred during tracking {FilePath}. Skipping this file",
-                    info?.FullFilePath);
+                    info?.FileMetadata);
             }
         }
 
@@ -500,8 +500,9 @@ public class ParseScannedFiles
 
         // Multiple Series can exist within a folder. We should instead put these infos on the result and perform merging above
         IList<ParserInfo> infos = files
-            .Select(file => _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type))
-            .Where(info => info != null)
+            .Select(file => _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type, library.ExtractChaptersFromVolumes))
+            .Where(infos => infos.Length > 0)
+            .SelectMany(infos => infos)
             .ToList()!;
 
         result.ParserInfos = infos;

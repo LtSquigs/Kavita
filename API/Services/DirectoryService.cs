@@ -10,6 +10,7 @@ using API.DTOs.System;
 using API.Entities.Enums;
 using API.Extensions;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using Kavita.Common.Helpers;
 using Microsoft.Extensions.Logging;
 
@@ -48,7 +49,7 @@ public interface IDirectoryService
     int TraverseTreeParallelForEach(string root, Action<string> action, string searchPattern, ILogger logger);
     bool IsDriveMounted(string path);
     bool IsDirectoryEmpty(string path);
-    long GetTotalSize(IEnumerable<string> paths);
+    long GetTotalSize(IEnumerable<FileMetadata> paths);
     void ClearDirectory(string directoryPath);
     void ClearAndDeleteDirectory(string directoryPath);
     string[] GetFilesWithExtension(string path, string searchPatternExpression = "");
@@ -337,9 +338,9 @@ public class DirectoryService : IDirectoryService
     /// </summary>
     /// <param name="paths"></param>
     /// <returns>Total bytes</returns>
-    public long GetTotalSize(IEnumerable<string> paths)
+    public long GetTotalSize(IEnumerable<FileMetadata> paths)
     {
-        return paths.Sum(path => FileSystem.FileInfo.New(path).Length);
+        return paths.Sum(path => path.FileSize != -1 ? path.FileSize : FileSystem.FileInfo.New(path.Path).Length);
     }
 
     /// <summary>

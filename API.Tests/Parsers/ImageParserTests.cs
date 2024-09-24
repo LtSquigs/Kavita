@@ -33,10 +33,11 @@ public class ImageParserTests
     [Fact]
     public void Parse_SeriesWithDirectoryName()
     {
-        var actual = _parser.Parse("C:/Comics/Birds of Prey/Chapter 01/01.jpg", "C:/Comics/Birds of Prey/",
+        var actuals = _parser.Parse("C:/Comics/Birds of Prey/Chapter 01/01.jpg", "C:/Comics/Birds of Prey/",
             RootDirectory, LibraryType.Image, null);
 
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actuals);
+        var actual = actuals[0];
         Assert.Equal("Birds of Prey", actual.Series);
         Assert.Equal("1", actual.Chapters);
     }
@@ -47,10 +48,11 @@ public class ImageParserTests
     [Fact]
     public void Parse_SeriesWithNoNestedChapter()
     {
-        var actual = _parser.Parse("C:/Comics/Birds of Prey/Chapter 01 page 01.jpg", "C:/Comics/",
+        var actuals = _parser.Parse("C:/Comics/Birds of Prey/Chapter 01 page 01.jpg", "C:/Comics/",
             RootDirectory, LibraryType.Image, null);
 
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actuals);
+        var actual = actuals[0];
         Assert.Equal("Birds of Prey", actual.Series);
         Assert.Equal(Parser.DefaultChapter, actual.Chapters);
     }
@@ -61,10 +63,11 @@ public class ImageParserTests
     [Fact]
     public void Parse_SeriesWithLooseImages()
     {
-        var actual = _parser.Parse("C:/Comics/Birds of Prey/page 01.jpg", "C:/Comics/",
+        var actuals = _parser.Parse("C:/Comics/Birds of Prey/page 01.jpg", "C:/Comics/",
             RootDirectory, LibraryType.Image, null);
 
-        Assert.NotNull(actual);
+        Assert.NotEmpty(actuals);
+        var actual = actuals[0];
         Assert.Equal("Birds of Prey", actual.Series);
         Assert.Equal(Parser.DefaultChapter, actual.Chapters);
         Assert.True(actual.IsSpecial);

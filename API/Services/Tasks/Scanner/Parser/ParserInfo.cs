@@ -1,5 +1,7 @@
-﻿using API.Data.Metadata;
+﻿using System;
+using API.Data.Metadata;
 using API.Entities.Enums;
+using API.Structs;
 
 namespace API.Services.Tasks.Scanner.Parser;
 #nullable enable
@@ -42,7 +44,7 @@ public class ParserInfo
     /// Full filepath of the underlying file
     /// <example>C:/Manga/Beastars v01 (digital).cbz</example>
     /// </summary>
-    public string FullFilePath { get; set; } = string.Empty;
+    public FileMetadata FileMetadata { get; set; } = FileMetadata.Empty;
 
     /// <summary>
     /// <see cref="MangaFormat"/> that represents the type of the file
@@ -106,5 +108,12 @@ public class ParserInfo
         Title = string.IsNullOrEmpty(Title) ? info2.Title : Title;
         Series = string.IsNullOrEmpty(Series) ? info2.Series : Series;
         IsSpecial = IsSpecial || info2.IsSpecial;
+    }
+
+    public ParserInfo Clone()
+    {
+        var clone = MemberwiseClone() as ParserInfo;
+        clone.ComicInfo = ComicInfo?.Clone();
+        return clone;
     }
 }

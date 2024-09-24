@@ -11,6 +11,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
+using API.Structs;
 
 namespace API.Benchmark;
 
@@ -39,7 +40,7 @@ public class ArchiveServiceBenchmark
     [Benchmark(Baseline = true)]
     public void TestGetComicInfo_baseline()
     {
-        if (_archiveService.GetComicInfo("Data/ComicInfo.zip") == null) {
+        if (_archiveService.GetComicInfo(new FileMetadata("Data/ComicInfo.zip")) == null) {
             throw new Exception("ComicInfo not found");
         }
     }
@@ -47,7 +48,7 @@ public class ArchiveServiceBenchmark
     [Benchmark]
     public void TestGetComicInfo_duplicate()
     {
-        if (_archiveService.GetComicInfo("Data/ComicInfo_duplicateInfos.zip") == null) {
+        if (_archiveService.GetComicInfo(new FileMetadata("Data/ComicInfo_duplicateInfos.zip")) == null) {
             throw new Exception("ComicInfo not found");
         }
     }
@@ -55,7 +56,7 @@ public class ArchiveServiceBenchmark
     [Benchmark]
     public void TestGetComicInfo_outside_root()
     {
-        if (_archiveService.GetComicInfo("Data/ComicInfo_outside_root.zip") == null) {
+        if (_archiveService.GetComicInfo(new FileMetadata("Data/ComicInfo_outside_root.zip")) == null) {
             throw new Exception("ComicInfo not found");
         }
     }

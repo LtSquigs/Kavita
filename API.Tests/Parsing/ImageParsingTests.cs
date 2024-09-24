@@ -2,6 +2,7 @@
 using API.Entities.Enums;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -32,10 +33,11 @@ public class ImageParsingTests
         {
             Series = "Monster #8", Volumes = API.Services.Tasks.Scanner.Parser.Parser.LooseLeafVolume, Edition = "",
             Chapters = "8", Filename = "13.jpg", Format = MangaFormat.Image,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         };
-        var actual2 = _parser.Parse(filepath, @"E:\Manga\Monster #8", "E:/Manga", LibraryType.Image, null);
-        Assert.NotNull(actual2);
+        var actuals= _parser.Parse(filepath, @"E:\Manga\Monster #8", "E:/Manga", LibraryType.Image, null);
+        Assert.NotEmpty(actuals);
+        var actual2 = actuals[0];
         _testOutputHelper.WriteLine($"Validating {filepath}");
         Assert.Equal(expectedInfo2.Format, actual2.Format);
         _testOutputHelper.WriteLine("Format ✓");
@@ -49,7 +51,7 @@ public class ImageParsingTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expectedInfo2.Filename, actual2.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expectedInfo2.FullFilePath, actual2.FullFilePath);
+        Assert.Equal(expectedInfo2.FileMetadata, actual2.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
 
         filepath = @"E:\Manga\Extra layer for no reason\Just Images the second\Vol19\ch. 186\Vol. 19 p106.gif";
@@ -57,10 +59,12 @@ public class ImageParsingTests
         {
             Series = "Just Images the second", Volumes = "19", Edition = "",
             Chapters = "186", Filename = "Vol. 19 p106.gif", Format = MangaFormat.Image,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         };
 
-        actual2 = _parser.Parse(filepath, @"E:\Manga\Extra layer for no reason\", "E:/Manga", LibraryType.Image, null);
+        actuals = _parser.Parse(filepath, @"E:\Manga\Extra layer for no reason\", "E:/Manga", LibraryType.Image, null);
+        Assert.NotEmpty(actuals);
+        actual2 = actuals[0];
         Assert.NotNull(actual2);
         _testOutputHelper.WriteLine($"Validating {filepath}");
         Assert.Equal(expectedInfo2.Format, actual2.Format);
@@ -75,7 +79,7 @@ public class ImageParsingTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expectedInfo2.Filename, actual2.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expectedInfo2.FullFilePath, actual2.FullFilePath);
+        Assert.Equal(expectedInfo2.FileMetadata, actual2.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
 
         filepath = @"E:\Manga\Extra layer for no reason\Just Images the second\Blank Folder\Vol19\ch. 186\Vol. 19 p106.gif";
@@ -83,11 +87,12 @@ public class ImageParsingTests
         {
             Series = "Just Images the second", Volumes = "19", Edition = "",
             Chapters = "186", Filename = "Vol. 19 p106.gif", Format = MangaFormat.Image,
-            FullFilePath = filepath, IsSpecial = false
+            FileMetadata = new FileMetadata(filepath), IsSpecial = false
         };
 
-        actual2 = _parser.Parse(filepath, @"E:\Manga\Extra layer for no reason\", "E:/Manga", LibraryType.Image, null);
-        Assert.NotNull(actual2);
+        actuals = _parser.Parse(filepath, @"E:\Manga\Extra layer for no reason\", "E:/Manga", LibraryType.Image, null);
+        Assert.NotEmpty(actuals);
+        actual2 = actuals[0];
         _testOutputHelper.WriteLine($"Validating {filepath}");
         Assert.Equal(expectedInfo2.Format, actual2.Format);
         _testOutputHelper.WriteLine("Format ✓");
@@ -101,7 +106,7 @@ public class ImageParsingTests
         _testOutputHelper.WriteLine("Edition ✓");
         Assert.Equal(expectedInfo2.Filename, actual2.Filename);
         _testOutputHelper.WriteLine("Filename ✓");
-        Assert.Equal(expectedInfo2.FullFilePath, actual2.FullFilePath);
+        Assert.Equal(expectedInfo2.FileMetadata, actual2.FileMetadata);
         _testOutputHelper.WriteLine("FullFilePath ✓");
     }
 }

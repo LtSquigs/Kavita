@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using API.DTOs.Stats;
 using API.Entities;
+using API.Entities.Enums;
+using API.Structs;
 using Microsoft.AspNetCore.StaticFiles;
 using MimeTypes;
 
@@ -10,24 +14,33 @@ namespace API.Services;
 
 public interface IDownloadService
 {
-    Tuple<string, string, string> GetFirstFileDownload(IEnumerable<MangaFile> files);
+    Task<Tuple<Stream, string, string>> GetFirstFileDownload(IEnumerable<MangaFile> files);
     string GetContentTypeFromFile(string filepath);
 }
 public class DownloadService : IDownloadService
 {
+    private readonly IArchiveService _archiveService;
     private readonly FileExtensionContentTypeProvider _fileTypeProvider = new FileExtensionContentTypeProvider();
 
-    public DownloadService() { }
+    public DownloadService(IArchiveService archiveService) {
+        _archiveService = archiveService;
+     }
 
     /// <summary>
     /// Downloads the first file in the file enumerable for download
     /// </summary>
     /// <param name="files"></param>
     /// <returns></returns>
-    public Tuple<string, string, string> GetFirstFileDownload(IEnumerable<MangaFile> files)
+    public async Task<Tuple<Stream, string, string>> GetFirstFileDownload(IEnumerable<MangaFile> files)
     {
-        var firstFile = files.Select(c => c.FilePath).First();
-        return Tuple.Create(firstFile, GetContentTypeFromFile(firstFile), Path.GetFileName(firstFile));
+        var firstFile = files.First();
+        Stream stream;
+        if (firstFile.Format == MangaFormat.Archive && firstFile.FileMetadata.HasPageRange()) {
+            stream = await _archiveService.CreateZipStream(firstFile.FileMetadata);
+        } else {
+            stream = File.OpenRead(firstFile.FileMetadata.Path);
+        }
+        return Tuple.Create(stream, GetContentTypeFromFile(firstFile.FileMetadata.Path), firstFile.GetDownloadName());
     }
 
     public string GetContentTypeFromFile(string filepath)

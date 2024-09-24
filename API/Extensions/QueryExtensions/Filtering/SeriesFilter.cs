@@ -796,7 +796,7 @@ public static class SeriesFilter
                     s.Volumes.Any(v =>
                         v.Chapters.Any(c =>
                             c.Files.Any(f =>
-                                f.FilePath != null && f.FilePath.Equals(normalizedPath)
+                                f.FileMetadata.Path != null && f.FileMetadata.Path.Equals(normalizedPath)
                             )
                         )
                     )
@@ -806,7 +806,7 @@ public static class SeriesFilter
                     s.Volumes.Any(v =>
                         v.Chapters.Any(c =>
                             c.Files.Any(f =>
-                                f.FilePath != null && EF.Functions.Like(f.FilePath, $"{normalizedPath}%")
+                                f.FileMetadata.Path != null && EF.Functions.Like(f.FileMetadata.Path, $"{normalizedPath}%")
                             )
                         )
                     )
@@ -816,7 +816,7 @@ public static class SeriesFilter
                     s.Volumes.Any(v =>
                         v.Chapters.Any(c =>
                             c.Files.Any(f =>
-                                f.FilePath != null && EF.Functions.Like(f.FilePath, $"%{normalizedPath}")
+                                f.FileMetadata.Path != null && EF.Functions.Like(f.FileMetadata.Path, $"%{normalizedPath}")
                             )
                         )
                     )
@@ -826,7 +826,7 @@ public static class SeriesFilter
                     s.Volumes.Any(v =>
                         v.Chapters.Any(c =>
                             c.Files.Any(f =>
-                                f.FilePath != null && EF.Functions.Like(f.FilePath, $"%{normalizedPath}%")
+                                f.FileMetadata.Path != null && EF.Functions.Like(f.FileMetadata.Path, $"%{normalizedPath}%")
                             )
                         )
                     )
@@ -836,7 +836,7 @@ public static class SeriesFilter
                     s.Volumes.Any(v =>
                         v.Chapters.Any(c =>
                             c.Files.Any(f =>
-                                f.FilePath == null || !f.FilePath.Equals(normalizedPath)
+                                f.FileMetadata.Path == null || !f.FileMetadata.Path.Equals(normalizedPath)
                             )
                         )
                     )

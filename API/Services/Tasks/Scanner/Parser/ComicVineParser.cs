@@ -2,6 +2,7 @@
 using System.Linq;
 using API.Data.Metadata;
 using API.Entities.Enums;
+using API.Structs;
 
 namespace API.Services.Tasks.Scanner.Parser;
 #nullable enable
@@ -19,13 +20,13 @@ public class ComicVineParser(IDirectoryService directoryService) : DefaultParser
     /// <param name="rootPath"></param>
     /// <param name="type"></param>
     /// <returns></returns>
-    public override ParserInfo? Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool extractChapters = false)
     {
-        if (type != LibraryType.ComicVine) return null;
+        if (type != LibraryType.ComicVine) return [];
 
         var fileName = directoryService.FileSystem.Path.GetFileNameWithoutExtension(filePath);
         // Mylar often outputs cover.jpg, ignore it by default
-        if (string.IsNullOrEmpty(fileName) || Parser.IsCoverImage(directoryService.FileSystem.Path.GetFileName(filePath))) return null;
+        if (string.IsNullOrEmpty(fileName) || Parser.IsCoverImage(directoryService.FileSystem.Path.GetFileName(filePath))) return [];
 
         var directoryName = directoryService.FileSystem.DirectoryInfo.New(rootPath).Name;
 
@@ -34,7 +35,7 @@ public class ComicVineParser(IDirectoryService directoryService) : DefaultParser
             Filename = Path.GetFileName(filePath),
             Format = Parser.ParseFormat(filePath),
             Title = Parser.RemoveExtensionIfSupported(fileName)!,
-            FullFilePath = Parser.NormalizePath(filePath),
+            FileMetadata = new FileMetadata(filePath).Normalized(),
             Series = string.Empty,
             ComicInfo = comicInfo,
             Chapters = Parser.ParseChapter(fileName, type),
@@ -89,7 +90,7 @@ public class ComicVineParser(IDirectoryService directoryService) : DefaultParser
         }
 
 
-        return string.IsNullOrEmpty(info.Series) ? null : info;
+        return string.IsNullOrEmpty(info.Series) ? [] : [info];
     }
 
     /// <summary>

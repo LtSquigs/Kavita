@@ -1,5 +1,6 @@
 ﻿using API.Entities.Enums;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using Xunit;
 
 namespace API.Tests.Parsing;
@@ -14,7 +15,7 @@ public class ParserInfoTests
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter,
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             IsSpecial = false,
             Series = "darker than black",
             Title = "darker than black",
@@ -26,7 +27,7 @@ public class ParserInfoTests
             Chapters = "1",
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             IsSpecial = false,
             Series = "darker than black",
             Title = "Darker Than Black",
@@ -38,7 +39,7 @@ public class ParserInfoTests
             Chapters = "1",
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             IsSpecial = false,
             Series = "darker than black",
             Title = "darker than black",
@@ -58,7 +59,7 @@ public class ParserInfoTests
             Chapters = "1",
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             IsSpecial = true,
             Series = "darker than black",
             Title = "darker than black",
@@ -70,7 +71,7 @@ public class ParserInfoTests
             Chapters = API.Services.Tasks.Scanner.Parser.Parser.DefaultChapter,
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             IsSpecial = false,
             Series = "darker than black",
             Title = "Darker Than Black",
@@ -82,7 +83,7 @@ public class ParserInfoTests
             Chapters = "1",
             Edition = "",
             Format = MangaFormat.Archive,
-            FullFilePath = "/manga/darker than black.cbz",
+            FileMetadata = new FileMetadata("/manga/darker than black.cbz"),
             IsSpecial = true,
             Series = "darker than black",
             Title = "darker than black",
@@ -104,6 +105,6 @@ public class ParserInfoTests
         Assert.Equal(expected.Format, actual.Format);
         Assert.Equal(expected.Series, actual.Series);
         Assert.Equal(expected.IsSpecial, actual.IsSpecial);
-        Assert.Equal(expected.FullFilePath, actual.FullFilePath);
+        Assert.Equal(expected.FileMetadata, actual.FileMetadata);
     }
 }

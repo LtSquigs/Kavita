@@ -28,7 +28,7 @@ internal class EmailOptionsDto
     /// <summary>
     /// Filenames to attach
     /// </summary>
-    public IList<string>? Attachments { get; set; }
+    public IList<KeyValuePair<string, Stream>>? Attachments { get; set; }
 }
 
 public interface IEmailService
@@ -247,7 +247,7 @@ public class EmailService : IEmailService
                 data.DestinationEmail
             },
             Body = await GetEmailBody("SendToDevice"),
-            Attachments = data.FilePaths.ToList()
+            Attachments = data.FileStreams.ToList()
         };
 
         await SendEmail(emailOptions);
@@ -279,7 +279,7 @@ public class EmailService : IEmailService
         {
             foreach (var attachment in userEmailOptions.Attachments)
             {
-                await body.Attachments.AddAsync(attachment);
+                await body.Attachments.AddAsync(attachment.Key, attachment.Value);
             }
         }
 

@@ -7,6 +7,7 @@ using API.Extensions;
 using API.Helpers.Builders;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using API.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -42,10 +43,10 @@ public class ParserInfoListExtensions
         {
             infos.Add(_defaultParser.Parse(
                 Path.Join("E:/Manga/Cynthia the Mission/", filename),
-                "E:/Manga/", "E:/Manga/", LibraryType.Manga));
+                "E:/Manga/", "E:/Manga/", LibraryType.Manga)[0]);
         }
 
-        var files = inputChapters.Select(s => new MangaFileBuilder(s, MangaFormat.Archive, 199).Build()).ToList();
+        var files = inputChapters.Select(s => new MangaFileBuilder(new FileMetadata(s), MangaFormat.Archive, 199).Build()).ToList();
         var chapter = new ChapterBuilder("0-6")
             .WithFiles(files)
             .Build();
@@ -56,15 +57,12 @@ public class ParserInfoListExtensions
     [Fact]
     public void HasInfoTest_SuccessWhenSpecial()
     {
-        var infos = new[]
-        {
-            _defaultParser.Parse(
+        var infos = _defaultParser.Parse(
                 "E:/Manga/Cynthia the Mission/Cynthia The Mission The Special SP01 [Desudesu&Brolen].zip",
-                "E:/Manga/", "E:/Manga/", LibraryType.Manga)
-        };
+                "E:/Manga/", "E:/Manga/", LibraryType.Manga);
 
-    var files = new[] {@"E:\Manga\Cynthia the Mission\Cynthia The Mission The Special SP01 [Desudesu&Brolen].zip"}
-            .Select(s => new MangaFileBuilder(s, MangaFormat.Archive, 199).Build())
+        var files = new[] {@"E:\Manga\Cynthia the Mission\Cynthia The Mission The Special SP01 [Desudesu&Brolen].zip"}
+            .Select(s => new MangaFileBuilder(new FileMetadata(s), MangaFormat.Archive, 199).Build())
             .ToList();
         var chapter = new ChapterBuilder("Cynthia The Mission The Special SP01 [Desudesu&Brolen].zip")
             .WithRange("Cynthia The Mission The Special SP01 [Desudesu&Brolen]")

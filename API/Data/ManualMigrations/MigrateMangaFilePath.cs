@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using API.Entities;
 using API.Services.Tasks.Scanner.Parser;
+using API.Structs;
 using Kavita.Common.EnvironmentInfo;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,7 +27,7 @@ public static class MigrateMangaFilePath
 
         foreach(var file in dataContext.MangaFile)
         {
-            file.FilePath = Parser.NormalizePath(file.FilePath);
+            file.FileMetadata = new FileMetadata(file.FileMetadata.Path).Normalized();
         }
 
         await dataContext.SaveChangesAsync();

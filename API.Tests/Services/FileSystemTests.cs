@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
 using API.Services;
+using API.Structs;
 using Xunit;
 
 namespace API.Tests.Services;
@@ -22,7 +23,7 @@ public class FileSystemTests
 
         var fileService = new FileService(fileSystem);
 
-        Assert.False(fileService.HasFileBeenModifiedSince(@"c:\myfile.txt", DateTime.Now));
+        Assert.False(fileService.HasFileBeenModifiedSince(new FileMetadata(@"c:\myfile.txt"), DateTime.Now));
     }
 
     [Fact]
@@ -39,6 +40,6 @@ public class FileSystemTests
 
         var fileService = new FileService(fileSystem);
 
-        Assert.True(fileService.HasFileBeenModifiedSince(@"c:\myfile.txt", DateTime.Now.Subtract(TimeSpan.FromMinutes(1))));
+        Assert.True(fileService.HasFileBeenModifiedSince(new FileMetadata(@"c:\myfile.txt"), DateTime.Now.Subtract(TimeSpan.FromMinutes(1))));
     }
 }

@@ -14,6 +14,7 @@ using API.Services.Plus;
 using API.Services.Tasks;
 using API.Services.Tasks.Metadata;
 using API.SignalR;
+using API.Structs;
 using API.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -54,8 +55,8 @@ public class WordCountAnalysisTests : AbstractDbTest
 
         var chapter = new ChapterBuilder("")
             .WithFile(new MangaFileBuilder(
-                Path.Join(_testDirectory,
-                    "The Golden Harpoon; Or, Lost Among the Floes A Story of the Whaling Grounds.epub"),
+                new FileMetadata(Path.Join(_testDirectory,
+                    "The Golden Harpoon; Or, Lost Among the Floes A Story of the Whaling Grounds.epub")),
                 MangaFormat.Epub).Build())
             .Build();
 
@@ -106,8 +107,8 @@ public class WordCountAnalysisTests : AbstractDbTest
         await ResetDb();
         var chapter = new ChapterBuilder("")
             .WithFile(new MangaFileBuilder(
-                Path.Join(_testDirectory,
-                    "The Golden Harpoon; Or, Lost Among the Floes A Story of the Whaling Grounds.epub"),
+                new FileMetadata(Path.Join(_testDirectory,
+                    "The Golden Harpoon; Or, Lost Among the Floes A Story of the Whaling Grounds.epub")),
                 MangaFormat.Epub).Build())
             .Build();
         var series = new SeriesBuilder("Test Series")
@@ -132,8 +133,8 @@ public class WordCountAnalysisTests : AbstractDbTest
 
         var chapter2 = new ChapterBuilder("2")
             .WithFile(new MangaFileBuilder(
-                Path.Join(_testDirectory,
-                    "The Golden Harpoon; Or, Lost Among the Floes A Story of the Whaling Grounds.epub"),
+                new FileMetadata(Path.Join(_testDirectory,
+                    "The Golden Harpoon; Or, Lost Among the Floes A Story of the Whaling Grounds.epub")),
                 MangaFormat.Epub).Build())
             .Build();
 
