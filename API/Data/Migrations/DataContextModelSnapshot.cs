@@ -1045,7 +1045,7 @@ namespace API.Data.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("ExtractChaptersFromVolumes")
+                    b.Property<bool>("ParseChaptersFromVolumes")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("FolderWatching")

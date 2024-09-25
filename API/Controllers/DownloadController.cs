@@ -103,14 +103,16 @@ public class DownloadController : BaseApiController
         if (volume == null) return BadRequest(await _localizationService.Translate(User.GetUserId(), "volume-doesnt-exist"));
         var files = await _unitOfWork.VolumeRepository.GetFilesForVolume(volumeId);
         // A volume can be made up of extracted chapters, so we group by path
-        files = files.GroupBy(f => f.FileMetadata.Path).Select(f => {
-            var firstFile = f.First();
-            if (firstFile.FileMetadata.HasPageRange()) {
-                return firstFile.VolumeFile();
-            }
+        if (files.Any(f => f.FileMetadata.HasPageRange())) {
+            files = files.GroupBy(f => f.FileMetadata.Path).Select(f => {
+                var firstFile = f.First();
+                if (firstFile.FileMetadata.HasPageRange()) {
+                    return firstFile.VolumeFile();
+                }
 
-            return firstFile;
-        }).ToList();
+                return firstFile;
+            }).ToList();
+        }
 
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(volume.SeriesId);
         try
@@ -207,14 +209,17 @@ public class DownloadController : BaseApiController
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(seriesId);
         if (series == null) return BadRequest("Invalid Series");
         var files = await _unitOfWork.SeriesRepository.GetFilesForSeries(seriesId);
-        files = files.GroupBy(f => f.FileMetadata.Path).Select(f => {
-            var firstFile = f.First();
-            if (firstFile.FileMetadata.HasPageRange()) {
-                return firstFile.VolumeFile();
-            }
+        if (files.Any(f => f.FileMetadata.HasPageRange())) {
+            files = files.GroupBy(f => f.FileMetadata.Path).Select(f => {
+                var firstFile = f.First();
+                if (firstFile.FileMetadata.HasPageRange()) {
+                    return firstFile.VolumeFile();
+                }
 
-            return firstFile;
-        }).ToList();
+                return firstFile;
+            }).ToList();
+        }
+
         try
         {
             return await DownloadFiles(files, $"download_{User.GetUsername()}_s{seriesId}", $"{series.Name}.zip");

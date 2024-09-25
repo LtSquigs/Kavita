@@ -18,6 +18,7 @@ namespace API.Data.Repositories;
 #nullable enable
 public interface IAppUserProgressRepository
 {
+    void Add(AppUserProgress appUserProgress);
     void Update(AppUserProgress userProgress);
     Task<int> CleanupAbandonedChapters();
     Task<bool> UserHasProgress(LibraryType libraryType, int userId);
@@ -50,6 +51,11 @@ public class AppUserProgressRepository : IAppUserProgressRepository
     {
         _context = context;
         _mapper = mapper;
+    }
+
+    public void Add(AppUserProgress appUserProgress)
+    {
+        _context.AppUserProgresses.Add(appUserProgress);
     }
 
     public void Update(AppUserProgress userProgress)

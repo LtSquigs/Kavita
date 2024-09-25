@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using API.Data.Metadata;
 using API.Entities.Enums;
 using API.Structs;
-using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Bcpg;
 
 namespace API.Services.Tasks.Scanner.Parser;
 #nullable enable
@@ -15,9 +11,9 @@ namespace API.Services.Tasks.Scanner.Parser;
 /// This is the basic parser for handling Manga/Comic/Book libraries. This was previously DefaultParser before splitting each parser
 /// into their own classes.
 /// </summary>
-public class BasicParser(IDirectoryService directoryService, IDefaultParser imageParser, IArchiveService? archiveService = null, ILogger? logger = null) : DefaultParser(directoryService)
+public class BasicParser(IDirectoryService directoryService, IDefaultParser imageParser, IArchiveService? archiveService = null) : DefaultParser(directoryService)
 {
-    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool extractChapters = false)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool parseVolumeChapters = false)
     {
         var fileName = directoryService.FileSystem.Path.GetFileNameWithoutExtension(filePath);
         // TODO: Potential Bug: This will return null, but on Image libraries, if all images, we would want to include this.
@@ -25,7 +21,7 @@ public class BasicParser(IDirectoryService directoryService, IDefaultParser imag
 
         if (Parser.IsImage(filePath))
         {
-            return imageParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Image, comicInfo, extractChapters);
+            return imageParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Image, comicInfo, parseVolumeChapters);
         }
 
         var ret = new ParserInfo()
@@ -117,14 +113,14 @@ public class BasicParser(IDirectoryService directoryService, IDefaultParser imag
             return [];
         }
 
-        if (extractChapters) {
+        if (parseVolumeChapters) {
             List<PageInfo>? pages = null;
             if (Parser.IsArchive(filePath) && archiveService != null) {
                 pages = archiveService.GetPages(new FileMetadata(filePath));
             }
 
             if (pages != null) {
-                return ExtractChapters(ret, type, pages);
+                return ParseVolumeChapters(ret, type, pages);
             }
         }
 

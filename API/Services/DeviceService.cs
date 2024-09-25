@@ -141,7 +141,7 @@ public class DeviceService : IDeviceService
         {
             DestinationEmail = device.EmailAddress!,
             FileStreams = files.Select(async f => {
-                if (f.Format == MangaFormat.Archive) {
+                if (f.Format == MangaFormat.Archive && f.FileMetadata.HasPageRange()) {
                     var stream = await _archiveService.CreateZipStream(f.FileMetadata);
                     return new KeyValuePair<string, Stream>(f.GetDownloadName(), stream);
                 }

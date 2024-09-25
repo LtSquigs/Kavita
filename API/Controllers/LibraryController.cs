@@ -81,7 +81,7 @@ public class LibraryController : BaseApiController
             .WithManageCollections(dto.ManageCollections)
             .WithManageReadingLists(dto.ManageReadingLists)
             .WIthAllowScrobbling(dto.AllowScrobbling)
-            .WithExtractChaptersFromVolumes(dto.ExtractChaptersFromVolumes)
+            .WithParseChaptersFromVolumes(dto.ParseChaptersFromVolumes)
             .Build();
 
         library.LibraryFileTypes = dto.FileGroupTypes
@@ -400,7 +400,7 @@ public class LibraryController : BaseApiController
                 FileGroupTypes = sourceLibrary.LibraryFileTypes.Select(t => t.FileTypeGroup).ToList(),
                 IncludeInDashboard = sourceLibrary.IncludeInDashboard,
                 IncludeInSearch = sourceLibrary.IncludeInSearch,
-                ExtractChaptersFromVolumes = sourceLibrary.ExtractChaptersFromVolumes,
+                ParseChaptersFromVolumes = sourceLibrary.ParseChaptersFromVolumes,
                 ManageReadingLists = sourceLibrary.ManageReadingLists
             }, targetLibrary, dto.IncludeType);
         }
@@ -594,7 +594,7 @@ public class LibraryController : BaseApiController
         library.FolderWatching = dto.FolderWatching;
         library.IncludeInDashboard = dto.IncludeInDashboard;
         library.IncludeInSearch = dto.IncludeInSearch;
-        library.ExtractChaptersFromVolumes = dto.ExtractChaptersFromVolumes;
+        library.ParseChaptersFromVolumes = dto.ParseChaptersFromVolumes;
         library.ManageCollections = dto.ManageCollections;
         library.ManageReadingLists = dto.ManageReadingLists;
         library.AllowScrobbling = dto.AllowScrobbling;

@@ -63,28 +63,28 @@ public class MockReadingItemService : IReadingItemService
         throw new NotImplementedException();
     }
 
-    public ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool extractChapters)
+    public ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
     {
         var filePath = new FileMetadata(path);
         if (_comicVineParser.IsApplicable(path, type))
         {
-            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), extractChapters);
+            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_imageParser.IsApplicable(path, type))
         {
-            return _imageParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), extractChapters);
+            return _imageParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_bookParser.IsApplicable(path, type))
         {
-            return _bookParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), extractChapters);
+            return _bookParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_pdfParser.IsApplicable(path, type))
         {
-            return _pdfParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), extractChapters);
+            return _pdfParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_basicParser.IsApplicable(path, type))
         {
-            return _basicParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), extractChapters);
+            return _basicParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
         }
 
         return null;

@@ -43,11 +43,11 @@ public class CacheHelper : ICacheHelper
         bool isCoverLocked = false)
     {
 
-        var fileExists = !string.IsNullOrEmpty(coverPath) && _fileService.Exists(new FileMetadata(coverPath));
+        var fileExists = !string.IsNullOrEmpty(coverPath) && _fileService.Exists(coverPath);
         if (isCoverLocked && fileExists) return false;
         if (forceUpdate) return true;
         if (firstFile == null) return true;
-        return (_fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, firstFile.LastModified)) || !fileExists;
+        return (_fileService.HasFileBeenModifiedSince(firstFile.FileMetadata.Path, firstFile.LastModified)) || !fileExists;
     }
 
     /// <summary>
@@ -61,8 +61,8 @@ public class CacheHelper : ICacheHelper
     {
         return firstFile != null &&
                (!forceUpdate &&
-                !(_fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, chapter.Created)
-                  || _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, firstFile.LastModified)));
+                !(_fileService.HasFileBeenModifiedSince(firstFile.FileMetadata.Path, chapter.Created)
+                  || _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata.Path, firstFile.LastModified)));
     }
 
     /// <summary>
@@ -76,8 +76,8 @@ public class CacheHelper : ICacheHelper
     {
         if (firstFile == null) return false;
         if (forceUpdate) return true;
-        return _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, lastScan)
-               || _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata, firstFile.LastModified);
+        return _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata.Path, lastScan)
+               || _fileService.HasFileBeenModifiedSince(firstFile.FileMetadata.Path, firstFile.LastModified);
     }
 
     /// <summary>
@@ -87,6 +87,6 @@ public class CacheHelper : ICacheHelper
     /// <returns></returns>
     public bool CoverImageExists(string path)
     {
-        return !string.IsNullOrEmpty(path) && _fileService.Exists(new FileMetadata(path));
+        return !string.IsNullOrEmpty(path) && _fileService.Exists(path);
     }
 }

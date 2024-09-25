@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240920045830_AddExtractChaptersFromVolume")]
-    partial class AddExtractChaptersFromVolume
+    [Migration("20240920045830_AddParseChaptersFromVolume")]
+    partial class AddParseChaptersFromVolume
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1047,7 +1047,7 @@ namespace API.Data.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("ExtractChaptersFromVolumes")
+                    b.Property<bool>("ParseChaptersFromVolumes")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("FolderWatching")

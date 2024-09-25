@@ -2,15 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using API.Data.Metadata;
 using API.Entities.Enums;
-using API.Extensions;
 using API.Structs;
-using Microsoft.Extensions.Logging;
 
 namespace API.Services.Tasks.Scanner.Parser;
 #nullable enable
+
 
 record struct ParsedChapter {
     public int Page;
@@ -19,7 +17,7 @@ record struct ParsedChapter {
 }
 public interface IDefaultParser
 {
-    ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool extractChapters = false);
+    ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool parseVolumeChapters = false);
     void ParseFromFallbackFolders(string filePath, string rootPath, LibraryType type, ref ParserInfo ret);
     bool IsApplicable(string filePath, LibraryType type);
 }
@@ -38,7 +36,7 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
     /// <param name="rootPath">Root folder</param>
     /// <param name="type">Allows different Regex to be used for parsing.</param>
     /// <returns><see cref="ParserInfo"/> or null if Series was empty</returns>
-    public abstract ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool extractChapters = false);
+    public abstract ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool parseVolumeChapters = false);
 
     /// <summary>
     /// Fills out <see cref="ParserInfo"/> by trying to parse volume, chapters, and series from folders
@@ -156,9 +154,18 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
                (string.IsNullOrEmpty(volumes) || volumes == Parser.LooseLeafVolume);
     }
 
+    /// <summary>
+    /// Converts the parsed chapters from ParseVolumeChapters into ParserInfo objects
+    /// </summary>
+    /// <param name="baseParserInfo">The parser info of the suspected volume</param>
+    /// <param name="type">The library type of the volume being parsed</param>
+    /// <param name="pages">An ordered list of PageInfo that represents the pages in the volume.</param>
+    /// <param name="chapters">List of ParsedChapter objects that need to be converted into parser info.</param>
     private static ParserInfo[] ParsedChaptersToInfo (ParserInfo baseParserInfo, LibraryType type, List<PageInfo> pages, List<ParsedChapter> chapters) {
         IEnumerable<int> covers = new List<int>();
         if (baseParserInfo.ComicInfo != null) {
+            // We allow an "internal" chapter to define a cover by marking a page as an
+            // InnerCover or Cover type within its range, this finds all of those in the metadata
             covers = baseParserInfo.ComicInfo.Pages.Select((p) => {
                 if (p.GetPageType() == PageType.InnerCover || p.GetPageType() == PageType.FrontCover ) {
                     return p.Image;
@@ -168,7 +175,11 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
         }
 
         return chapters.Select((bookmark, idx) => {
+            // For the first chapter in our list, we set the startSpan to 0 just to ensure the full
+            // volume is included (e.g. if a bookmark is set 5 pages in, we still want those 5 pages)
             var startSpan = idx == 0 ? 0 : bookmark.Page;
+            // The end of the span is always defined to be up to the page before the next span or
+            // the end of the volume if its the last span
             var endSpan = idx == chapters.Count -1 ? pages.Count - 1 : chapters[idx + 1].Page - 1;
             var parserInfo = baseParserInfo.Clone();
      
@@ -186,6 +197,7 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
                 };
             }
             var size = pages.GetRange(startSpan, endSpan - startSpan + 1).Sum(f => f.Size);
+            // We look for a cover inside the span of pages to set as the cover of the file
             var coverIdx = covers.FirstOrDefault(c => c >= startSpan && c <= endSpan, -1);
             var cover = coverIdx != -1 ? pages[coverIdx].Name : string.Empty;
             parserInfo.Chapters = bookmark.Chapter;
@@ -195,13 +207,22 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
         }).ToArray();
     }
 
-    public static ParserInfo[] ExtractChapters(ParserInfo baseParserInfo, LibraryType type, List<PageInfo> pages) {
+    /// <summary>
+    /// Attempts to parse chapters from inside a volume file.
+    /// </summary>
+    /// <param name="baseParserInfo">The parser info of the suspected volume</param>
+    /// <param name="type">The library type of the volume being parsed</param>
+    /// <param name="pages">An ordered list of PageInfo that represents the pages in the volume.</param>
+    public static ParserInfo[] ParseVolumeChapters(ParserInfo baseParserInfo, LibraryType type, List<PageInfo> pages) {
         // We only want to try to extract chapters from files that have been clearly
         // marked as having a volume, but somehow don't have chapters 
         if (baseParserInfo.IsSpecial) return [baseParserInfo];
         if (baseParserInfo.Chapters != Parser.DefaultChapter) return [baseParserInfo];
         if (baseParserInfo.Volumes == Parser.LooseLeafVolume) return [baseParserInfo];
 
+        // First we attempt to parse chapters based off of the Page array of the ComicInfo
+        // We look for Bookmarks that meet a specific format to parse the chapter number
+        // and the title
         if (baseParserInfo.ComicInfo != null) {
             var chaptersFromInfo = baseParserInfo.ComicInfo.Pages.Select((p) => {
                 string chapter = Parser.ParseChapter(p.Bookmark, type);
@@ -213,6 +234,8 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
             }
         }
 
+        // If we do not find any chapters from the ComicInfo, we attempt to use the filenames
+        // in the volume to detect chapter boundaries and titles.
         var chaptersFromPages = pages.Select((f, idx) => {
             string chapter = Parser.ParseChapter(Parser.RemoveEditionTagHolders(f.Name), type);
             var fileParts = Parser.NormalizePath(f.Name.Replace(Path.GetExtension(f.Name), string.Empty)).Split(Path.AltDirectorySeparatorChar);

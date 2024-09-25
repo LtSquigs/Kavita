@@ -500,7 +500,7 @@ public class ParseScannedFiles
 
         // Multiple Series can exist within a folder. We should instead put these infos on the result and perform merging above
         IList<ParserInfo> infos = files
-            .Select(file => _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type, library.ExtractChaptersFromVolumes))
+            .Select(file => _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type, library.ParseChaptersFromVolumes))
             .Where(infos => infos.Length > 0)
             .SelectMany(infos => infos)
             .ToList()!;

@@ -5,7 +5,7 @@ namespace API.Services.Tasks.Scanner.Parser;
 
 public class BookParser(IDirectoryService directoryService, IBookService bookService, BasicParser basicParser) : DefaultParser(directoryService)
 {
-    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo comicInfo = null, bool extractChapters = false)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo comicInfo = null, bool parseVolumeChapters = false)
     {
         var info = bookService.ParseInfo(filePath);
         if (info == null) return [];
@@ -35,7 +35,7 @@ public class BookParser(IDirectoryService directoryService, IBookService bookSer
             }
             else
             {
-                var info2 = basicParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Book, comicInfo, extractChapters);
+                var info2 = basicParser.Parse(filePath, rootPath, libraryRoot, LibraryType.Book, comicInfo, parseVolumeChapters);
                 if (info2.Length > 0) {
                     info.Merge(info2[0]);
                 }

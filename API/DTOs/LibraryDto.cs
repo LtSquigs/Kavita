@@ -47,7 +47,7 @@ public class LibraryDto
     /// When scanning the library, attempts to extract chapters from volume files using bookmarks
     /// entry names, or table of contents.
     /// </summary>
-    public bool ExtractChaptersFromVolumes { get; set; } = false;
+    public bool ParseChaptersFromVolumes { get; set; } = false;
     /// <summary>
     /// Should this library allow Scrobble events to emit from it
     /// </summary>

@@ -14,7 +14,7 @@ public interface IReadingItemService
     int GetNumberOfPages(FileMetadata fileMetadata, MangaFormat format);
     string GetCoverImage(FileMetadata fileMetadata, string fileName, MangaFormat format, EncodeFormat encodeFormat, CoverImageSize size = CoverImageSize.Default);
     void Extract(FileMetadata fileFileMetadata, string targetDirectory, MangaFormat format, int imageCount = 1);
-    ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool extractChapters);
+    ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters);
 }
 
 public class ReadingItemService : IReadingItemService
@@ -40,7 +40,7 @@ public class ReadingItemService : IReadingItemService
         _logger = logger;
 
         _imageParser = new ImageParser(directoryService);
-        _basicParser = new BasicParser(directoryService, _imageParser, _archiveService, _logger);
+        _basicParser = new BasicParser(directoryService, _imageParser, _archiveService);
         _bookParser = new BookParser(directoryService, bookService, _basicParser);
         _comicVineParser = new ComicVineParser(directoryService);
         _pdfParser = new PdfParser(directoryService);
@@ -73,11 +73,11 @@ public class ReadingItemService : IReadingItemService
     /// <param name="path">Path of a file</param>
     /// <param name="rootPath"></param>
     /// <param name="type">Library type to determine parsing to perform</param>
-    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool extractChapters)
+    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
     {
         try
         {
-            var infos = Parse(path, rootPath, libraryRoot, type, extractChapters);
+            var infos = Parse(path, rootPath, libraryRoot, type, parseVolumeChapters);
             if (infos.Length == 0)
             {
                 _logger.LogError("Unable to parse any meaningful information out of file {FilePath}", path);
@@ -176,28 +176,28 @@ public class ReadingItemService : IReadingItemService
     /// <param name="rootPath"></param>
     /// <param name="type"></param>
     /// <returns></returns>
-    private ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool extractChapters)
+    private ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
     {
         var fileMetadata = new FileMetadata(path);
         if (_comicVineParser.IsApplicable(path, type))
         {
-            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), extractChapters);
+            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_imageParser.IsApplicable(path, type))
         {
-            return _imageParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), extractChapters);
+            return _imageParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_bookParser.IsApplicable(path, type))
         {
-            return _bookParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), extractChapters);
+            return _bookParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_pdfParser.IsApplicable(path, type))
         {
-            return _pdfParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), extractChapters);
+            return _pdfParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_basicParser.IsApplicable(path, type))
         {
-            return _basicParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), extractChapters);
+            return _basicParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
 
         return [];

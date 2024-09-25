@@ -20,7 +20,9 @@ using API.Structs;
 using Hangfire;
 using Kavita.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Logging;
+using SharpCompress;
 
 namespace API.Services.Tasks.Scanner;
 #nullable enable
@@ -147,7 +149,7 @@ public class ProcessSeries : IProcessSeries
             // parsedInfos[0] is not the first volume or chapter. We need to find it using a ComicInfo check (as it uses firstParsedInfo for series sort)
             var firstParsedInfo = parsedInfos.FirstOrDefault(p => p.ComicInfo != null, firstInfo);
 
-            await UpdateVolumes(series, parsedInfos, forceUpdate);
+            var progressUpdates = await UpdateVolumes(series, parsedInfos, forceUpdate);
             series.Pages = series.Volumes.Sum(v => v.Pages);
 
             series.NormalizedName = series.Name.ToNormalized();
@@ -237,6 +239,16 @@ public class ProcessSeries : IProcessSeries
                     return;
                 }
 
+                // Wait until after commit to update read progress, as chapter IDs
+                // may not be available.
+                if (progressUpdates.Count > 0) {
+                    progressUpdates.ForEach(update => {
+                        update.Item1.ChapterId = update.Item2.Id;
+                        _unitOfWork.AppUserProgressRepository.Add(update.Item1);
+                    });
+
+                    await _unitOfWork.CommitAsync();
+                }
 
                 // Process reading list after commit as we need to commit per list
                 await _readingListService.CreateReadingListsFromSeries(library.Id, series.Id);
@@ -638,10 +650,55 @@ public class ProcessSeries : IProcessSeries
         }
     }
 
-    private async Task UpdateVolumes(Series series, IList<ParserInfo> parsedInfos, bool forceUpdate = false)
+    // Gets a list of users that have a complete read status on a given volume that
+    // should be persisted between volume updates.
+    // There are three scenarios where these completed statuses should be persisted:
+    //   1. When we parse chapters internal to a volume and create new chapters from it
+    //   2. When that feature is disabled and it returns to being a single volume file
+    //   3. When a volume is made up of internally parsed chapters, and more chapters are parsed
+    // In all three cases, the underlying file hasn't really changed, just how its presented
+    // in terms of chapters, so the read status should still show as completed.
+    private async Task<IEnumerable<int>> GetCompletedProgressToPersist(Volume? volume, ParserInfo[] infos)
     {
+        if (volume == null) return [];
+
+        var wasVolumeChapter = volume.IsVolumeChapter();
+        var wasSplitVolume = volume.IsSplitVolume();
+        var isVolumeChapter = infos.Count() == 1 && infos[0].Volumes != Parser.Parser.LooseLeafVolume && infos[0].Chapters == Parser.Parser.DefaultChapter;
+        var isSplitVolume = infos.Any() && infos.All(i => i.FileMetadata.HasPageRange());
+
+        // We're going from a virtual chapter volume -> multiple chapters from parsing internal
+        if (wasVolumeChapter && isSplitVolume) {
+            var ch = volume.Chapters[0];
+            var progresses = await _unitOfWork.AppUserProgressRepository.GetUserProgressForChapter(ch.Id);
+            return progresses.Where(up => up.PagesRead >= ch.Pages).Select(up => up.AppUserId);
+        }
+
+        // We're going from multiple chapters -> virtual chapter volume, or we already were
+        // multiple chapters parsed internal to volume and are just adding more.
+        if (wasSplitVolume && isVolumeChapter ||
+            wasSplitVolume && isSplitVolume && infos.Count() != volume.Chapters.Count()) {
+            IEnumerable<int>? completedUserIds = null;
+            foreach(var ch in volume.Chapters) {
+                var progresses = await _unitOfWork.AppUserProgressRepository.GetUserProgressForChapter(ch.Id);
+                if (completedUserIds == null) {
+                    completedUserIds = progresses.Where(up => up.PagesRead >= ch.Pages).Select(up => up.AppUserId);
+                } else {
+                    completedUserIds = completedUserIds.Intersect(progresses.Where(up => up.PagesRead >= ch.Pages).Select(up => up.AppUserId));
+                }
+            }
+            return completedUserIds == null ? [] : completedUserIds;
+        }
+
+        return [];
+    }
+
+    private async Task<IList<(AppUserProgress, Chapter)>> UpdateVolumes(Series series, IList<ParserInfo> parsedInfos, bool forceUpdate = false)
+    {
+        var readingProgressUpdates = new List<(AppUserProgress, Chapter)>();
         // Add new volumes and update chapters per volume
         var distinctVolumes = parsedInfos.DistinctVolumes();
+        
         _logger.LogDebug("[ScannerService] Updating {DistinctVolumes} volumes on {SeriesName}", distinctVolumes.Count, series.Name);
         foreach (var volumeNumber in distinctVolumes)
         {
@@ -659,6 +716,10 @@ public class ProcessSeries : IProcessSeries
                 throw new KavitaException(
                     $"Kavita found corrupted volume entries on {series.Name}. Please delete the series from Kavita via UI and rescan");
             }
+
+            var infos = parsedInfos.Where(p => p.Volumes == volumeNumber).ToArray();
+            var completedProgress = await GetCompletedProgressToPersist(volume, infos);
+
             if (volume == null)
             {
                 volume = new VolumeBuilder(volumeNumber)
@@ -670,8 +731,10 @@ public class ProcessSeries : IProcessSeries
             volume.LookupName = volumeNumber;
             volume.Name = volume.GetNumberTitle();
 
+
             _logger.LogDebug("[ScannerService] Parsing {SeriesName} - Volume {VolumeNumber}", series.Name, volume.Name);
-            var infos = parsedInfos.Where(p => p.Volumes == volumeNumber).ToArray();
+
+            
             UpdateChapters(series, volume, infos, forceUpdate);
             volume.Pages = volume.Chapters.Sum(c => c.Pages);
 
@@ -688,6 +751,30 @@ public class ProcessSeries : IProcessSeries
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "There was some issue when updating chapter's metadata");
+                }
+
+                try
+                {
+                    if(completedProgress != null) {
+                        readingProgressUpdates.AddRange(completedProgress.Select(userId => {
+                            return (new AppUserProgress
+                            {
+                                AppUserId = userId,
+                                PagesRead = chapter.Pages,
+                                VolumeId = volume.Id,
+                                SeriesId = volume.SeriesId,
+                                LibraryId = series.LibraryId,
+                                Created = DateTime.Now,
+                                CreatedUtc = DateTime.UtcNow,
+                                LastModified = DateTime.Now,
+                                LastModifiedUtc = DateTime.UtcNow
+                            }, chapter);
+                        }));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "There was some issue when updating chapter's read status for users");
                 }
             }
         }
@@ -717,6 +804,8 @@ public class ProcessSeries : IProcessSeries
 
             series.Volumes = nonDeletedVolumes;
         }
+
+        return readingProgressUpdates;
     }
 
     private void UpdateChapters(Series series, Volume volume, IList<ParserInfo> parsedInfos, bool forceUpdate = false)
@@ -807,7 +896,7 @@ public class ProcessSeries : IProcessSeries
         if (existingFile != null)
         {
             existingFile.Format = info.Format;
-            if (!forceUpdate && !_fileService.HasFileBeenModifiedSince(existingFile.FileMetadata, existingFile.LastModified) && existingFile.Pages != 0) return;
+            if (!forceUpdate && !_fileService.HasFileBeenModifiedSince(existingFile.FileMetadata.Path, existingFile.LastModified) && existingFile.Pages != 0) return;
             existingFile.Pages = _readingItemService.GetNumberOfPages(info.FileMetadata, info.Format);
             existingFile.Extension = fileInfo.Extension.ToLowerInvariant();
             existingFile.FileName = Parser.Parser.RemoveExtensionIfSupported(existingFile.FileMetadata.Path);

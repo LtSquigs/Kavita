@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using API.Entities.Interfaces;
 using API.Extensions;
 using API.Services.Tasks.Scanner.Parser;
@@ -80,4 +81,13 @@ public class Volume : IEntityDate, IHasReadTimeEstimate, IHasCoverImage
         SecondaryColor = string.Empty;
     }
 
+    public bool IsVolumeChapter()
+    {
+        return !MinNumber.Is(Parser.LooseLeafVolumeNumber) && Chapters.Count == 1 && Chapters[0].MinNumber.Is(Parser.DefaultChapterNumber);
+    }
+
+    public bool IsSplitVolume()
+    {
+        return Chapters.Any() && Chapters.All(ch => ch.Files.All(f => f.FileMetadata.HasPageRange()));
+    }
 }

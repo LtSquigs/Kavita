@@ -6,16 +6,15 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Unicode;
 using API.Extensions;
-using API.Structs;
 
 namespace API.Services;
 
 public interface IFileService
 {
     IFileSystem GetFileSystem();
-    bool HasFileBeenModifiedSince(FileMetadata fileMetadata, DateTime time);
-    bool Exists(FileMetadata fileMetadata);
-    bool ValidateSha(FileMetadata filepath, string sha);
+    bool HasFileBeenModifiedSince(string filePath, DateTime time);
+    bool Exists(string filePath);
+    bool ValidateSha(string filepath, string sha);
 }
 
 public class FileService : IFileService
@@ -38,17 +37,17 @@ public class FileService : IFileService
     /// If the File on disk's last modified time is after passed time
     /// </summary>
     /// <remarks>This has a resolution to the minute. Will ignore seconds and milliseconds</remarks>
-    /// <param name="fileMetadata">Full qualified path of file</param>
+    /// <param name="filePath">Full qualified path of file</param>
     /// <param name="time"></param>
     /// <returns></returns>
-    public bool HasFileBeenModifiedSince(FileMetadata fileMetadata, DateTime time)
+    public bool HasFileBeenModifiedSince(string filePath, DateTime time)
     {
-        return !string.IsNullOrEmpty(fileMetadata.Path) && _fileSystem.File.GetLastWriteTime(fileMetadata.Path).Truncate(TimeSpan.TicksPerMinute) > time.Truncate(TimeSpan.TicksPerMinute);
+        return !string.IsNullOrEmpty(filePath) && _fileSystem.File.GetLastWriteTime(filePath).Truncate(TimeSpan.TicksPerMinute) > time.Truncate(TimeSpan.TicksPerMinute);
     }
 
-    public bool Exists(FileMetadata fileMetadata)
+    public bool Exists(string filePath)
     {
-        return _fileSystem.File.Exists(fileMetadata.Path);
+        return _fileSystem.File.Exists(filePath);
     }
 
     /// <summary>
@@ -57,12 +56,12 @@ public class FileService : IFileService
     /// <param name="filepath"></param>
     /// <param name="sha"></param>
     /// <returns></returns>
-    public bool ValidateSha(FileMetadata filepath, string sha)
+    public bool ValidateSha(string filepath, string sha)
     {
         if (!Exists(filepath)) return false;
         if (string.IsNullOrEmpty(sha)) throw new ArgumentException("Sha cannot be null");
 
-        using var fs = _fileSystem.File.OpenRead(filepath.Path);
+        using var fs = _fileSystem.File.OpenRead(filepath);
         fs.Position = 0;
 
         using var reader = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);

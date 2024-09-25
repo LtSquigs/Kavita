@@ -113,7 +113,7 @@ export class LibrarySettingsModalComponent implements OnInit {
     includeInDashboard: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     includeInRecommended: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     includeInSearch: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
-    extractChaptersFromVolumes: new FormControl<boolean>(false, { nonNullable: true, validators: [Validators.required] }),
+    parseChaptersFromVolumes: new FormControl<boolean>(false, { nonNullable: true, validators: [Validators.required] }),
     manageCollections: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     manageReadingLists: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     allowScrobbling: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
@@ -234,7 +234,7 @@ export class LibrarySettingsModalComponent implements OnInit {
       this.libraryForm.get('includeInDashboard')?.setValue(this.library.includeInDashboard);
       this.libraryForm.get('includeInRecommended')?.setValue(this.library.includeInRecommended);
       this.libraryForm.get('includeInSearch')?.setValue(this.library.includeInSearch);
-      this.libraryForm.get('extractChaptersFromVolumes')?.setValue(this.library.extractChaptersFromVolumes);
+      this.libraryForm.get('parseChaptersFromVolumes')?.setValue(this.library.parseChaptersFromVolumes);
       this.libraryForm.get('manageCollections')?.setValue(this.library.manageCollections);
       this.libraryForm.get('manageReadingLists')?.setValue(this.library.manageReadingLists);
       this.libraryForm.get('collapseSeriesRelationships')?.setValue(this.library.collapseSeriesRelationships);

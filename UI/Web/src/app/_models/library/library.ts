@@ -21,7 +21,7 @@ export interface Library {
     includeInDashboard: boolean;
     includeInRecommended: boolean;
     includeInSearch: boolean;
-    extractChaptersFromVolumes: boolean;
+    parseChaptersFromVolumes: boolean;
     manageCollections: boolean;
     manageReadingLists: boolean;
     allowScrobbling: boolean;

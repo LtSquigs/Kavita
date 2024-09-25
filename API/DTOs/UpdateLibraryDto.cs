@@ -21,7 +21,7 @@ public class UpdateLibraryDto
     [Required]
     public bool IncludeInSearch { get; init; }
     [Required]
-    public bool ExtractChaptersFromVolumes { get; set; }
+    public bool ParseChaptersFromVolumes { get; set; }
     [Required]
     public bool ManageCollections { get; init; }
     [Required]

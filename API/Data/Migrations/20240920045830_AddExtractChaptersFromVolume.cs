@@ -5,13 +5,13 @@
 namespace API.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddExtractChaptersFromVolume : Migration
+    public partial class AddParseChaptersFromVolume : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
-                name: "ExtractChaptersFromVolumes",
+                name: "ParseChaptersFromVolumes",
                 table: "Library",
                 type: "INTEGER",
                 nullable: false,
@@ -22,7 +22,7 @@ namespace API.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ExtractChaptersFromVolumes",
+                name: "ParseChaptersFromVolumes",
                 table: "Library");
         }
     }
