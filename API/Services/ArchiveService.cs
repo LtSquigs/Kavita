@@ -315,6 +315,12 @@ public class ArchiveService : IArchiveService
     /// <returns></returns>
     public string GetCoverImage(FileMetadata archivePath, string fileName, string outputDirectory, EncodeFormat format, CoverImageSize size = CoverImageSize.Default)
     {
+        // For chapters derived from volumes, if a cover has not explicitly been set than we just return none
+        // this is to avoid edge cases where an archive declares a 2nd cover file (e.g. a back cover with "Cover" as its tag)
+        if (archivePath.HasPageRange() && archivePath.MinRange() != 0 && string.IsNullOrEmpty(archivePath.CoverFile)) {
+            return string.Empty;
+        }
+
         if (string.IsNullOrEmpty(archivePath.Path) || !IsValidArchive(archivePath)) return string.Empty;
         try
         {
