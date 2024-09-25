@@ -124,7 +124,7 @@ public class ArchiveService : IArchiveService
                 !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(getName(e)) && 
                 !getName(e).StartsWith(Tasks.Scanner.Parser.Parser.MacOsMetadataFileStartsWith) &&
                 Tasks.Scanner.Parser.Parser.IsImage(getName(e))
-            ).OrderByNatural(e => getName(e).GetFullPathWithoutExtension());
+            ).OrderByNatural(e => getName(e).Replace(Path.GetExtension(getName(e)), string.Empty));
 
         if (onlyImages && !fileMetadata.HasPageRange()) {
             return imageEntries;

@@ -582,42 +582,42 @@ public static class Parser
     public static readonly Regex[] BookmarkRegex = new[]
     {
         new Regex(
-            @"(บทที่|ตอนที่)\.?(\s|_)?(?<Chapter>\d+)\s*[-:,]?\s+(?<Title>.+)$",
+            @"(บทที่|ตอนที่)\.?(\s|_)?(?<Chapter>\d+)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         new Regex(
-            @"(\b|_)(c|ch)(\.?\s?)(?<Chapter>(\d+(\.\d)?)(-c?\d+(\.\d)?)?)\s*[-:,]?\s+(?<Title>.+)$",
+            @"(\b|_)(c|ch)(\.?\s?)(?<Chapter>(\d+(\.\d)?)(-c?\d+(\.\d)?)?)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         // Green Worldz - Chapter 027, Kimi no Koto ga Daidaidaidaidaisuki na 100-nin no Kanojo Chapter 11-10
         new Regex(
-            @"Chapter\s(?<Chapter>\d+(?:\.?[\d-]+)?)\s*[-:,]?\s+(?<Title>.+)$",
+            @"Chapter\s(?<Chapter>\d+(?:\.?[\d-]+)?)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         // Russian Chapter: Главы n -> Chapter n
         new Regex(
-            @"(Глава|глава|Главы|Глава)(\.?)(\s|_)?(?<Chapter>\d+(?:.\d+|-\d+)?)\s*[-:,]?\s+(?<Title>.+)$",
+            @"(Глава|глава|Главы|Глава)(\.?)(\s|_)?(?<Chapter>\d+(?:.\d+|-\d+)?)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         // Yumekui-Merry_DKThias_Chapter21.zip
         new Regex(
-            @"Chapter(?<Chapter>\d+(-\d+)?)\s*[-:,]?\s+(?<Title>.+)$", //(?:.\d+|-\d+)?
+            @"Chapter(?<Chapter>\d+(-\d+)?)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$", //(?:.\d+|-\d+)?
             MatchOptions, RegexTimeout),
         // Vol 1 Chapter 2
         new Regex(
-            @"(Chp|Chapter)\.?(\s|_)?(?<Chapter>\d+)\s*[-:,]?\s+(?<Title>.+)$",
+            @"(Chp|Chapter)\.?(\s|_)?(?<Chapter>\d+)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         // Chinese Chapter: 第n话 -> Chapter n, 【TFO汉化&Petit汉化】迷你偶像漫画第25话
         new Regex(
-            @"第(?<Chapter>\d+)话\s*[-:,]?\s+(?<Title>.+)$",
+            @"第(?<Chapter>\d+)话(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         // Korean Chapter: 제n화 -> Chapter n, 가디언즈 오브 갤럭시 죽음의 보석.E0008.7화#44
         new Regex(
-            @"제?(?<Chapter>\d+\.?\d+)(회|화|장)\s*[-:,]?\s+(?<Title>.+)$",
+            @"제?(?<Chapter>\d+\.?\d+)(회|화|장)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         // Korean Chapter: 第10話 -> Chapter n, [ハレム]ナナとカオル ～高校生のSMごっこ～　第1話
         new Regex(
-            @"第?(?<Chapter>\d+(?:\.\d+|-\d+)?)話\s*[-:,]?\s+(?<Title>.+)$",
+            @"第?(?<Chapter>\d+(?:\.\d+|-\d+)?)話(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
         // Russian Chapter: n Главa -> Chapter n
         new Regex(
-            @"(?!Том)(?<!Том\.)\s\d+(\s|_)?(?<Chapter>\d+(?:\.\d+|-\d+)?)(\s|_)(Глава|глава|Главы|Глава)\s*[-:,]?\s+(?<Title>.+)$",
+            @"(?!Том)(?<!Том\.)\s\d+(\s|_)?(?<Chapter>\d+(?:\.\d+|-\d+)?)(\s|_)(Глава|глава|Главы|Глава)(?<Page>.+\bp[\.\d]+(-[\.\d]+)?)?\s*[-:,]?\s+(?<Title>.+)$",
             MatchOptions, RegexTimeout),
     };
 

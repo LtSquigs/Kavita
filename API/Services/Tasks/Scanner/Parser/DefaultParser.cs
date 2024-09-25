@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using API.Data.Metadata;
 using API.Entities.Enums;
+using API.Extensions;
 using API.Structs;
 using Microsoft.Extensions.Logging;
 
@@ -214,7 +215,7 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
 
         var chaptersFromPages = pages.Select((f, idx) => {
             string chapter = Parser.ParseChapter(Parser.RemoveEditionTagHolders(f.Name), type);
-            var fileParts = Parser.NormalizePath(f.Name).Split(Path.AltDirectorySeparatorChar);
+            var fileParts = Parser.NormalizePath(f.Name.Replace(Path.GetExtension(f.Name), string.Empty)).Split(Path.AltDirectorySeparatorChar);
             var titlePart = fileParts.FirstOrDefault(p => {
                 return !String.IsNullOrEmpty(Parser.ParseBookmarkTitle(p, type));
             }, string.Empty);
