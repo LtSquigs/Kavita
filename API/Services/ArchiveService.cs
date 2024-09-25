@@ -112,10 +112,10 @@ public class ArchiveService : IArchiveService
         }
     }
 
-    IEnumerable<ZipArchiveEntry> GetEntries(ReadOnlyCollection<ZipArchiveEntry> entries, FileMetadata fileMetadata, bool forceImages = false)
+    IEnumerable<ZipArchiveEntry> GetEntries(ReadOnlyCollection<ZipArchiveEntry> entries, FileMetadata fileMetadata, bool onlyImages = false)
     {
-        if (!forceImages && !fileMetadata.HasPageRange()) {
-            return entries.Where(e => !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(e.FullName));
+        if (!onlyImages && !fileMetadata.HasPageRange()) {
+            return entries.Where(e => !Path.EndsInDirectorySeparator(e.FullName) && !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(e.FullName));
         }
 
         var imageEntries = entries
@@ -126,7 +126,7 @@ public class ArchiveService : IArchiveService
                 Tasks.Scanner.Parser.Parser.IsImage(e.FullName)
             ).OrderByNatural(e => e.FullName.GetFullPathWithoutExtension());
 
-        if (forceImages && !fileMetadata.HasPageRange()) {
+        if (onlyImages && !fileMetadata.HasPageRange()) {
             return imageEntries;
         }
 
@@ -143,23 +143,22 @@ public class ArchiveService : IArchiveService
         return slicedEntries;
     }
 
-    IEnumerable<IArchiveEntry> GetEntries(IEnumerable<IArchiveEntry> entries, FileMetadata fileMetadata, bool forceImages = false)
+    IEnumerable<IArchiveEntry> GetEntries(IEnumerable<IArchiveEntry> entries, FileMetadata fileMetadata, bool onlyImages = false)
     {
-        if (!forceImages && !fileMetadata.HasPageRange()) {
-            return entries.Where(e => !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(Path.GetDirectoryName(e.Key) ?? string.Empty));;
+        if (!onlyImages && !fileMetadata.HasPageRange()) {
+            return entries.Where(e => !e.IsDirectory && !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(Path.GetDirectoryName(e.Key) ?? string.Empty));;
         }
 
         var imageEntries = entries
             .Where(e =>
                 e.Key != null && 
-                !Path.EndsInDirectorySeparator(e.Key) &&
                 !e.IsDirectory &&
                 !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(Path.GetDirectoryName(e.Key) ?? string.Empty) &&
                 !e.Key.StartsWith(Tasks.Scanner.Parser.Parser.MacOsMetadataFileStartsWith) &&
                 Tasks.Scanner.Parser.Parser.IsImage(e.Key)
             ).OrderByNatural(e => (e.Key ?? string.Empty).GetFullPathWithoutExtension());
 
-        if (forceImages && !fileMetadata.HasPageRange()) {
+        if (onlyImages && !fileMetadata.HasPageRange()) {
             return imageEntries;
         }
 
@@ -798,8 +797,8 @@ public class ArchiveService : IArchiveService
                             entries = entries.Append(infoEntry);
                         }
                     }
-                    
-                    ExtractArchiveEntries(archive,  extractPath, entries.Count() == archive.Entries.Count ? null : entries);
+
+                    ExtractArchiveEntries(archive,  extractPath, archivePath.HasPageRange() ? entries : null);
                     break;
                 }
                 case ArchiveLibrary.SharpCompress:
