@@ -30,5 +30,12 @@ public static class ParserInfoListExtensions
     {
         return infos.Any(i => chapter.Files.Any(f => i.IsSameFile(f.FileMetadata, chapter)));
     }
-
+    public static float MinChapter(this IList<ParserInfo> infos)
+    {
+        return infos.Select(info => Parser.MinNumberFromRange(info.Chapters)).Min();
+    }
+    public static float MaxChapter(this IList<ParserInfo> infos)
+    {
+        return infos.Select(info => Parser.MaxNumberFromRange(info.Chapters)).Max();
+    }
 }

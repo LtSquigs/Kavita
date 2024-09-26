@@ -674,8 +674,12 @@ public class ProcessSeries : IProcessSeries
 
         // We're going from multiple chapters -> virtual chapter volume, or we already were
         // multiple chapters parsed internal to volume and are just adding more.
-        if (wasSplitVolume && isVolumeChapter ||
-            wasSplitVolume && isSplitVolume && infos.Count() != volume.Chapters.Count()) {
+        if ((wasSplitVolume && isVolumeChapter) ||
+            (wasSplitVolume && isSplitVolume && (
+                infos.Count() != volume.Chapters.Count()   || 
+                volume.MinNumber.IsNot(infos.MinChapter()) || 
+                volume.MaxNumber.IsNot(infos.MaxChapter())
+            ))) {
             IEnumerable<int>? completedUserIds = null;
             foreach(var ch in volume.Chapters) {
                 var progresses = await _unitOfWork.AppUserProgressRepository.GetUserProgressForChapter(ch.Id);

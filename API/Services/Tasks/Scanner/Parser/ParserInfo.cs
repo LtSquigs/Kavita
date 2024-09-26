@@ -118,7 +118,7 @@ public class ParserInfo
         return clone;
     }
     public bool IsSameFile(FileMetadata metadata, Chapter existingChapter) {
-        if (!FileMetadata.HasPageRange()) {
+        if (!FileMetadata.HasPageRange() && !metadata.HasPageRange()) {
             return metadata.Path == FileMetadata.Path;
         }
 
