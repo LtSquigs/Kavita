@@ -660,26 +660,20 @@ public class ProcessSeries : IProcessSeries
     {
         if (volume == null) return [];
 
-        var wasVolumeChapter = volume.IsVolumeChapter();
         var wasSplitVolume = volume.IsSplitVolume();
         var isVolumeChapter = infos.Count() == 1 && infos[0].Volumes != Parser.Parser.LooseLeafVolume && infos[0].Chapters == Parser.Parser.DefaultChapter;
         var isSplitVolume = infos.Any() && infos.All(i => i.FileMetadata.HasPageRange());
 
-        // We're going from a virtual chapter volume -> multiple chapters from parsing internal
-        if (wasVolumeChapter && isSplitVolume) {
-            var ch = volume.Chapters[0];
-            var progresses = await _unitOfWork.AppUserProgressRepository.GetUserProgressForChapter(ch.Id);
-            return progresses.Where(up => up.PagesRead >= ch.Pages).Select(up => up.AppUserId);
-        }
-
-        // We're going from multiple chapters -> virtual chapter volume, or we already were
-        // multiple chapters parsed internal to volume and are just adding more.
-        if ((wasSplitVolume && isVolumeChapter) ||
-            (wasSplitVolume && isSplitVolume && (
+        var hasBeenSplit = !wasSplitVolume && isSplitVolume;
+        var hasBeenRejoined = wasSplitVolume && isVolumeChapter;
+        var rangeHasChanged = !hasBeenSplit && !hasBeenRejoined &&
+            wasSplitVolume && isSplitVolume && (
                 infos.Count() != volume.Chapters.Count()   || 
-                volume.MinNumber.IsNot(infos.MinChapter()) || 
-                volume.MaxNumber.IsNot(infos.MaxChapter())))
-            ) {
+                volume.Chapters.Min(c => c.MinNumber).IsNot(infos.MinChapter()) || 
+                volume.Chapters.Max(c => c.MaxNumber).IsNot(infos.MaxChapter())
+            );
+
+        if (hasBeenSplit || hasBeenRejoined || rangeHasChanged) {
             IEnumerable<int>? completedUserIds = null;
             foreach(var ch in volume.Chapters) {
                 var progresses = await _unitOfWork.AppUserProgressRepository.GetUserProgressForChapter(ch.Id);
