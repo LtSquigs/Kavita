@@ -162,18 +162,6 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
     /// <param name="pages">An ordered list of PageInfo that represents the pages in the volume.</param>
     /// <param name="chapters">List of ParsedChapter objects that need to be converted into parser info.</param>
     private static ParserInfo[] ParsedChaptersToInfo (ParserInfo baseParserInfo, LibraryType type, List<PageInfo> pages, List<ParsedChapter> chapters) {
-        IEnumerable<int> covers = new List<int>();
-        if (baseParserInfo.ComicInfo != null) {
-            // We allow an "internal" chapter to define a cover by marking a page as an
-            // InnerCover or Cover type within its range, this finds all of those in the metadata
-            covers = baseParserInfo.ComicInfo.Pages.Select((p) => {
-                if (p.GetPageType() == PageType.InnerCover || p.GetPageType() == PageType.FrontCover ) {
-                    return p.Image;
-                }
-                return -1;
-            }).Where(y => y != -1);
-        }
-
         return chapters.Select((bookmark, idx) => {
             // For the first chapter in our list, we set the startSpan to 0 just to ensure the full
             // volume is included (e.g. if a bookmark is set 5 pages in, we still want those 5 pages)
@@ -197,11 +185,8 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
                 };
             }
             var size = pages.GetRange(startSpan, endSpan - startSpan + 1).Sum(f => f.Size);
-            // We look for a cover inside the span of pages to set as the cover of the file
-            var coverIdx = covers.FirstOrDefault(c => c >= startSpan && c <= endSpan, -1);
-            var cover = coverIdx != -1 ? pages[coverIdx].Name : string.Empty;
             parserInfo.Chapters = bookmark.Chapter;
-            parserInfo.FileMetadata = new FileMetadata(parserInfo.FileMetadata.Path, startSpan + "-" + endSpan, size, cover);
+            parserInfo.FileMetadata = new FileMetadata(parserInfo.FileMetadata.Path, startSpan + "-" + endSpan, size);
 
             return parserInfo;
         }).ToArray();

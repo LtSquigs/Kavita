@@ -3,20 +3,22 @@ using System.Diagnostics.CodeAnalysis;
 using API.Services.Tasks.Scanner.Parser;
 
 namespace API.Structs;
+/// <summary>
+/// Represents a file on the disk, can represent either a full file or a file with an internal
+/// range of pages.
+/// </summary>
 public record struct FileMetadata {
     [SetsRequiredMembers]
-    public FileMetadata(string path, string pageRange = "", long fileSize = -1, string coverFile = "")
+    public FileMetadata(string path, string pageRange = "", long fileSize = -1)
     {
         Path = path;
         PageRange = pageRange;
         FileSize = fileSize;
-        CoverFile = coverFile;
     }
 
     public required string Path { get; set; }
     public string PageRange { get; set; } = string.Empty;
     public long FileSize { get; set; } = -1;
-    public string CoverFile { get; set; } = string.Empty;
 
     public string ID() {
         return Path + PageRange;
@@ -34,7 +36,7 @@ public record struct FileMetadata {
 
     public FileMetadata Normalized()
     {
-        return new FileMetadata(Parser.NormalizePath(Path), PageRange, FileSize, CoverFile);
+        return new FileMetadata(Parser.NormalizePath(Path), PageRange, FileSize);
     }
 
     public bool isSameFile(FileMetadata metadata) {

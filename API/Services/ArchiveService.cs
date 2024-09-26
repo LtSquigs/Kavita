@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -15,13 +14,11 @@ using API.Entities.Enums;
 using API.Extensions;
 using API.Services.Tasks;
 using API.Structs;
-using CsvHelper;
 using Kavita.Common;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
 using SharpCompress.Common;
 using SharpCompress.Writers;
-using Xunit.Sdk;
 
 namespace API.Services;
 
@@ -112,9 +109,24 @@ public class ArchiveService : IArchiveService
         }
     }
 
-    static IEnumerable<T> GetEntries<T>(IEnumerable<T> entries, FileMetadata fileMetadata, Func<T, string> getName, bool onlyImages = false) where T : class
+    /// <summary>
+    /// This returns the entries from the given ZipFile according to the index information provided
+    /// by the file metadata.
+    /// 
+    /// If the FileMetadata provided does not indicate that the file has internal ranges, it returns
+    /// the entries minus directories and blacklisted files.
+    /// 
+    /// If the FileMetadata provided indicates that it points to an internal range inside the
+    /// file, then it returns only the images in the archive in the specified range.
+    /// </summary>
+    /// <param name="entries">Entry enumerable to filter based off fileMetadata</param>
+    /// <param name="fileMetadata">The FileMetadata representing the archive to be read</param>
+    /// <param name="getName">A function that returns the name of the entry</param>
+    /// <param name="forceOnlyImages">Wether to filter the results to only images, even if the FileMetadata does not indicate internal ranges</param>
+    /// <returns></returns>
+    static IEnumerable<T> GetEntries<T>(IEnumerable<T> entries, FileMetadata fileMetadata, Func<T, string> getName, bool forceOnlyImages = false) where T : class
     {
-        if (!onlyImages && !fileMetadata.HasPageRange()) {
+        if (!forceOnlyImages && !fileMetadata.HasPageRange()) {
             return entries.Where(e => !Path.EndsInDirectorySeparator(getName(e)) && !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(getName(e)));
         }
 
@@ -126,7 +138,7 @@ public class ArchiveService : IArchiveService
                 Tasks.Scanner.Parser.Parser.IsImage(getName(e))
             ).OrderByNatural(e => getName(e).Replace(Path.GetExtension(getName(e)), string.Empty));
 
-        if (onlyImages && !fileMetadata.HasPageRange()) {
+        if (forceOnlyImages && !fileMetadata.HasPageRange()) {
             return imageEntries;
         }
 
@@ -146,13 +158,17 @@ public class ArchiveService : IArchiveService
             if(slicedEntries.Any(x => x == coverEntry)) {
                 return slicedEntries;
             } else {
-                return slicedEntries.Prepend(coverEntry);
+                // We have to insert the cover and resort the files.
+                return slicedEntries.Append(coverEntry).OrderByNatural(e => getName(e).Replace(Path.GetExtension(getName(e)), string.Empty));
             }
         }
 
         return slicedEntries.Where(f => f != coverEntry);
     }
 
+    /// <summary>
+    /// Returns a sorted list of images in the archive, which should be the pages of the archive.
+    /// </summary>
     public List<PageInfo> GetPages(FileMetadata archivePath)
     {
         if (string.IsNullOrEmpty(archivePath.Path) || !IsValidArchive(archivePath)) return [];
@@ -166,13 +182,13 @@ public class ArchiveService : IArchiveService
                     using var archive = ZipFile.OpenRead(archivePath.Path);
 
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.FullName, true);
-                    return entries.Select((e, idx) => new PageInfo(e.FullName, idx, e.CompressedLength, Tasks.Scanner.Parser.Parser.IsCoverImage(e.FullName))).ToList();
+                    return entries.Select((e, idx) => new PageInfo(e.FullName, idx, e.CompressedLength)).ToList();
                 }
                 case ArchiveLibrary.SharpCompress:
                 {
                     using var archive = ArchiveFactory.Open(archivePath.Path);
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.Key ?? "", true);
-                    return entries.Select((e, idx) => new PageInfo(e.Key ?? "", idx, e.CompressedSize, Tasks.Scanner.Parser.Parser.IsCoverImage(e.Key ?? ""))).ToList();
+                    return entries.Select((e, idx) => new PageInfo(e.Key ?? "", idx, e.CompressedSize)).ToList();
                 }
                 case ArchiveLibrary.NotSupported:
                     _logger.LogWarning("[GetPages] This archive cannot be read: {ArchivePath}. Defaulting to no cover image", archivePath);
@@ -325,7 +341,7 @@ public class ArchiveService : IArchiveService
                 {
                     using var archive = ZipFile.OpenRead(archivePath.Path);
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.FullName);
-                    var entryName = string.IsNullOrEmpty(archivePath.CoverFile) ? FindCoverImageFilename(archivePath, entries.Select(e => e.FullName)) : archivePath.CoverFile;
+                    var entryName = FindCoverImageFilename(archivePath, entries.Select(e => e.FullName));
                     var entry = entries.Single(e => e.FullName == entryName);
 
                     using var stream = entry.Open();
@@ -337,7 +353,7 @@ public class ArchiveService : IArchiveService
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.Key ?? "");
                     var entryNames = entries.Where(archiveEntry => !archiveEntry.IsDirectory).Select(e => e.Key).ToList();
 
-                    var entryName = string.IsNullOrEmpty(archivePath.CoverFile) ? FindCoverImageFilename(archivePath, entryNames) : archivePath.CoverFile;
+                    var entryName = FindCoverImageFilename(archivePath, entryNames);
                     var entry = entries.Single(e => e.Key == entryName);
 
                     using var stream = entry.OpenEntryStream();
@@ -371,7 +387,7 @@ public class ArchiveService : IArchiveService
     {
         // For chapters derived from volumes, if a cover has not explicitly been set than we just return none
         // this is to avoid edge cases where an archive declares a 2nd cover file (e.g. a back cover with "Cover" as its tag)
-        if (archivePath.HasPageRange() && archivePath.MinRange() != 0 && string.IsNullOrEmpty(archivePath.CoverFile)) {
+        if (archivePath.HasPageRange() && archivePath.MinRange() != 0) {
             return FirstFileEntry(entryNames, Path.GetFileName(archivePath.Path));
         }
 
@@ -393,16 +409,20 @@ public class ArchiveService : IArchiveService
                archive.Entries.Any(e => e.FullName.Contains(Path.AltDirectorySeparatorChar) && !Tasks.Scanner.Parser.Parser.HasBlacklistedFolderInPath(e.FullName));
     }
 
+    /// <summary>
+    /// Returns a readable stream that contains the content of the zip file.
+    /// </summary>
     public async Task<Stream> CreateZipStream(FileMetadata archivePath) {
         if (!archivePath.HasPageRange()) {
             return File.OpenRead(archivePath.Path);
         }
 
+        // When an archive has an internal range, we construct the zip file
+        // in memory and return a stream to that.
         var memStream = new MemoryStream(0);
         try
         {
             if (!File.Exists(archivePath.Path)) {
-                await memStream.DisposeAsync();
                 return memStream;
             }
 
@@ -416,16 +436,19 @@ public class ArchiveService : IArchiveService
 
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.FullName);
 
+                    // For partial archives we insert the comic info file into the first archive
                     if (archivePath.HasPageRange() && archivePath.MinRange() == 0) {
                         var allEntries = GetEntries(archive.Entries, new FileMetadata(archivePath.Path), (e) => e.FullName);
-                        var infoEntry = allEntries.FirstOrDefault(x => (x.FullName ?? x.Name) == ComicInfoFilename) ??
-                                        allEntries.FirstOrDefault(x => IsComicInfoArchiveEntry(x.FullName, x.Name));
+                        var infoEntry = GetComicInfoArchiveEntry(allEntries);
                         
                         if (infoEntry != null) {
                             entries = entries.Append(infoEntry);
                         }
                     }
 
+                    // We copy the entries into a memory stream as the stream needs to be
+                    // open when we call SaveTo, but do not want to risk the zip stream
+                    // actually staying open (outside of the using range).
                     foreach(var entry in entries) {
                         using var stream = entry.Open();
                         var entryMemoryStream = new MemoryStream();
@@ -449,8 +472,7 @@ public class ArchiveService : IArchiveService
                     
                     if (archivePath.HasPageRange() && archivePath.MinRange() == 0) {
                         var allEntries = GetEntries(archive.Entries, new FileMetadata(archivePath.Path), (e) => e.Key ?? "");
-                        var infoEntry = allEntries.FirstOrDefault(x => x.Key == ComicInfoFilename) ??
-                                        allEntries.FirstOrDefault(x => IsComicInfoArchiveEntry(Path.GetDirectoryName(x.Key), x.Key ?? string.Empty));
+                        var infoEntry = GetComicInfoArchiveEntry(allEntries);
                         if (infoEntry != null) {
                             entries = entries.Append(infoEntry);
                         }
@@ -605,7 +627,16 @@ public class ArchiveService : IArchiveService
         _logger.LogWarning("Archive {ArchivePath} is not a valid archive", archivePath);
         return false;
     }
-
+    private static ZipArchiveEntry? GetComicInfoArchiveEntry(IEnumerable<ZipArchiveEntry> entries)
+    {
+        return entries.FirstOrDefault(x => (x.FullName ?? x.Name) == ComicInfoFilename) ??
+                        entries.FirstOrDefault(x => IsComicInfoArchiveEntry(x.FullName, x.Name));
+    }
+    private static IArchiveEntry? GetComicInfoArchiveEntry(IEnumerable<IArchiveEntry> entries)
+    {
+        return entries.FirstOrDefault(entry => entry.Key == ComicInfoFilename) ??
+                        entries.FirstOrDefault(entry => IsComicInfoArchiveEntry(Path.GetDirectoryName(entry.Key), entry.Key));
+    }
     private static bool IsComicInfoArchiveEntry(string? fullName, string name)
     {
         if (fullName == null) return false;
@@ -634,8 +665,7 @@ public class ArchiveService : IArchiveService
                 {
                     using var archive = ZipFile.OpenRead(archivePath.Path);
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.FullName);
-                    var entry = entries.FirstOrDefault(x => (x.FullName ?? x.Name) == ComicInfoFilename) ??
-                        entries.FirstOrDefault(x => IsComicInfoArchiveEntry(x.FullName, x.Name));
+                    var entry = GetComicInfoArchiveEntry(entries);
                     if (entry != null)
                     {
                         using var stream = entry.Open();
@@ -648,9 +678,7 @@ public class ArchiveService : IArchiveService
                 {
                     using var archive = ArchiveFactory.Open(archivePath.Path);
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.Key ?? "");
-                    var entry = entries.FirstOrDefault(entry => entry.Key == ComicInfoFilename) ??
-                        entries.FirstOrDefault(entry =>
-                        IsComicInfoArchiveEntry(Path.GetDirectoryName(entry.Key), entry.Key));
+                    var entry = GetComicInfoArchiveEntry(entries);
 
                     if (entry != null)
                     {
@@ -775,8 +803,7 @@ public class ArchiveService : IArchiveService
 
                     if (archivePath.HasPageRange() && archivePath.MinRange() == 0) {
                         var allEntries = GetEntries(archive.Entries, new FileMetadata(archivePath.Path), (e) => e.FullName);
-                        var infoEntry = allEntries.FirstOrDefault(x => (x.FullName ?? x.Name) == ComicInfoFilename) ??
-                                        allEntries.FirstOrDefault(x => IsComicInfoArchiveEntry(x.FullName, x.Name));
+                        var infoEntry = GetComicInfoArchiveEntry(allEntries);
                         
                         if (infoEntry != null) {
                             entries = entries.Append(infoEntry);
@@ -793,8 +820,7 @@ public class ArchiveService : IArchiveService
 
                     if (archivePath.HasPageRange() && archivePath.MinRange() == 0) {
                         var allEntries = GetEntries(archive.Entries, new FileMetadata(archivePath.Path), (e) => e.Key ?? "");
-                        var infoEntry = allEntries.FirstOrDefault(x => x.Key == ComicInfoFilename) ??
-                                        allEntries.FirstOrDefault(x => IsComicInfoArchiveEntry(Path.GetDirectoryName(x.Key), x.Key ?? string.Empty));
+                        var infoEntry = GetComicInfoArchiveEntry(allEntries);
                         if (infoEntry != null) {
                             entries = entries.Append(infoEntry);
                         }
