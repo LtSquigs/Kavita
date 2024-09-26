@@ -1,5 +1,7 @@
 ﻿using API.Data.Metadata;
+using API.Entities;
 using API.Entities.Enums;
+using API.Extensions;
 using API.Structs;
 
 namespace API.Services.Tasks.Scanner.Parser;
@@ -114,5 +116,16 @@ public class ParserInfo
         var clone = MemberwiseClone() as ParserInfo;
         clone.ComicInfo = ComicInfo?.Clone();
         return clone;
+    }
+    public bool IsSameFile(FileMetadata metadata, Chapter existingChapter) {
+        if (!FileMetadata.HasPageRange()) {
+            return metadata.Path == FileMetadata.Path;
+        }
+
+        // We need extra scrutiny when checking ranged based files as the same
+        // range may have moved between chapters, so we check chapter numbers too
+        return existingChapter.MinNumber.Is(Parser.MinNumberFromRange(Chapters)) &&
+                existingChapter.MaxNumber.Is(Parser.MaxNumberFromRange(Chapters)) &&               
+                metadata.Path == FileMetadata.Path && metadata.PageRange == FileMetadata.PageRange;
     }
 }

@@ -740,7 +740,7 @@ public class ProcessSeries : IProcessSeries
                 if (firstFile == null || _cacheHelper.IsFileUnmodifiedSinceCreationOrLastScan(chapter, forceUpdate, firstFile)) continue;
                 try
                 {
-                    var firstChapterInfo = infos.SingleOrDefault(i => i.FileMetadata.isSameFile(firstFile.FileMetadata));
+                    var firstChapterInfo = infos.SingleOrDefault(i => i.IsSameFile(firstFile.FileMetadata, chapter));
                     await UpdateChapterFromComicInfo(chapter, firstChapterInfo?.ComicInfo, forceUpdate);
                 }
                 catch (Exception ex)
@@ -875,10 +875,17 @@ public class ProcessSeries : IProcessSeries
             {
                 // Ensure we remove any files that no longer exist AND order
                 existingChapter.Files = existingChapter.Files
-                    .Where(f => parsedInfos.Any(p => p.FileMetadata.isSameFile(f.FileMetadata)))
+                    .Where(f => parsedInfos.Any(p => p.IsSameFile(f.FileMetadata, existingChapter)))
                     .OrderByNatural(f => f.FileMetadata.Path)
                     .ToList();
+                
                 existingChapter.Pages = existingChapter.Files.Sum(f => f.Pages);
+
+                if (existingChapter.Files.Count == 0) {
+                    _logger.LogDebug("[ScannerService] Removed chapter {Chapter} for Volume {VolumeNumber} on {SeriesName}",
+                    existingChapter.Range, volume.Name, parsedInfos[0].Series);
+                    volume.Chapters.Remove(existingChapter);
+                }
             }
         }
     }
@@ -886,7 +893,7 @@ public class ProcessSeries : IProcessSeries
     private void AddOrUpdateFileForChapter(Chapter chapter, ParserInfo info, bool forceUpdate = false)
     {
         chapter.Files ??= new List<MangaFile>();
-        var existingFile = chapter.Files.SingleOrDefault(f => f.FileMetadata.isSameFile(info.FileMetadata));
+        var existingFile = chapter.Files.SingleOrDefault(f => info.IsSameFile(f.FileMetadata, chapter));
         var fileInfo = _directoryService.FileSystem.FileInfo.New(info.FileMetadata.Path);
         if (existingFile != null)
         {

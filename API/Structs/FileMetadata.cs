@@ -39,9 +39,5 @@ public record struct FileMetadata {
         return new FileMetadata(Parser.NormalizePath(Path), PageRange, FileSize);
     }
 
-    public bool isSameFile(FileMetadata metadata) {
-        return metadata.Path == Path && metadata.PageRange == PageRange;
-    }
-
     public static readonly FileMetadata Empty = new FileMetadata("");
 }
