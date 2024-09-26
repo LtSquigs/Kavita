@@ -678,8 +678,8 @@ public class ProcessSeries : IProcessSeries
             (wasSplitVolume && isSplitVolume && (
                 infos.Count() != volume.Chapters.Count()   || 
                 volume.MinNumber.IsNot(infos.MinChapter()) || 
-                volume.MaxNumber.IsNot(infos.MaxChapter())
-            ))) {
+                volume.MaxNumber.IsNot(infos.MaxChapter())))
+            ) {
             IEnumerable<int>? completedUserIds = null;
             foreach(var ch in volume.Chapters) {
                 var progresses = await _unitOfWork.AppUserProgressRepository.GetUserProgressForChapter(ch.Id);
@@ -756,6 +756,7 @@ public class ProcessSeries : IProcessSeries
                 {
                     if(completedProgress != null) {
                         readingProgressUpdates.AddRange(completedProgress.Select(userId => {
+                            _logger.LogInformation("Persisting Read Progress for User ID: {User}, Volume ID: {Volume}, Chapter: {Chapter}, Num Pages: {Pages}", userId, volume.Id, chapter.GetNumberTitle(), chapter.Pages);
                             return (new AppUserProgress
                             {
                                 AppUserId = userId,
@@ -885,6 +886,7 @@ public class ProcessSeries : IProcessSeries
                 
                 existingChapter.Pages = existingChapter.Files.Sum(f => f.Pages);
 
+                // It's possible we filtered out all the files, and need to delete the chapter
                 if (existingChapter.Files.Count == 0) {
                     _logger.LogDebug("[ScannerService] Removed chapter {Chapter} for Volume {VolumeNumber} on {SeriesName}",
                     existingChapter.Range, volume.Name, parsedInfos[0].Series);
