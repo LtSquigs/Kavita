@@ -50,7 +50,7 @@ public class ReadingItemService : IReadingItemService
     /// <summary>
     /// Gets the ComicInfo for the file if it exists. Null otherwise.
     /// </summary>
-    /// <param name="fileMetadata">Fully qualified path of file</param>
+    /// <param name="fileMetadata">Fully qualified metadata of file</param>
     /// <returns></returns>
     public ComicInfo? GetComicInfo(FileMetadata fileMetadata)
     {

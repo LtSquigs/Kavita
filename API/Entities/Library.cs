@@ -28,7 +28,7 @@ public class Library : IEntityDate, IHasCoverImage
     /// <summary>
     /// Include library series in Search
     /// </summary>
-    public bool IncludeInSearch { get; set; } = false;
+    public bool IncludeInSearch { get; set; } = true;
     /// <summary>
     /// When scanning the library, attempts to extract chapters from volume files using bookmarks
     /// entry names, or table of contents.
@@ -47,6 +47,9 @@ public class Library : IEntityDate, IHasCoverImage
     /// </summary>
     /// <remarks>Scrobbling requires a valid LicenseKey</remarks>
     public bool AllowScrobbling { get; set; } = true;
+
+
+
 
 
     public DateTime Created { get; set; }

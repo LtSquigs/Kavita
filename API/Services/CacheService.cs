@@ -235,7 +235,7 @@ public class CacheService : ICacheService
             switch (file.Format)
             {
                 case MangaFormat.Archive:
-                    _readingItemService.Extract(file.FileMetadata, Path.Join(extractPath, extraPath), file.Format, 1);
+                    _readingItemService.Extract(file.FileMetadata, Path.Join(extractPath, extraPath), file.Format);
                     break;
                 case MangaFormat.Epub:
                 case MangaFormat.Pdf:

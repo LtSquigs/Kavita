@@ -2,7 +2,6 @@
 using API.Entities.Enums;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
-using Castle.Core.Logging;
 using EasyCaching.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

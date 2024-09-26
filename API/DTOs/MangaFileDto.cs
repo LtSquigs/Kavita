@@ -8,7 +8,7 @@ public class MangaFileDto
 {
     public int Id { get; init; }
     /// <summary>
-    /// Absolute path to the archive file (normalized)
+    /// Absolute path metadata to the archive file (normalized)
     /// </summary>
     public FileMetadata FileMetadata { get; init; } = default!;
     /// <summary>

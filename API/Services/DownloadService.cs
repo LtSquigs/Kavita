@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using API.DTOs.Stats;
 using API.Entities;
 using API.Entities.Enums;
-using API.Structs;
 using Microsoft.AspNetCore.StaticFiles;
 using MimeTypes;
 

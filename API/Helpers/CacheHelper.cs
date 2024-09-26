@@ -2,7 +2,6 @@
 using API.Entities;
 using API.Entities.Interfaces;
 using API.Services;
-using API.Structs;
 
 namespace API.Helpers;
 #nullable enable

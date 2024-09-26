@@ -185,14 +185,14 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
      
             if (parserInfo.ComicInfo != null) {
                 parserInfo.ComicInfo.PageCount = endSpan - startSpan + 1;
-                parserInfo.ComicInfo.TitleSort = Parser.ParseBookmarkTitle(bookmark.TitleStr, type);
-                parserInfo.ComicInfo.Title = Parser.ParseBookmarkTitle(bookmark.TitleStr, type);
+                parserInfo.ComicInfo.TitleSort = Parser.ParseChapterTitle(bookmark.TitleStr, type);
+                parserInfo.ComicInfo.Title = Parser.ParseChapterTitle(bookmark.TitleStr, type);
                 parserInfo.ComicInfo.Number = bookmark.Chapter;
             } else {
                 parserInfo.ComicInfo = new ComicInfo() {
                     PageCount = endSpan - startSpan + 1,
-                    TitleSort = Parser.ParseBookmarkTitle(bookmark.TitleStr, type),
-                    Title = Parser.ParseBookmarkTitle(bookmark.TitleStr, type),
+                    TitleSort = Parser.ParseChapterTitle(bookmark.TitleStr, type),
+                    Title = Parser.ParseChapterTitle(bookmark.TitleStr, type),
                     Number = bookmark.Chapter
                 };
             }
@@ -240,7 +240,7 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
             string chapter = Parser.ParseChapter(Parser.RemoveEditionTagHolders(f.Name), type);
             var fileParts = Parser.NormalizePath(f.Name.Replace(Path.GetExtension(f.Name), string.Empty)).Split(Path.AltDirectorySeparatorChar);
             var titlePart = fileParts.FirstOrDefault(p => {
-                return !String.IsNullOrEmpty(Parser.ParseBookmarkTitle(p, type));
+                return !String.IsNullOrEmpty(Parser.ParseChapterTitle(p, type));
             }, string.Empty);
             return new ParsedChapter() { Page = idx, Chapter = chapter, TitleStr = titlePart};
         }).Where(y => y.Chapter != Parser.DefaultChapter);

@@ -18,7 +18,7 @@ public class MangaFile : IEntityDate
     /// </summary>
     public string FileName { get; set; }
     /// <summary>
-    /// Metadata about the file used to access it
+    /// Absolute Metadata to the archive file
     /// </summary>
     public required FileMetadata FileMetadata { get; set; }
     /// <summary>
@@ -71,11 +71,13 @@ public class MangaFile : IEntityDate
         LastFileAnalysis = DateTime.Now;
         LastFileAnalysisUtc = DateTime.UtcNow;
     }
-
+    /// <summary>
+    /// When downloading a volume this attempts to return a reasonable name for the file.
+    /// </summary>
     public string GetDownloadName()
     {
         if (FileMetadata.HasPageRange() && Chapter != null) {
-            return Path.GetFileNameWithoutExtension(FileMetadata.Path) + " Chapter " + Chapter.GetNumberTitle() + Path.GetExtension(FileMetadata.Path);
+            return Path.GetFileNameWithoutExtension(FileMetadata.Path) + " " + Chapter.GetNumberTitle() + Path.GetExtension(FileMetadata.Path);
         }
         return Path.GetFileName(FileMetadata.Path);
     }

@@ -28,9 +28,9 @@ public static class ParserInfoListExtensions
     /// <returns></returns>
     public static bool HasInfo(this IList<ParserInfo> infos, Chapter chapter)
     {
-        var chapterFiles = chapter.Files.Select(x => x.FileMetadata.Normalized().ID()).ToList();
-        var infoFiles = infos.Select(x =>  x.FileMetadata.Normalized().ID()).ToList();
-        return infoFiles.Intersect(chapterFiles).Any();
+        var chapterFileIDs = chapter.Files.Select(x => x.FileMetadata.Normalized().ID()).ToList();
+        var infoFileIDs = infos.Select(x =>  x.FileMetadata.Normalized().ID()).ToList();
+        return infoFileIDs.Intersect(chapterFileIDs).Any();
     }
 
 }

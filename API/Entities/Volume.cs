@@ -80,12 +80,16 @@ public class Volume : IEntityDate, IHasReadTimeEstimate, IHasCoverImage
         PrimaryColor = string.Empty;
         SecondaryColor = string.Empty;
     }
-
+    /// <summary>
+    /// Checks if the Volume is sourced from a single volume file rather than chapters.
+    /// </summary>
     public bool IsVolumeChapter()
     {
         return !MinNumber.Is(Parser.LooseLeafVolumeNumber) && Chapters.Count == 1 && Chapters[0].MinNumber.Is(Parser.DefaultChapterNumber);
     }
-
+    /// <summary>
+    /// Checks if the volume has been split into chapters from a volume file by the parse chapters feature.
+    /// </summary>
     public bool IsSplitVolume()
     {
         return Chapters.Any() && Chapters.All(ch => ch.Files.All(f => f.FileMetadata.HasPageRange()));

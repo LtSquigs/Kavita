@@ -13,7 +13,15 @@ using Nager.ArticleNumber;
 namespace API.Data.Metadata;
 #nullable enable
 
+/// <summary>
+/// A representation of the Page metadata in ComicInfo.xml
+/// </summary>
+/// <remarks>See reference of the loose spec here: https://anansi-project.github.io/docs/comicinfo/documentation#pages--comicpageinfo</remarks>
 public class Page {
+    /// <summary>
+    /// Page number. Sort order of files is not well defined, so may be some inconsistencies
+    /// between tools on what file this refers to.
+    /// </summary>
     [XmlAttribute]
     public int Image { get; set; } = 0;
     [XmlAttribute]
@@ -22,8 +30,14 @@ public class Page {
     public bool DoublePage { get; set; } = false;
     [XmlAttribute]
     public long ImageSize { get; set; } = 0;
+    /// <summary>
+    /// Seemingly unknown purpose.
+    /// </summary>
     [XmlAttribute]
     public string Key { get; set; } = string.Empty;
+    /// <summary>
+    /// Represents bookmarks in a book.
+    /// </summary>
     [XmlAttribute]
     public string Bookmark { get; set; } = string.Empty;
     [XmlAttribute]
