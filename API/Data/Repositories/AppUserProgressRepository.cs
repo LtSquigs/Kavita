@@ -18,7 +18,6 @@ namespace API.Data.Repositories;
 #nullable enable
 public interface IAppUserProgressRepository
 {
-    void Add(AppUserProgress appUserProgress);
     void Update(AppUserProgress userProgress);
     Task<int> CleanupAbandonedChapters();
     Task<bool> UserHasProgress(LibraryType libraryType, int userId);
@@ -40,6 +39,8 @@ public interface IAppUserProgressRepository
     Task<DateTime?> GetFirstProgressForSeries(int seriesId, int userId);
     Task UpdateAllProgressThatAreMoreThanChapterPages();
     Task<IList<FullProgressDto>> GetUserProgressForChapter(int chapterId, int userId = 0);
+    Task<IEnumerable<int>> GetUsersThatHaveFinishedVolume(Volume volume);
+    Task UsersUpdateVolumesCompleted(IEnumerable<(Volume, int)> updates);
 }
 #nullable disable
 public class AppUserProgressRepository : IAppUserProgressRepository
@@ -51,11 +52,6 @@ public class AppUserProgressRepository : IAppUserProgressRepository
     {
         _context = context;
         _mapper = mapper;
-    }
-
-    public void Add(AppUserProgress appUserProgress)
-    {
-        _context.AppUserProgresses.Add(appUserProgress);
     }
 
     public void Update(AppUserProgress userProgress)
@@ -275,5 +271,100 @@ public class AppUserProgressRepository : IAppUserProgressRepository
         return await _context.AppUserProgresses
             .Where(p => p.ChapterId == chapterId && p.AppUserId == userId)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<int>> GetUsersThatHaveFinishedVolume(Volume volume)
+    {
+        if (volume == null || volume.Id == 0) return [];
+        var numChapters = volume.Chapters.Count();
+        return await _context.AppUserProgresses
+            .Join(
+                _context.Chapter,
+                p => new { p.ChapterId, p.VolumeId },
+                c => new { ChapterId = c.Id, c.VolumeId },
+                (p, c) => new {
+                    p.Id,
+                    UserId = p.AppUserId,
+                    p.ChapterId,
+                    p.VolumeId,
+                    ChapterVolumeId = c.VolumeId,
+                    HasRead = p.PagesRead >= c.Pages, 
+                }
+            )
+            .Where(p =>
+                p.VolumeId == volume.Id
+            )
+            .GroupBy(p => p.UserId, (userId, ps) => new {
+                    UserId = userId,
+                    HasRead = ps.Count(p => p.HasRead) == numChapters
+            })
+            .Where((p) => p.HasRead)
+            .Select((p) => p.UserId)
+            .ToListAsync();
+    }
+
+
+    public async Task UsersUpdateVolumesCompleted(IEnumerable<(Volume, int)> updates) {
+        var usersToUpdateByVolume = updates.GroupBy(u => u.Item1).Select(g => new { Volume = g.Key, UserIds = g.Select(u => u.Item2)});
+
+        foreach(var update in usersToUpdateByVolume) {
+            // First we update every row where a chapter already exists
+            await _context.AppUserProgresses
+                .Where(p => p.VolumeId == update.Volume.Id && update.UserIds.Contains(p.AppUserId))
+                .Join(
+                    _context.Chapter,
+                    (u) => new { u.ChapterId, u.VolumeId },
+                    (c) => new { ChapterId = c.Id, c.VolumeId },
+                    (u, c) => new {
+                        AppUserProgresses = u,
+                        c.Pages,
+                        ChapterVolumeId = c.VolumeId
+                    }
+                ).Select(p => new {
+                    p.AppUserProgresses,
+                    p.Pages
+                }).ExecuteUpdateAsync(setters => setters.SetProperty(p => p.AppUserProgresses.PagesRead, p => p.Pages));
+
+            // For new chapters the chapters will be in the database, but there will be no AppUserProgress
+            var newChapters = await _context.Chapter
+                .Where(c => c.VolumeId == update.Volume.Id)
+                .GroupJoin(
+                    _context.AppUserProgresses,
+                    c => new { ChapterId = c.Id, c.VolumeId},
+                    u => new { u.ChapterId, u.VolumeId },
+                    (c, u) => new {
+                        Chapter = c,
+                        AppUserProgress = u
+                    }
+                )
+                .SelectMany(x => x.AppUserProgress.DefaultIfEmpty(), (c, u) => new {
+                    c.Chapter.Id,
+                    c.Chapter.Pages,
+                    NotExists = u == null
+                })
+                .Where(p => p.NotExists)
+                .Select(c => new { c.Id, c.Pages })
+                .ToListAsync();
+
+            var newUpdates = newChapters.SelectMany((chapter) => {
+                return update.UserIds.Select((userId) => {
+                    return new AppUserProgress {
+                        AppUserId = userId,
+                        PagesRead = chapter.Pages,
+                        ChapterId = chapter.Id,
+                        VolumeId = update.Volume.Id,
+                        SeriesId = update.Volume.SeriesId,
+                        LibraryId = update.Volume.Series.LibraryId,
+                        Created = DateTime.Now,
+                        CreatedUtc = DateTime.UtcNow,
+                        LastModified = DateTime.Now,
+                        LastModifiedUtc = DateTime.UtcNow
+                    };
+                });
+            });
+
+            await _context.AppUserProgresses.AddRangeAsync(newUpdates);
+        }
+
     }
 }

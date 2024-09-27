@@ -240,11 +240,7 @@ public class ProcessSeries : IProcessSeries
                 // Wait until after commit to update read progress, as chapter IDs
                 // may not be available.
                 if (progressUpdates.Count > 0) {
-                    progressUpdates.ForEach(update => {
-                        update.Item1.ChapterId = update.Item2.Id;
-                        _unitOfWork.AppUserProgressRepository.Add(update.Item1);
-                    });
-
+                    await _unitOfWork.AppUserProgressRepository.UsersUpdateVolumesCompleted(progressUpdates);
                     await _unitOfWork.CommitAsync();
                 }
 
@@ -658,8 +654,8 @@ public class ProcessSeries : IProcessSeries
     // in terms of chapters, so the read status should still show as completed.
     private async Task<IEnumerable<int>> GetCompletedProgressToPersist(Volume? volume, ParserInfo[] infos)
     {
-        if (volume == null) return [];
-
+        if (volume == null || volume.Id == 0) return [];
+        
         var wasSplitVolume = volume.IsSplitVolume();
         var isVolumeChapter = infos.Count() == 1 && infos[0].Volumes != Parser.Parser.LooseLeafVolume && infos[0].Chapters == Parser.Parser.DefaultChapter;
         var isSplitVolume = infos.Any() && infos.All(i => i.FileMetadata.HasPageRange());
@@ -674,24 +670,15 @@ public class ProcessSeries : IProcessSeries
             );
 
         if (hasBeenSplit || hasBeenRejoined || rangeHasChanged) {
-            IEnumerable<int>? completedUserIds = null;
-            foreach(var ch in volume.Chapters) {
-                var progresses = await _unitOfWork.AppUserProgressRepository.GetUserProgressForChapter(ch.Id);
-                if (completedUserIds == null) {
-                    completedUserIds = progresses.Where(up => up.PagesRead >= ch.Pages).Select(up => up.AppUserId);
-                } else {
-                    completedUserIds = completedUserIds.Intersect(progresses.Where(up => up.PagesRead >= ch.Pages).Select(up => up.AppUserId));
-                }
-            }
-            return completedUserIds == null ? [] : completedUserIds;
+            return await _unitOfWork.AppUserProgressRepository.GetUsersThatHaveFinishedVolume(volume);
         }
 
         return [];
     }
 
-    private async Task<IList<(AppUserProgress, Chapter)>> UpdateVolumes(Series series, IList<ParserInfo> parsedInfos, bool forceUpdate = false)
+    private async Task<IList<(Volume, int)>> UpdateVolumes(Series series, IList<ParserInfo> parsedInfos, bool forceUpdate = false)
     {
-        var readingProgressUpdates = new List<(AppUserProgress, Chapter)>();
+        var progressUpdates = new List<(Volume, int)>();
         // Add new volumes and update chapters per volume
         var distinctVolumes = parsedInfos.DistinctVolumes();
         
@@ -714,7 +701,9 @@ public class ProcessSeries : IProcessSeries
             }
 
             var infos = parsedInfos.Where(p => p.Volumes == volumeNumber).ToArray();
-            var completedProgress = await GetCompletedProgressToPersist(volume, infos);
+            if (volume != null) {
+                progressUpdates = (await GetCompletedProgressToPersist(volume, infos)).Select((x) => (volume, x)).ToList();
+            }
 
             if (volume == null)
             {
@@ -745,31 +734,6 @@ public class ProcessSeries : IProcessSeries
                 {
                     _logger.LogError(ex, "There was some issue when updating chapter's metadata");
                 }
-
-                try
-                {
-                    if(completedProgress != null) {
-                        readingProgressUpdates.AddRange(completedProgress.Select(userId => {
-                            _logger.LogInformation("Persisting Read Progress for User ID: {User}, Volume ID: {Volume}, Chapter: {Chapter}, Num Pages: {Pages}", userId, volume.Id, chapter.GetNumberTitle(), chapter.Pages);
-                            return (new AppUserProgress
-                            {
-                                AppUserId = userId,
-                                PagesRead = chapter.Pages,
-                                VolumeId = volume.Id,
-                                SeriesId = volume.SeriesId,
-                                LibraryId = series.LibraryId,
-                                Created = DateTime.Now,
-                                CreatedUtc = DateTime.UtcNow,
-                                LastModified = DateTime.Now,
-                                LastModifiedUtc = DateTime.UtcNow
-                            }, chapter);
-                        }));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "There was some issue when updating chapter's read status for users");
-                }
             }
         }
 
@@ -799,7 +763,7 @@ public class ProcessSeries : IProcessSeries
             series.Volumes = nonDeletedVolumes;
         }
 
-        return readingProgressUpdates;
+        return progressUpdates;
     }
 
     private void UpdateChapters(Series series, Volume volume, IList<ParserInfo> parsedInfos, bool forceUpdate = false)
