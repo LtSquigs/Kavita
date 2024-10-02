@@ -341,8 +341,13 @@ public class ArchiveService : IArchiveService
                 {
                     using var archive = ZipFile.OpenRead(archivePath.Path);
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.FullName);
-                    var entryName = FindCoverImageFilename(archivePath, entries.Select(e => e.FullName));
-                    var entry = entries.Single(e => e.FullName == entryName);
+                    ZipArchiveEntry entry;
+                    if (archivePath.CoverIndex != -1) {
+                        entry = entries.ToList()[archivePath.CoverIndex];
+                    } else {
+                        var entryName = FindCoverImageFilename(archivePath, entries.Select(e => e.FullName));
+                        entry = entries.Single(e => e.FullName == entryName);
+                    }
 
                     using var stream = entry.Open();
                     return _imageService.WriteCoverThumbnail(stream, fileName, outputDirectory, format, size);
@@ -351,10 +356,14 @@ public class ArchiveService : IArchiveService
                 {
                     using var archive = ArchiveFactory.Open(archivePath.Path);
                     var entries = GetEntries(archive.Entries, archivePath, (e) => e.Key ?? "");
-                    var entryNames = entries.Where(archiveEntry => !archiveEntry.IsDirectory).Select(e => e.Key).ToList();
-
-                    var entryName = FindCoverImageFilename(archivePath, entryNames);
-                    var entry = entries.Single(e => e.Key == entryName);
+                    IArchiveEntry entry;
+                    if (archivePath.CoverIndex != -1) {
+                        entry = entries.ToList()[archivePath.CoverIndex];
+                    } else {
+                        var entryNames = entries.Where(archiveEntry => !archiveEntry.IsDirectory).Select(e => e.Key).ToList();
+                        var entryName = FindCoverImageFilename(archivePath, entryNames);
+                        entry = entries.Single(e => e.Key == entryName);
+                    }
 
                     using var stream = entry.OpenEntryStream();
                     return _imageService.WriteCoverThumbnail(stream, fileName, outputDirectory, format, size);

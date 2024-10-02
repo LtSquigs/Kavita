@@ -171,11 +171,15 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
             var endSpan = idx == chapters.Count -1 ? pages.Count - 1 : chapters[idx + 1].Page - 1;
             var parserInfo = baseParserInfo.Clone();
      
+            Page? cover = null;
+
             if (parserInfo.ComicInfo != null) {
                 parserInfo.ComicInfo.PageCount = endSpan - startSpan + 1;
                 parserInfo.ComicInfo.TitleSort = Parser.ParseChapterTitle(bookmark.TitleStr, type);
                 parserInfo.ComicInfo.Title = Parser.ParseChapterTitle(bookmark.TitleStr, type);
                 parserInfo.ComicInfo.Number = bookmark.Chapter;
+                
+                cover = Array.Find(parserInfo.ComicInfo.Pages, p => p.Image >= startSpan && p.Image <= endSpan && (p.GetPageType() == PageType.InnerCover || p.GetPageType() == PageType.FrontCover));
             } else {
                 parserInfo.ComicInfo = new ComicInfo() {
                     PageCount = endSpan - startSpan + 1,
@@ -186,7 +190,7 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
             }
             var size = pages.GetRange(startSpan, endSpan - startSpan + 1).Sum(f => f.Size);
             parserInfo.Chapters = bookmark.Chapter;
-            parserInfo.FileMetadata = new FileMetadata(parserInfo.FileMetadata.Path, startSpan + "-" + endSpan, size);
+            parserInfo.FileMetadata = new FileMetadata(parserInfo.FileMetadata.Path, startSpan + "-" + endSpan, size, cover != null ? cover.Image - startSpan : -1);
 
             return parserInfo;
         }).ToArray();

@@ -16,9 +16,9 @@ namespace API.Data.Migrations
                 newName: "FileMetadata_Path");
 
             migrationBuilder.AddColumn<string>(
-                name: "FileMetadata_CoverFile",
+                name: "FileMetadata_CoverIndex",
                 table: "MangaFile",
-                type: "TEXT",
+                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.AddColumn<long>(
@@ -39,7 +39,7 @@ namespace API.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "FileMetadata_CoverFile",
+                name: "FileMetadata_CoverIndex",
                 table: "MangaFile");
 
             migrationBuilder.DropColumn(

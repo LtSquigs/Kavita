@@ -670,7 +670,9 @@ public class ProcessSeries : IProcessSeries
             );
 
         if (hasBeenSplit || hasBeenRejoined || rangeHasChanged) {
-            return await _unitOfWork.AppUserProgressRepository.GetUsersThatHaveFinishedVolume(volume);
+            var x = await _unitOfWork.AppUserProgressRepository.GetUsersThatHaveFinishedVolume(volume);
+            _logger.LogInformation("Attempting to persist Reading Progress for {Z} users on volume {X} - {Y}", x.Count(), volume.Series.Name, volume.GetNumberTitle());
+            return x;
         }
 
         return [];
@@ -702,7 +704,7 @@ public class ProcessSeries : IProcessSeries
 
             var infos = parsedInfos.Where(p => p.Volumes == volumeNumber).ToArray();
             if (volume != null) {
-                progressUpdates = (await GetCompletedProgressToPersist(volume, infos)).Select((x) => (volume, x)).ToList();
+                progressUpdates.AddRange((await GetCompletedProgressToPersist(volume, infos)).Select((x) => (volume, x)).ToList());
             }
 
             if (volume == null)
