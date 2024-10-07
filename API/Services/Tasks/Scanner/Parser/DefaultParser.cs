@@ -145,8 +145,8 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
         }
 
         if (info.ComicInfo.Pages.Length > 0) {
-            var coverIdx = Array.FindIndex(info.ComicInfo.Pages, (p) => p.GetPageType() == PageType.InnerCover || p.GetPageType() == PageType.FrontCover);
-            info.FileMetadata = new FileMetadata(info.FileMetadata.Path, info.FileMetadata.PageRange, info.FileMetadata.FileSize, coverIdx);
+            var cover = Array.Find(info.ComicInfo.Pages, (p) => p.GetPageType() == PageType.InnerCover || p.GetPageType() == PageType.FrontCover);
+            info.FileMetadata = new FileMetadata(info.FileMetadata.Path, info.FileMetadata.PageRange, info.FileMetadata.FileSize, cover != null ? cover.Image : -1);
         }
 
     }
