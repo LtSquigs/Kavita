@@ -340,7 +340,7 @@ public class ArchiveService : IArchiveService
                 case ArchiveLibrary.Default:
                 {
                     using var archive = ZipFile.OpenRead(archivePath.Path);
-                    var entries = GetEntries(archive.Entries, archivePath, (e) => e.FullName);
+                    var entries = GetEntries(archive.Entries, archivePath, (e) => e.FullName, archivePath.CoverIndex != -1);
                     ZipArchiveEntry entry;
                     if (archivePath.CoverIndex != -1) {
                         entry = entries.ToList()[archivePath.CoverIndex];
@@ -355,7 +355,7 @@ public class ArchiveService : IArchiveService
                 case ArchiveLibrary.SharpCompress:
                 {
                     using var archive = ArchiveFactory.Open(archivePath.Path);
-                    var entries = GetEntries(archive.Entries, archivePath, (e) => e.Key ?? "");
+                    var entries = GetEntries(archive.Entries, archivePath, (e) => e.Key ?? "", archivePath.CoverIndex != -1);
                     IArchiveEntry entry;
                     if (archivePath.CoverIndex != -1) {
                         entry = entries.ToList()[archivePath.CoverIndex];
