@@ -144,6 +144,11 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
             info.SeriesSort = info.ComicInfo.TitleSort.Trim();
         }
 
+        if (info.ComicInfo.Pages.Length > 0) {
+            var coverIdx = Array.FindIndex(info.ComicInfo.Pages, (p) => p.GetPageType() == PageType.InnerCover || p.GetPageType() == PageType.FrontCover);
+            info.FileMetadata = new FileMetadata(info.FileMetadata.Path, info.FileMetadata.PageRange, info.FileMetadata.FileSize, coverIdx);
+        }
+
     }
 
     public abstract bool IsApplicable(string filePath, LibraryType type);
