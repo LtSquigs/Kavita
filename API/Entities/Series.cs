@@ -54,6 +54,9 @@ public class Series : IEntityDate, IHasReadTimeEstimate, IHasCoverImage
     /// Denotes if the CoverImage has been overridden by the user. If so, it will not be updated during normal scan operations.
     /// </summary>
     public bool CoverImageLocked { get; set; }
+    public bool IsWideCover {
+        get { return CoverImage != null && CoverImage.Contains("_wide"); }
+    }
     /// <summary>
     /// Sum of all Volume page counts
     /// </summary>

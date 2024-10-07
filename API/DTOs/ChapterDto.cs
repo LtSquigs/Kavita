@@ -190,6 +190,9 @@ public class ChapterDto : IHasReadTimeEstimate, IHasCoverImage
     public string CoverImage { get; set; }
     public string PrimaryColor { get; set; }
     public string SecondaryColor { get; set; }
+    public bool IsWideCover {
+        get { return CoverImage != null && CoverImage.Contains("_wide"); }
+    }
 
     public void ResetColorScape()
     {

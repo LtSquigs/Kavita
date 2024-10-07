@@ -49,6 +49,9 @@ public class Chapter : IEntityDate, IHasReadTimeEstimate, IHasCoverImage
     public string PrimaryColor { get; set; }
     public string SecondaryColor { get; set; }
     public bool CoverImageLocked { get; set; }
+    public bool IsWideCover {
+        get { return CoverImage != null && CoverImage.Contains("_wide"); }
+    }
     /// <summary>
     /// Total number of pages in all MangaFiles
     /// </summary>

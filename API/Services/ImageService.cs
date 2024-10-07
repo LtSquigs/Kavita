@@ -217,11 +217,12 @@ public class ImageService : IImageService
         {
             var (width, height) = size.GetDimensions();
             using var sourceImage = Image.NewFromFile(path, false, Enums.Access.SequentialUnbuffered);
+            var likeyWide = IsLikelyWideImage(sourceImage.Width, sourceImage.Height);
 
-            using var thumbnail = Image.Thumbnail(path, width, height: height,
+            using var thumbnail = Image.Thumbnail(path, width * (likeyWide ? 2 : 1), height: height,
                 size: GetSizeForDimensions(sourceImage, width, height),
                 crop: GetCropForDimensions(sourceImage, width, height));
-            var filename = fileName + encodeFormat.GetExtension();
+            var filename = fileName + (likeyWide ? "_wide": "") + encodeFormat.GetExtension();
             thumbnail.WriteToFile(_directoryService.FileSystem.Path.Join(outputDirectory, filename));
             return filename;
         }
@@ -250,12 +251,13 @@ public class ImageService : IImageService
 
         var scalingSize = GetSizeForDimensions(sourceImage, targetWidth, targetHeight);
         var scalingCrop = GetCropForDimensions(sourceImage, targetWidth, targetHeight);
+        var likeyWide = IsLikelyWideImage(sourceImage.Width, sourceImage.Height);
 
-        using var thumbnail = sourceImage.ThumbnailImage(targetWidth, targetHeight,
+        using var thumbnail = sourceImage.ThumbnailImage(targetWidth * (likeyWide ? 2 : 1), targetHeight,
             size: scalingSize,
             crop: scalingCrop);
 
-        var filename = fileName + encodeFormat.GetExtension();
+        var filename = fileName + (likeyWide ? "_wide": "") + encodeFormat.GetExtension();
         _directoryService.ExistOrCreate(outputDirectory);
 
         try
@@ -288,11 +290,13 @@ public class ImageService : IImageService
     {
         var (width, height) = size.GetDimensions();
         using var sourceImage = Image.NewFromFile(sourceFile, false, Enums.Access.SequentialUnbuffered);
+        var likeyWide = IsLikelyWideImage(sourceImage.Width, sourceImage.Height);
 
-        using var thumbnail = Image.Thumbnail(sourceFile, width, height: height,
+        using var thumbnail = Image.Thumbnail(sourceFile, width * (likeyWide ? 2 : 1), height: height,
             size: GetSizeForDimensions(sourceImage, width, height),
             crop: GetCropForDimensions(sourceImage, width, height));
-        var filename = fileName + encodeFormat.GetExtension();
+
+        var filename = fileName + (likeyWide ? "_wide": "") +  encodeFormat.GetExtension();
         _directoryService.ExistOrCreate(outputDirectory);
         try
         {
@@ -803,8 +807,11 @@ public class ImageService : IImageService
     {
         try
         {
-            using var thumbnail = Image.ThumbnailBuffer(Convert.FromBase64String(encodedImage), thumbnailWidth);
-            fileName += encodeFormat.GetExtension();
+            var buffer = Convert.FromBase64String(encodedImage);
+            using var sourceImage = Image.NewFromBuffer(buffer, "", Enums.Access.SequentialUnbuffered);
+            var likeyWide = IsLikelyWideImage(sourceImage.Width, sourceImage.Height);
+            using var thumbnail = Image.ThumbnailBuffer(buffer, thumbnailWidth);
+            fileName += (likeyWide ? "_wide" : "") + encodeFormat.GetExtension();
             thumbnail.WriteToFile(_directoryService.FileSystem.Path.Join(_directoryService.CoverImageDirectory, fileName));
             return fileName;
         }

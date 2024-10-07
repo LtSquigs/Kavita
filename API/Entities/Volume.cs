@@ -42,6 +42,9 @@ public class Volume : IEntityDate, IHasReadTimeEstimate, IHasCoverImage
     public bool CoverImageLocked { get; set; }
     public string PrimaryColor { get; set; }
     public string SecondaryColor { get; set; }
+    public bool IsWideCover {
+        get { return CoverImage != null && CoverImage.Contains("_wide"); }
+    }
 
     /// <summary>
     /// Total pages of all chapters in this volume

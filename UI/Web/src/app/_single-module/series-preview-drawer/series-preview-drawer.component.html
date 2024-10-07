@@ -10,7 +10,7 @@
     @if (CoverUrl; as coverUrl) {
       <div style="width: 160px" class="mx-auto mb-3">
         @if (coverUrl) {
-          <app-image height="232.91px" width="160px" [styles]="{'object-fit': 'contain', 'max-height': '232.91px'}" [imageUrl]="coverUrl"></app-image>
+          <app-image height="232.91px" [styles]="{'object-fit': 'contain', 'max-height': '232.91px'}" [imageUrl]="coverUrl"></app-image>
         }
       </div>
     }

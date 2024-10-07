@@ -21,6 +21,9 @@ public class ReadingListDto : IHasCoverImage
 
     public string PrimaryColor { get; set; } = string.Empty;
     public string SecondaryColor { get; set; } = string.Empty;
+    public bool IsWideCover {
+        get { return CoverImage != null && CoverImage.Contains("_wide"); }
+    }
 
     /// <summary>
     /// Minimum Year the Reading List starts

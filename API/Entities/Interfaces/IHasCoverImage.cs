@@ -19,6 +19,8 @@ public interface IHasCoverImage
     /// </summary>
     public string? SecondaryColor { get; set; }
 
+    public bool IsWideCover { get; }
+
     /// <summary>
     /// Nulls out the ColorScape properties
     /// </summary>

@@ -68,6 +68,9 @@ public class VolumeDto : IHasReadTimeEstimate, IHasCoverImage
     private bool CoverImageLocked { get; set; }
     public string PrimaryColor { get; set; }
     public string SecondaryColor { get; set; }
+    public bool IsWideCover {
+        get { return CoverImage != null && CoverImage.Contains("_wide"); }
+    }
 
     public void ResetColorScape()
     {

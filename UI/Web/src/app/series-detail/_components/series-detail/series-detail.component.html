@@ -374,7 +374,7 @@
 </ng-container>
 
 <ng-template #nonSpecialChapterCard let-item let-scroll="scroll" let-idx="idx" let-totalLength="totalLength">
-  <app-chapter-card class="col-auto mt-2 mb-2" [chapter]="item" [seriesId]="series.id"
+  <app-chapter-card class="card-col col-auto mt-2 mb-2" [chapter]="item" [seriesId]="series.id"
                     [libraryId]="libraryId"
                     [actions]="chapterActions"
                     [libraryType]="libraryType"
@@ -384,7 +384,7 @@
 </ng-template>
 
 <ng-template #nonChapterVolumeCard let-item let-scroll="scroll" let-idx="idx" let-totalLength="totalLength">
-  <app-volume-card class="col-auto mt-2 mb-2" [volume]="item" [seriesId]="seriesId" [libraryId]="libraryId" [libraryType]="libraryType"
+  <app-volume-card class="card-col col-auto mt-2 mb-2" [volume]="item" [seriesId]="seriesId" [libraryId]="libraryId" [libraryType]="libraryType"
                    [actions]="volumeActions"
                    (selection)="bulkSelectionService.handleCardSelection('volume', scroll.viewPortInfo.startIndexWithBuffer + idx, totalLength, $event)"
                    [selected]="bulkSelectionService.isCardSelected('volume', scroll.viewPortInfo.startIndexWithBuffer + idx)" [allowSelection]="true">
@@ -392,7 +392,7 @@
 </ng-template>
 
 <ng-template #specialChapterCard let-item let-scroll="scroll" let-idx="idx" let-totalLength="totalLength">
-  <app-chapter-card class="col-auto mt-2 mb-2" [chapter]="item" [seriesId]="series.id"
+  <app-chapter-card class="card-col col-auto mt-2 mb-2" [chapter]="item" [seriesId]="series.id"
                     [libraryId]="libraryId"
                     [actions]="chapterActions"
                     [libraryType]="libraryType"

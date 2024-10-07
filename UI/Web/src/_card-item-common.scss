@@ -1,8 +1,7 @@
 $image-height: 232.91px;
-$image-width: 160px;
 
 .error-banner {
-  width: $image-width;
+  width: 100%;
   height: 18px;
   background-color: var(--toast-error-bg-color);
   font-size: 12px;
@@ -20,7 +19,7 @@ $image-width: 160px;
 }
 
 .progress-banner {
-  width: $image-width;
+  width: 100%;
   height: 5px;
 
   .progress {
@@ -46,7 +45,7 @@ $image-width: 160px;
   pointer-events: none;
   position: absolute;
   top: 0;
-  width: 160px;
+  width: 100%;
 }
 
 .not-read-badge {
@@ -68,7 +67,7 @@ $image-width: 160px;
 
   &.always-show {
     visibility: visible !important;
-    width: $image-width;
+    width: 100%;
     height: $image-height;
   }
 
