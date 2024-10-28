@@ -10,10 +10,9 @@ namespace API.Services;
 
 public interface IReadingItemService
 {
-    ComicInfo? GetComicInfo(FileMetadata fileMetadata);
     int GetNumberOfPages(FileMetadata fileMetadata, MangaFormat format);
     string GetCoverImage(FileMetadata fileMetadata, string fileName, MangaFormat format, EncodeFormat encodeFormat, CoverImageSize size = CoverImageSize.Default);
-    void Extract(FileMetadata fileFileMetadata, string targetDirectory, MangaFormat format, int imageCount = 1);
+    void Extract(FileMetadata fileMetadata, string targetDirectory, MangaFormat format, int imageCount = 1);
     ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters);
 }
 
@@ -52,7 +51,7 @@ public class ReadingItemService : IReadingItemService
     /// </summary>
     /// <param name="fileMetadata">Fully qualified metadata of file</param>
     /// <returns></returns>
-    public ComicInfo? GetComicInfo(FileMetadata fileMetadata)
+    private ComicInfo? GetComicInfo(FileMetadata fileMetadata)
     {
         if (Parser.IsEpub(fileMetadata.Path))
         {

@@ -142,13 +142,31 @@ public class BasicParserTests
     [Fact]
     public void Parse_MangaLibrary_SpecialInFilename()
     {
-        var actual = _parser.Parse("C:/Books/Summer Time Rendering/Specials/Volume Omake.cbr",
+        var actual = _parser.Parse("C:/Books/Summer Time Rendering/Volume SP01.cbr",
             "C:/Books/Summer Time Rendering/",
             RootDirectory, LibraryType.Manga, null);
         Assert.NotEmpty(actual);
 
         Assert.Equal("Summer Time Rendering", actual[0].Series);
-        Assert.Equal("Volume Omake", actual[0].Title);
+        Assert.Equal("Volume SP01", actual[0].Title);
+        Assert.Equal(Parser.SpecialVolume, actual[0].Volumes);
+        Assert.Equal(Parser.DefaultChapter, actual[0].Chapters);
+        Assert.True(actual[0].IsSpecial);
+    }
+
+    /// <summary>
+    /// Tests that when the filename parses as a speical, it appropriately parses
+    /// </summary>
+    [Fact]
+    public void Parse_MangaLibrary_SpecialInFilename2()
+    {
+        var actual = _parser.Parse("M:/Kimi wa Midara na Boku no Joou/Specials/[Renzokusei] Special 1 SP02.zip",
+            "M:/Kimi wa Midara na Boku no Joou/",
+            RootDirectory, LibraryType.Manga, null);
+        Assert.NotNull(actual);
+
+        Assert.Equal("Kimi wa Midara na Boku no Joou", actual[0].Series);
+        Assert.Equal("[Renzokusei] Special 1 SP02", actual[0].Title);
         Assert.Equal(Parser.SpecialVolume, actual[0].Volumes);
         Assert.Equal(Parser.DefaultChapter, actual[0].Chapters);
         Assert.True(actual[0].IsSpecial);

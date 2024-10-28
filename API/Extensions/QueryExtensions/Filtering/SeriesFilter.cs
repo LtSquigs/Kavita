@@ -257,9 +257,9 @@ public static class SeriesFilter
             .Select(s => new
             {
                 Series = s,
-                Percentage = ((float) s.Progress
+                Percentage = s.Progress
                     .Where(p => p != null && p.AppUserId == userId)
-                    .Sum(p => p != null ? (p.PagesRead * 1.0f / s.Pages) : 0) * 100)
+                    .Sum(p => p != null ? (p.PagesRead * 1.0f / s.Pages) : 0) * 100
             })
             .AsSplitQuery()
             .AsEnumerable();
@@ -361,6 +361,72 @@ public static class SeriesFilter
         return queryable.Where(s => ids.Contains(s.Id));
     }
 
+    /// <summary>
+    /// HasReadingDate but used to filter where last reading point was TODAY() - timeDeltaDays. This allows the user
+    /// to build smart filters "Haven't read in a month"
+    /// </summary>
+    public static IQueryable<Series> HasReadLast(this IQueryable<Series> queryable, bool condition,
+        FilterComparison comparison, int timeDeltaDays, int userId)
+    {
+        if (!condition || timeDeltaDays == 0) return queryable;
+
+        var subQuery = queryable
+            .Include(s => s.Progress)
+            .Where(s => s.Progress != null)
+            .Select(s => new
+            {
+                Series = s,
+                MaxDate = s.Progress.Where(p => p != null && p.AppUserId == userId)
+                    .Select(p => (DateTime?) p.LastModified)
+                    .DefaultIfEmpty()
+                    .Max()
+            })
+            .Where(s => s.MaxDate != null)
+            .AsSplitQuery()
+            .AsEnumerable();
+
+        var date = DateTime.Now.AddDays(-timeDeltaDays);
+
+        switch (comparison)
+        {
+            case FilterComparison.Equal:
+                subQuery = subQuery.Where(s => s.MaxDate != null && s.MaxDate.Equals(date));
+                break;
+            case FilterComparison.IsAfter:
+            case FilterComparison.GreaterThan:
+                subQuery = subQuery.Where(s => s.MaxDate != null && s.MaxDate > date);
+                break;
+            case FilterComparison.GreaterThanEqual:
+                subQuery = subQuery.Where(s => s.MaxDate != null && s.MaxDate >= date);
+                break;
+            case FilterComparison.IsBefore:
+            case FilterComparison.LessThan:
+                subQuery = subQuery.Where(s => s.MaxDate != null && s.MaxDate < date);
+                break;
+            case FilterComparison.LessThanEqual:
+                subQuery = subQuery.Where(s => s.MaxDate != null && s.MaxDate <= date);
+                break;
+            case FilterComparison.NotEqual:
+                subQuery = subQuery.Where(s => s.MaxDate != null && !s.MaxDate.Equals(date));
+                break;
+            case FilterComparison.Matches:
+            case FilterComparison.Contains:
+            case FilterComparison.NotContains:
+            case FilterComparison.BeginsWith:
+            case FilterComparison.EndsWith:
+            case FilterComparison.IsInLast:
+            case FilterComparison.IsNotInLast:
+            case FilterComparison.MustContains:
+            case FilterComparison.IsEmpty:
+                throw new KavitaException($"{comparison} not applicable for Series.ReadProgress");
+            default:
+                throw new ArgumentOutOfRangeException(nameof(comparison), comparison, null);
+        }
+
+        var ids = subQuery.Select(s => s.Series.Id).ToList();
+        return queryable.Where(s => ids.Contains(s.Id));
+    }
+
     public static IQueryable<Series> HasReadingDate(this IQueryable<Series> queryable, bool condition,
         FilterComparison comparison, DateTime? date, int userId)
     {
@@ -424,7 +490,7 @@ public static class SeriesFilter
     public static IQueryable<Series> HasTags(this IQueryable<Series> queryable, bool condition,
         FilterComparison comparison, IList<int> tags)
     {
-        if (!condition || tags.Count == 0) return queryable;
+        if (!condition || (comparison != FilterComparison.IsEmpty && tags.Count == 0)) return queryable;
 
         switch (comparison)
         {
@@ -471,22 +537,22 @@ public static class SeriesFilter
         {
             case FilterComparison.Equal:
             case FilterComparison.Contains:
-                return queryable.Where(s => s.Metadata.People.Any(p => people.Contains(p.Id)));
+                return queryable.Where(s => s.Metadata.People.Any(p => people.Contains(p.PersonId)));
             case FilterComparison.NotEqual:
             case FilterComparison.NotContains:
-                return queryable.Where(s => s.Metadata.People.All(t => !people.Contains(t.Id)));
+                return queryable.Where(s => s.Metadata.People.All(t => !people.Contains(t.PersonId)));
             case FilterComparison.MustContains:
                 // Deconstruct and do a Union of a bunch of where statements since this doesn't translate
                 var queries = new List<IQueryable<Series>>()
                 {
                     queryable
                 };
-                queries.AddRange(people.Select(gId => queryable.Where(s => s.Metadata.People.Any(p => p.Id == gId))));
+                queries.AddRange(people.Select(gId => queryable.Where(s => s.Metadata.People.Any(p => p.PersonId == gId))));
 
                 return queries.Aggregate((q1, q2) => q1.Intersect(q2));
             case FilterComparison.IsEmpty:
                 // Check if there are no people with specific roles (e.g., Writer, Penciller, etc.)
-                return queryable.Where(s => !s.Metadata.People.Any(p => p.Role == role));
+                return queryable.Where(s => s.Metadata.People.All(p => p.Role != role));
             case FilterComparison.GreaterThan:
             case FilterComparison.GreaterThanEqual:
             case FilterComparison.LessThan:
@@ -513,17 +579,17 @@ public static class SeriesFilter
         {
             case FilterComparison.Equal:
             case FilterComparison.Contains:
-                return queryable.Where(s => s.Metadata.People.Any(p => people.Contains(p.Id)));
+                return queryable.Where(s => s.Metadata.People.Any(p => people.Contains(p.PersonId)));
             case FilterComparison.NotEqual:
             case FilterComparison.NotContains:
-                return queryable.Where(s => s.Metadata.People.All(t => !people.Contains(t.Id)));
+                return queryable.Where(s => s.Metadata.People.All(t => !people.Contains(t.PersonId)));
             case FilterComparison.MustContains:
                 // Deconstruct and do a Union of a bunch of where statements since this doesn't translate
                 var queries = new List<IQueryable<Series>>()
                 {
                     queryable
                 };
-                queries.AddRange(people.Select(gId => queryable.Where(s => s.Metadata.People.Any(p => p.Id == gId))));
+                queries.AddRange(people.Select(gId => queryable.Where(s => s.Metadata.People.Any(p => p.PersonId == gId))));
 
                 return queries.Aggregate((q1, q2) => q1.Intersect(q2));
             case FilterComparison.IsEmpty:
@@ -547,7 +613,7 @@ public static class SeriesFilter
     public static IQueryable<Series> HasGenre(this IQueryable<Series> queryable, bool condition,
         FilterComparison comparison, IList<int> genres)
     {
-        if (!condition || genres.Count == 0) return queryable;
+        if (!condition || (comparison != FilterComparison.IsEmpty && genres.Count == 0)) return queryable;
 
         switch (comparison)
         {
@@ -620,7 +686,7 @@ public static class SeriesFilter
     public static IQueryable<Series> HasCollectionTags(this IQueryable<Series> queryable, bool condition,
         FilterComparison comparison, IList<int> collectionTags, IList<int> collectionSeries)
     {
-        if (!condition || collectionTags.Count == 0) return queryable;
+        if (!condition || (comparison != FilterComparison.IsEmpty && collectionTags.Count == 0)) return queryable;
 
 
         switch (comparison)
