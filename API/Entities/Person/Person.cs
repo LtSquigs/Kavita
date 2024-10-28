@@ -51,6 +51,9 @@ public class Person : IHasCoverImage
     public ICollection<ChapterPeople> ChapterPeople { get; set; } = new List<ChapterPeople>();
     public ICollection<SeriesMetadataPeople> SeriesMetadataPeople { get; set; } = new List<SeriesMetadataPeople>();
 
+    public bool IsWideCover {
+        get { return CoverImage != null && CoverImage.Contains("_wide"); }
+    }
 
     public void ResetColorScape()
     {
