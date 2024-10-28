@@ -27,10 +27,14 @@ public class AppUserCollectionDto : IHasCoverImage
     }
 
     /// <summary>
+    /// Number of Series in the Collection
+    /// </summary>
+    public int ItemCount { get; set; }
+
+    /// <summary>
     /// Owner of the Collection
     /// </summary>
     public string? Owner { get; set; }
-
     /// <summary>
     /// Last time Kavita Synced the Collection with an upstream source (for non Kavita sourced collections)
     /// </summary>

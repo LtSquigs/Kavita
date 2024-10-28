@@ -124,7 +124,6 @@ $image-height: 232.91px;
 
       .overlay-information--centered {
         position: absolute;
-        border-radius: 15px;
         background-color: rgba(0, 0, 0, 0.7);
         border-radius: 50px;
         top: 50%;
@@ -168,7 +167,7 @@ $image-height: 232.91px;
       margin: 0;
       text-align: center;
       max-width: 98px;
-    
+
       a {
         overflow: hidden;
         text-overflow: ellipsis;

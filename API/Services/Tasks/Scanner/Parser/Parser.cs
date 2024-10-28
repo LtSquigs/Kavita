@@ -738,8 +738,9 @@ public static class Parser
     /// </summary>
     /// <param name="filePath"></param>
     /// <returns></returns>
-    public static bool HasSpecialMarker(string filePath)
+    public static bool HasSpecialMarker(string? filePath)
     {
+        if (string.IsNullOrEmpty(filePath)) return false;
         return SpecialMarkerRegex.IsMatch(filePath);
     }
 
@@ -752,30 +753,19 @@ public static class Parser
 
     public static bool IsSpecial(string? filePath, LibraryType type)
     {
-        return type switch
-        {
-            LibraryType.Manga => IsMangaSpecial(filePath),
-            LibraryType.Comic => IsComicSpecial(filePath),
-            LibraryType.Book => IsMangaSpecial(filePath),
-            LibraryType.Image => IsMangaSpecial(filePath),
-            LibraryType.LightNovel => IsMangaSpecial(filePath),
-            LibraryType.ComicVine => IsComicSpecial(filePath),
-            _ => false
-        };
+        return HasSpecialMarker(filePath);
     }
 
     private static bool IsMangaSpecial(string? filePath)
     {
         if (string.IsNullOrEmpty(filePath)) return false;
-        filePath = ReplaceUnderscores(filePath);
-        return MangaSpecialRegex.IsMatch(filePath);
+        return HasSpecialMarker(filePath);
     }
 
     private static bool IsComicSpecial(string? filePath)
     {
         if (string.IsNullOrEmpty(filePath)) return false;
-        filePath = ReplaceUnderscores(filePath);
-        return ComicSpecialRegex.IsMatch(filePath);
+        return HasSpecialMarker(filePath);
     }
 
 
