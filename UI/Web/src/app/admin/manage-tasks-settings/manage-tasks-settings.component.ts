@@ -3,15 +3,15 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {ToastrService} from 'ngx-toastr';
 import {SettingsService} from '../settings.service';
 import {ServerSettings} from '../_models/server-settings';
-import {shareReplay, take} from 'rxjs/operators';
+import {shareReplay} from 'rxjs/operators';
 import {debounceTime, defer, distinctUntilChanged, filter, forkJoin, Observable, of, switchMap, tap} from 'rxjs';
 import {ServerService} from 'src/app/_services/server.service';
 import {Job} from 'src/app/_models/job/job';
 import {UpdateNotificationModalComponent} from 'src/app/shared/update-notification/update-notification-modal.component';
-import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {DownloadService} from 'src/app/shared/_services/download.service';
 import {DefaultValuePipe} from '../../_pipes/default-value.pipe';
-import {AsyncPipe, DatePipe, NgFor, NgIf, NgTemplateOutlet, TitleCasePipe} from '@angular/common';
+import {AsyncPipe, TitleCasePipe} from '@angular/common';
 import {translate, TranslocoModule} from "@jsverse/transloco";
 import {TranslocoLocaleModule} from "@jsverse/transloco-locale";
 import {UtcToLocalTimePipe} from "../../_pipes/utc-to-local-time.pipe";
@@ -20,6 +20,8 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {SettingItemComponent} from "../../settings/_components/setting-item/setting-item.component";
 import {ConfirmService} from "../../shared/confirm.service";
 import {SettingButtonComponent} from "../../settings/_components/setting-button/setting-button.component";
+import {DefaultModalOptions} from "../../_models/default-modal-options";
+import {ColumnMode, NgxDatatableModule} from "@siemens/ngx-datatable";
 
 interface AdhocTask {
   name: string;
@@ -35,14 +37,13 @@ interface AdhocTask {
   styleUrls: ['./manage-tasks-settings.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgIf, ReactiveFormsModule, NgbTooltip, NgFor, AsyncPipe, TitleCasePipe, DatePipe, DefaultValuePipe,
-    TranslocoModule, NgTemplateOutlet, TranslocoLocaleModule, UtcToLocalTimePipe, SettingItemComponent, SettingButtonComponent]
+    imports: [ReactiveFormsModule, AsyncPipe, TitleCasePipe, DefaultValuePipe,
+        TranslocoModule, TranslocoLocaleModule, UtcToLocalTimePipe, SettingItemComponent, SettingButtonComponent, NgxDatatableModule]
 })
 export class ManageTasksSettingsComponent implements OnInit {
 
   private readonly cdRef = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly confirmService = inject(ConfirmService);
   private readonly settingsService = inject(SettingsService);
   private readonly toastr = inject(ToastrService);
   private readonly serverService = inject(ServerService);
@@ -128,7 +129,7 @@ export class ManageTasksSettingsComponent implements OnInit {
           this.toastr.info(translate('toasts.no-updates'));
           return;
         }
-        const modalRef = this.modalService.open(UpdateNotificationModalComponent, { scrollable: true, size: 'lg' });
+        const modalRef = this.modalService.open(UpdateNotificationModalComponent, DefaultModalOptions);
         modalRef.componentInstance.updateData = update;
       }
     },
@@ -165,19 +166,25 @@ export class ManageTasksSettingsComponent implements OnInit {
       this.validateCronExpression('taskBackupCustom');
       this.validateCronExpression('taskCleanupCustom');
 
+      // Setup individual pipelines to save the changes automatically
+
+
       // Automatically save settings as we edit them
       this.settingsForm.valueChanges.pipe(
         distinctUntilChanged(),
-        debounceTime(100),
-        filter(_ => this.settingsForm.valid),
+        debounceTime(500),
+        filter(_ => this.isFormValid()),
         takeUntilDestroyed(this.destroyRef),
+        // switchMap(_ => {
+        //   // There can be a timing issue between isValidCron API and the form being valid. I currently solved by upping the debounceTime
+        // }),
         switchMap(_ => {
           const data = this.packData();
           return this.settingsService.updateServerSettings(data);
         }),
         tap(settings => {
           this.serverSettings = settings;
-          this.resetForm();
+
           this.recurringTasks$ = this.serverService.getRecurringJobs().pipe(shareReplay());
           this.cdRef.markForCheck();
         })
@@ -202,6 +209,8 @@ export class ManageTasksSettingsComponent implements OnInit {
     }
   }
 
+
+
   // Validate the custom fields for cron expressions
   validateCronExpression(controlName: string) {
     this.settingsForm.get(controlName)?.valueChanges.pipe(
@@ -213,10 +222,41 @@ export class ManageTasksSettingsComponent implements OnInit {
         } else {
           this.settingsForm.get(controlName)?.setErrors({ invalidCron: true });
         }
+
+        this.settingsForm.updateValueAndValidity(); // Ensure form validity reflects changes
         this.cdRef.markForCheck();
       }),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe();
+  }
+
+  isFormValid(): boolean {
+    // Check if the main form is valid
+    if (!this.settingsForm.valid) {
+      return false;
+    }
+
+    // List of pairs for main control and corresponding custom control
+    const customChecks: { mainControl: string; customControl: string }[] = [
+      { mainControl: 'taskScan', customControl: 'taskScanCustom' },
+      { mainControl: 'taskBackup', customControl: 'taskBackupCustom' },
+      { mainControl: 'taskCleanup', customControl: 'taskCleanupCustom' }
+    ];
+
+    for (const check of customChecks) {
+      const mainControlValue = this.settingsForm.get(check.mainControl)?.value;
+      const customControl = this.settingsForm.get(check.customControl);
+
+      // Only validate the custom control if the main control is set to the custom option
+      if (mainControlValue === this.customOption) {
+        // Ensure custom control has a value and passes validation
+        if (customControl?.invalid || !customControl?.value) {
+          return false; // Form is invalid if custom option is selected but custom control is invalid or empty
+        }
+      }
+    }
+
+    return true; // Return true only if both main form and any necessary custom fields are valid
   }
 
 
@@ -265,21 +305,10 @@ export class ManageTasksSettingsComponent implements OnInit {
       modelSettings.taskCleanup = this.settingsForm.get('taskCleanupCustom')?.value;
     }
 
+    console.log('modelSettings: ', modelSettings);
     return modelSettings;
   }
 
-
-  async resetToDefaults() {
-    if (!await this.confirmService.confirm(translate('toasts.confirm-reset-server-settings'))) return;
-
-    this.settingsService.resetServerSettings().pipe(take(1)).subscribe(async (settings: ServerSettings) => {
-      this.serverSettings = settings;
-      this.resetForm();
-      this.toastr.success(translate('toasts.server-settings-updated'));
-    }, (err: any) => {
-      console.error('error: ', err);
-    });
-  }
 
   runAdhoc(task: AdhocTask) {
     task.api.subscribe((data: any) => {
@@ -290,10 +319,9 @@ export class ManageTasksSettingsComponent implements OnInit {
       if (task.successFunction) {
         task.successFunction(data);
       }
-    }, (err: any) => {
-      console.error('error: ', err);
     });
   }
 
 
+    protected readonly ColumnMode = ColumnMode;
 }

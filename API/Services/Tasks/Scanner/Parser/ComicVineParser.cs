@@ -65,7 +65,7 @@ public class ComicVineParser(IDirectoryService directoryService) : DefaultParser
                 // When there was at least one directory and we failed to parse the series, this is the final fallback
                 if (string.IsNullOrEmpty(info.Series))
                 {
-                    info.Series = Parser.CleanTitle(directories[0], true, true);
+                    info.Series = Parser.CleanTitle(directories[0], true);
                 }
             }
             else
@@ -86,7 +86,7 @@ public class ComicVineParser(IDirectoryService directoryService) : DefaultParser
 
         if (string.IsNullOrEmpty(info.Series))
         {
-            info.Series = Parser.CleanTitle(directoryName, true, false);
+            info.Series = Parser.CleanTitle(directoryName, true);
         }
 
 

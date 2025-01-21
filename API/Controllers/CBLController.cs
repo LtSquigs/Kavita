@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using API.Constants;
 using API.DTOs.ReadingLists.CBL;
 using API.Extensions;
 using API.Services;
@@ -20,11 +21,13 @@ public class CblController : BaseApiController
 {
     private readonly IReadingListService _readingListService;
     private readonly IDirectoryService _directoryService;
+    private readonly ILocalizationService _localizationService;
 
-    public CblController(IReadingListService readingListService, IDirectoryService directoryService)
+    public CblController(IReadingListService readingListService, IDirectoryService directoryService, ILocalizationService localizationService)
     {
         _readingListService = readingListService;
         _directoryService = directoryService;
+        _localizationService = localizationService;
     }
 
     /// <summary>
@@ -44,6 +47,7 @@ public class CblController : BaseApiController
             var cblReadingList = await SaveAndLoadCblFile(cbl);
             var importSummary = await _readingListService.ValidateCblFile(userId, cblReadingList, useComicVineMatching);
             importSummary.FileName = cbl.FileName;
+
             return Ok(importSummary);
         }
         catch (ArgumentNullException)
@@ -90,6 +94,8 @@ public class CblController : BaseApiController
     [SwaggerIgnore]
     public async Task<ActionResult<CblImportSummaryDto>> ImportCbl(IFormFile cbl, [FromQuery] bool dryRun = false, [FromQuery] bool useComicVineMatching = false)
     {
+        if (User.IsInRole(PolicyConstants.ReadOnlyRole)) return BadRequest(await _localizationService.Translate(User.GetUserId(), "permission-denied"));
+
         try
         {
             var userId = User.GetUserId();

@@ -1,5 +1,11 @@
 <ng-container *transloco="let t; read: 'manage-email-settings'">
+
+  <div class="position-relative">
+    <button type="button" class="btn btn-primary-outline position-absolute custom-position" (click)="test()">{{t('test')}}</button>
+  </div>
+
   <p>{{t('description')}}</p>
+
 
   <form [formGroup]="settingsForm">
     <p class="alert alert-warning">{{t('setting-description')}} {{t('test-warning')}}</p>
@@ -86,7 +92,7 @@
       @if(settingsForm.get('enableSsl'); as formControl) {
         <app-setting-switch [title]="t('enable-ssl-label')">
           <ng-template #switch>
-            <div class="form-check form-switch">
+            <div class="form-check form-switch float-end">
               <input id="setting-enable-ssl" type="checkbox" class="form-check-input" formControlName="enableSsl">
             </div>
           </ng-template>
@@ -137,17 +143,12 @@
       @if(settingsForm.get('customizedTemplates'); as formControl) {
         <app-setting-switch [title]="t('customized-templates-label')" [subtitle]="t('customized-templates-tooltip')">
           <ng-template #switch>
-            <div class="form-check form-switch">
+            <div class="form-check form-switch float-end">
               <input id="settings-customized-templates" type="checkbox" class="form-check-input" formControlName="customizedTemplates">
             </div>
           </ng-template>
         </app-setting-switch>
       }
-    </div>
-
-    <div class="col-auto d-flex d-md-block justify-content-sm-center text-md-end mt-4">
-      <button type="button" class="flex-fill btn btn-secondary me-2" (click)="test()">{{t('test')}}</button>
-      <button type="button" class="flex-fill btn btn-secondary me-2" (click)="resetToDefaults()">{{t('reset-to-default')}}</button>
     </div>
   </form>
 

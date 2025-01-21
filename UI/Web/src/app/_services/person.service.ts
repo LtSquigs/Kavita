@@ -10,6 +10,7 @@ import {UtilityService} from "../shared/_services/utility.service";
 import {BrowsePerson} from "../_models/person/browse-person";
 import {Chapter} from "../_models/chapter";
 import {StandaloneChapter} from "../_models/standalone-chapter";
+import {TextResonse} from "../_types/text-response";
 
 @Injectable({
   providedIn: 'root'
@@ -25,11 +26,11 @@ export class PersonService {
   }
 
   get(name: string) {
-    return this.httpClient.get<Person>(this.baseUrl + `person?name=${name}`);
+    return this.httpClient.get<Person | null>(this.baseUrl + `person?name=${name}`);
   }
 
-  getRolesForPerson(name: string) {
-    return this.httpClient.get<Array<PersonRole>>(this.baseUrl + `person/roles?name=${name}`);
+  getRolesForPerson(personId: number) {
+    return this.httpClient.get<Array<PersonRole>>(this.baseUrl + `person/roles?personId=${personId}`);
   }
 
   getSeriesMostKnownFor(personId: number) {
@@ -49,5 +50,9 @@ export class PersonService {
         return this.utilityService.createPaginatedResult(response) as PaginatedResult<BrowsePerson[]>;
       })
     );
+  }
+
+  downloadCover(personId: number) {
+    return this.httpClient.post<string>(this.baseUrl + 'person/fetch-cover?personId=' + personId, {}, TextResonse);
   }
 }

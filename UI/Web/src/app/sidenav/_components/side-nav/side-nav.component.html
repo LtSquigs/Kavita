@@ -2,7 +2,7 @@
   @if (accountService.currentUser$ | async; as user) {
     <div class="side-nav-container" [ngClass]="{'closed' : (navService.sideNavCollapsed$ | async),
     'hidden': (navService.sideNavVisibility$ | async) === false,
-    'no-donate': (accountService.hasValidLicense$ | async) === true}">
+    'no-donate': (licenseService.hasValidLicense$ | async) === true}">
       <div class="side-nav">
 
 
@@ -11,7 +11,9 @@
         @if (navStreams$ | async; as streams) {
           @if (showAll) {
             <app-side-nav-item icon="fa fa-chevron-left" [title]="t('back')" (click)="showLess()"></app-side-nav-item>
-            <app-side-nav-item icon="fa-cogs" [title]="t('customize')" link="/settings" [fragment]="SettingsTabId.Customize"></app-side-nav-item>
+            @if (!isReadOnly) {
+              <app-side-nav-item icon="fa-cogs" [title]="t('customize')" link="/settings" [fragment]="SettingsTabId.Customize"></app-side-nav-item>
+            }
             @if (streams.length > ItemLimit && (navService.sideNavCollapsed$ | async) === false) {
               <div class="mb-2 mt-3 ms-2 me-2">
                 <label for="filter" class="form-label visually-hidden">{{t('filter-label')}}</label>
@@ -86,8 +88,8 @@
     }
 
     <div class="sidenav-bottom" [ngClass]="{'closed' : (navService.sideNavCollapsed$ | async),
-        'hidden': (navService.sideNavVisibility$ | async) === false || (accountService.hasValidLicense$ | async) === true}">
-      @if ((accountService.hasValidLicense$ | async) === false) {
+        'hidden': (navService.sideNavVisibility$ | async) === false || (licenseService.hasValidLicense$ | async) === true}">
+      @if ((licenseService.hasValidLicense$ | async) === false) {
         <app-side-nav-item [ngClass]="'donate'" icon="fa-heart"
                           [ngbTooltip]="t('donate-tooltip')"
                           [link]="WikiLink.Donation"

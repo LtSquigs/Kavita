@@ -24,8 +24,6 @@ public static class ApplicationServiceExtensions
     {
         services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
 
-        //services.AddScoped<DataContext>();
-
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IFileService, FileService>();
@@ -52,7 +50,6 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IStatisticService, StatisticService>();
         services.AddScoped<IMediaErrorService, MediaErrorService>();
         services.AddScoped<IMediaConversionService, MediaConversionService>();
-        services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<IStreamService, StreamService>();
 
         services.AddScoped<IScannerService, ScannerService>();
@@ -68,6 +65,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IEventHub, EventHub>();
         services.AddScoped<IPresenceTracker, PresenceTracker>();
         services.AddScoped<IImageService, ImageService>();
+        services.AddScoped<ICoverDbService, CoverDbService>();
 
         services.AddScoped<ILocalizationService, LocalizationService>();
 
@@ -76,6 +74,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ILicenseService, LicenseService>();
         services.AddScoped<IExternalMetadataService, ExternalMetadataService>();
         services.AddScoped<ISmartCollectionSyncService, SmartCollectionSyncService>();
+        services.AddScoped<IWantToReadSyncService, WantToReadSyncService>();
 
         services.AddSqLite();
         services.AddSignalR(opt => opt.EnableDetailedErrors = true);
@@ -83,12 +82,13 @@ public static class ApplicationServiceExtensions
         services.AddEasyCaching(options =>
         {
             options.UseInMemory(EasyCacheProfiles.Favicon);
-            options.UseInMemory(EasyCacheProfiles.License);
             options.UseInMemory(EasyCacheProfiles.Library);
             options.UseInMemory(EasyCacheProfiles.RevokedJwt);
 
             // KavitaPlus stuff
             options.UseInMemory(EasyCacheProfiles.KavitaPlusExternalSeries);
+            options.UseInMemory(EasyCacheProfiles.License);
+            options.UseInMemory(EasyCacheProfiles.LicenseInfo);
         });
 
         services.AddMemoryCache(options =>

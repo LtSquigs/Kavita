@@ -765,6 +765,12 @@ public class OpdsController : BaseApiController
         return CreateXmlResult(SerializeXml(feed));
     }
 
+    /// <summary>
+    /// OPDS Search endpoint
+    /// </summary>
+    /// <param name="apiKey"></param>
+    /// <param name="query"></param>
+    /// <returns></returns>
     [HttpGet("{apiKey}/series")]
     [Produces("application/xml")]
     public async Task<IActionResult> SearchSeries(string apiKey, [FromQuery] string query)
@@ -782,20 +788,21 @@ public class OpdsController : BaseApiController
         query = query.Replace(@"%", string.Empty);
         // Get libraries user has access to
         var libraries = (await _unitOfWork.LibraryRepository.GetLibrariesForUserIdAsync(userId)).ToList();
-        if (!libraries.Any()) return BadRequest(await _localizationService.Translate(userId, "libraries-restricted"));
+        if (libraries.Count == 0) return BadRequest(await _localizationService.Translate(userId, "libraries-restricted"));
 
         var isAdmin = await _unitOfWork.UserRepository.IsUserAdminAsync(user);
 
-        var series = await _unitOfWork.SeriesRepository.SearchSeries(userId, isAdmin, libraries.Select(l => l.Id).ToArray(), query);
+        var searchResults = await _unitOfWork.SeriesRepository.SearchSeries(userId, isAdmin,
+            libraries.Select(l => l.Id).ToArray(), query, includeChapterAndFiles: false);
 
         var feed = CreateFeed(query, $"{apiKey}/series?query=" + query, apiKey, prefix);
         SetFeedId(feed, "search-series");
-        foreach (var seriesDto in series.Series)
+        foreach (var seriesDto in searchResults.Series)
         {
             feed.Entries.Add(CreateSeries(seriesDto, apiKey, prefix, baseUrl));
         }
 
-        foreach (var collection in series.Collections)
+        foreach (var collection in searchResults.Collections)
         {
             feed.Entries.Add(new FeedEntry()
             {
@@ -814,7 +821,7 @@ public class OpdsController : BaseApiController
             });
         }
 
-        foreach (var readingListDto in series.ReadingLists)
+        foreach (var readingListDto in searchResults.ReadingLists)
         {
             feed.Entries.Add(new FeedEntry()
             {
@@ -828,6 +835,7 @@ public class OpdsController : BaseApiController
             });
         }
 
+        // TODO: Search should allow Chapters/Files and more
 
         return CreateXmlResult(SerializeXml(feed));
     }
@@ -947,9 +955,7 @@ public class OpdsController : BaseApiController
         var series = await _unitOfWork.SeriesRepository.GetSeriesDtoByIdAsync(seriesId, userId);
         var libraryType = await _unitOfWork.LibraryRepository.GetLibraryTypeAsync(series.LibraryId);
         var volume = await _unitOfWork.VolumeRepository.GetVolumeAsync(volumeId, VolumeIncludes.Chapters);
-        // var chapters =
-        //     (await _unitOfWork.ChapterRepository.GetChaptersAsync(volumeId))
-        //     .OrderBy(x => x.MinNumber, _chapterSortComparerDefaultLast);
+
         var feed = CreateFeed(series.Name + " - Volume " + volume!.Name + $" - {_seriesService.FormatChapterName(userId, libraryType)}s ",
             $"{apiKey}/series/{seriesId}/volume/{volumeId}", apiKey, prefix);
         SetFeedId(feed, $"series-{series.Id}-volume-{volume.Id}-{_seriesService.FormatChapterName(userId, libraryType)}s");
@@ -1095,15 +1101,6 @@ public class OpdsController : BaseApiController
         };
     }
 
-    private static FeedAuthor CreateAuthor(PersonDto person)
-    {
-        return new FeedAuthor()
-        {
-            Name = person.Name,
-            Uri = "http://opds-spec.org/author/" + person.Id
-        };
-    }
-
     private static FeedEntry CreateSeries(SearchResultDto searchResultDto, string apiKey, string prefix, string baseUrl)
     {
         return new FeedEntry()
@@ -1120,6 +1117,15 @@ public class OpdsController : BaseApiController
                 CreateLink(FeedLinkRelation.Thumbnail, FeedLinkType.Image,
                     $"{baseUrl}api/image/series-cover?seriesId={searchResultDto.SeriesId}&apiKey={apiKey}")
             ]
+        };
+    }
+
+    private static FeedAuthor CreateAuthor(PersonDto person)
+    {
+        return new FeedAuthor()
+        {
+            Name = person.Name,
+            Uri = "http://opds-spec.org/author/" + person.Id
         };
     }
 

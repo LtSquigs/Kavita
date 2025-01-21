@@ -15,6 +15,9 @@ import { AgeRestriction } from '../_models/metadata/age-restriction';
 import { TextResonse } from '../_types/text-response';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Action} from "./action-factory.service";
+import {CoverImageSize} from "../admin/_models/cover-image-size";
+import {LicenseInfo} from "../_models/kavitaplus/license-info";
+import {LicenseService} from "./license.service";
 
 export enum Role {
   Admin = 'Admin',
@@ -27,12 +30,24 @@ export enum Role {
   Promote = 'Promote',
 }
 
+export const allRoles = [
+  Role.Admin,
+  Role.ChangePassword,
+  Role.Bookmark,
+  Role.Download,
+  Role.ChangeRestriction,
+  Role.ReadOnly,
+  Role.Login,
+  Role.Promote,
+]
+
 @Injectable({
   providedIn: 'root'
 })
 export class AccountService {
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly licenseService = inject(LicenseService);
 
   baseUrl = environment.apiUrl;
   userKey = 'kavita-user';
@@ -42,17 +57,13 @@ export class AccountService {
 
   // Stores values, when someone subscribes gives (1) of last values seen.
   private currentUserSource = new ReplaySubject<User | undefined>(1);
-  public currentUser$ = this.currentUserSource.asObservable();
+  public currentUser$ = this.currentUserSource.asObservable().pipe(takeUntilDestroyed(this.destroyRef), shareReplay({bufferSize: 1, refCount: true}));
   public isAdmin$: Observable<boolean> = this.currentUser$.pipe(takeUntilDestroyed(this.destroyRef), map(u => {
     if (!u) return false;
     return this.hasAdminRole(u);
   }), shareReplay({bufferSize: 1, refCount: true}));
 
-  private hasValidLicenseSource = new ReplaySubject<boolean>(1);
-  /**
-   * Does the user have an active license
-   */
-  public hasValidLicense$ = this.hasValidLicenseSource.asObservable();
+
 
   /**
    * SetTimeout handler for keeping track of refresh token call
@@ -91,14 +102,22 @@ export class AccountService {
     return true;
   }
 
-  hasAnyRole(user: User, roles: Array<Role>) {
+  hasAnyRole(user: User, roles: Array<Role>, restrictedRoles: Array<Role> = []) {
     if (!user || !user.roles) {
       return false;
     }
+
+    // If restricted roles are provided and the user has any of them, deny access
+    if (restrictedRoles.length > 0 && restrictedRoles.some(role => user.roles.includes(role))) {
+      return false;
+    }
+
+    // If roles are empty, allow access (no restrictions by roles)
     if (roles.length === 0) {
       return true;
     }
 
+    // Allow access if the user has any of the allowed roles
     return roles.some(role => user.roles.includes(role));
   }
 
@@ -134,40 +153,7 @@ export class AccountService {
     return this.httpClient.get<string[]>(this.baseUrl + 'account/roles');
   }
 
-  deleteLicense() {
-    return this.httpClient.delete<string>(this.baseUrl + 'license', TextResonse);
-  }
 
-  resetLicense(license: string, email: string) {
-    return this.httpClient.post<string>(this.baseUrl + 'license/reset', {license, email}, TextResonse);
-  }
-
-  hasValidLicense(forceCheck: boolean = false) {
-    console.log('hasValidLicense being called: ', forceCheck);
-    return this.httpClient.get<string>(this.baseUrl + 'license/valid-license?forceCheck=' + forceCheck, TextResonse)
-      .pipe(
-        map(res => res === "true"),
-        tap(res => {
-          this.hasValidLicenseSource.next(res)
-        }),
-        catchError(error => {
-          this.hasValidLicenseSource.next(false);
-          return throwError(error); // Rethrow the error to propagate it further
-        })
-      );
-  }
-
-  hasAnyLicense() {
-    return this.httpClient.get<string>(this.baseUrl + 'license/has-license', TextResonse)
-      .pipe(
-        map(res => res === "true"),
-      );
-  }
-
-  updateUserLicense(license: string, email: string, discordId?: string) {
-  return this.httpClient.post<string>(this.baseUrl + 'license', {license, email, discordId}, TextResonse)
-    .pipe(map(res => res === "true"));
-  }
 
   login(model: {username: string, password: string, apiKey?: string}) {
     return this.httpClient.post<User>(this.baseUrl + 'account/login', model).pipe(
@@ -211,7 +197,7 @@ export class AccountService {
       // But that really messes everything up
       this.messageHub.stopHubConnection();
       this.messageHub.createHubConnection(this.currentUser);
-      this.hasValidLicense().subscribe();
+      this.licenseService.hasValidLicense().subscribe();
       this.startRefreshTokenTimer();
     }
   }

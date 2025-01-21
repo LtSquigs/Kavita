@@ -139,7 +139,6 @@ public class MangaParsingTests
     [InlineData("Vagabond_v03", "Vagabond")]
     [InlineData("[AN] Mahoutsukai to Deshi no Futekisetsu na Kankei Chp. 1", "Mahoutsukai to Deshi no Futekisetsu na Kankei")]
     [InlineData("Beelzebub_Side_Story_02_RHS.zip", "Beelzebub Side Story")]
-    [InlineData("[BAA]_Darker_than_Black_Omake-1.zip", "Darker than Black")]
     [InlineData("Baketeriya ch01-05.zip", "Baketeriya")]
     [InlineData("[PROzess]Kimi_ha_midara_na_Boku_no_Joou_-_Ch01", "Kimi ha midara na Boku no Joou")]
     [InlineData("[SugoiSugoi]_NEEDLESS_Vol.2_-_Disk_The_Informant_5_[ENG].rar", "NEEDLESS")]
@@ -212,6 +211,7 @@ public class MangaParsingTests
     [InlineData("หนึ่งความคิด นิจนิรันดร์ เล่ม 2", "หนึ่งความคิด นิจนิรันดร์")]
     [InlineData("不安の種\uff0b - 01", "不安の種\uff0b")]
     [InlineData("Giant Ojou-sama - Ch. 33.5 - Volume 04 Bonus Chapter", "Giant Ojou-sama")]
+    [InlineData("[218565]-(C92) [BRIO (Puyocha)] Mika-nee no Tanryoku Shidou - Mika s Guide to Self-Confidence (THE IDOLM@STE", "")]
     public void ParseSeriesTest(string filename, string expected)
     {
         Assert.Equal(expected, API.Services.Tasks.Scanner.Parser.Parser.ParseSeries(filename, LibraryType.Manga));

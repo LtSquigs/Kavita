@@ -15,6 +15,7 @@ using API.DTOs.Filtering;
 using API.DTOs.Filtering.v2;
 using API.DTOs.Metadata;
 using API.DTOs.ReadingLists;
+using API.DTOs.Recommendation;
 using API.DTOs.Scrobbling;
 using API.DTOs.Search;
 using API.DTOs.SeriesDetail;
@@ -65,6 +66,7 @@ public enum QueryContext
 {
     None = 1,
     Search = 2,
+    [Obsolete("Use Dashboard")]
     Recommended = 3,
     Dashboard = 4,
 }
@@ -163,6 +165,8 @@ public interface ISeriesRepository
     Task ClearOnDeckRemoval(int seriesId, int userId);
     Task<PagedList<SeriesDto>> GetSeriesDtoForLibraryIdV2Async(int userId, UserParams userParams, FilterV2Dto filterDto, QueryContext queryContext = QueryContext.None);
     Task<PlusSeriesDto?> GetPlusSeriesDto(int seriesId);
+    Task<int> GetCountAsync();
+    Task<Series?> MatchSeries(ExternalSeriesDetailDto externalSeries);
 }
 
 public class SeriesRepository : ISeriesRepository
@@ -695,7 +699,7 @@ public class SeriesRepository : ISeriesRepository
 
         var retSeries = query
             .ProjectTo<SeriesDto>(_mapper.ConfigurationProvider)
-            .AsSplitQuery()
+            //.AsSplitQuery()
             .AsNoTracking();
 
         return await PagedList<SeriesDto>.CreateAsync(retSeries, userParams.PageNumber, userParams.PageSize);
@@ -707,7 +711,7 @@ public class SeriesRepository : ISeriesRepository
             .Where(s => s.Id == seriesId)
             .Select(series => new PlusSeriesDto()
             {
-                MediaFormat = LibraryTypeHelper.GetFormat(series.Library.Type),
+                MediaFormat = series.Library.Type.ConvertToPlusMediaFormat(series.Format),
                 SeriesName = series.Name,
                 AltSeriesName = series.LocalizedName,
                 AniListId = ScrobblingService.ExtractId<int?>(series.Metadata.WebLinks,
@@ -725,6 +729,10 @@ public class SeriesRepository : ISeriesRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<int> GetCountAsync()
+    {
+        return await _context.Series.CountAsync();
+    }
 
     public async Task AddSeriesModifiers(int userId, IList<SeriesDto> series)
     {
@@ -1045,8 +1053,6 @@ public class SeriesRepository : ISeriesRepository
             .Select(u => u.CollapseSeriesRelationships)
             .SingleOrDefaultAsync();
 
-
-
         query ??= _context.Series
             .AsNoTracking();
 
@@ -1063,12 +1069,12 @@ public class SeriesRepository : ISeriesRepository
 
         query = ApplyWantToReadFilter(filter, query, userId);
 
-
         query = await ApplyCollectionFilter(filter, query, userId, userRating);
 
 
-        query = BuildFilterQuery(userId, filter, query);
 
+
+        query = BuildFilterQuery(userId, filter, query);
 
         query = query
             .WhereIf(userLibraries.Count > 0, s => userLibraries.Contains(s.LibraryId))
@@ -1080,7 +1086,8 @@ public class SeriesRepository : ISeriesRepository
 
         return ApplyLimit(query
             .Sort(userId, filter.SortOptions)
-            .AsSplitQuery(), filter.LimitTo);
+            .AsSplitQuery()
+            , filter.LimitTo);
     }
 
     private async Task<IQueryable<Series>> ApplyCollectionFilter(FilterV2Dto filter, IQueryable<Series> query, int userId, AgeRestriction userRating)
@@ -1135,6 +1142,7 @@ public class SeriesRepository : ISeriesRepository
         var seriesIds = _context.AppUser.Where(u => u.Id == userId)
             .SelectMany(u => u.WantToRead)
             .Select(s => s.SeriesId);
+
         if (bool.Parse(wantToReadStmt.Value))
         {
             query = query.Where(s => seriesIds.Contains(s.Id));
@@ -1151,6 +1159,7 @@ public class SeriesRepository : ISeriesRepository
     {
         var filterIncludeLibs = new List<int>();
         var filterExcludeLibs = new List<int>();
+
         if (filter.Statements != null)
         {
             foreach (var stmt in filter.Statements.Where(stmt => stmt.Field == FilterField.Libraries))
@@ -1192,7 +1201,7 @@ public class SeriesRepository : ISeriesRepository
 
     private static IQueryable<Series> BuildFilterQuery(int userId, FilterV2Dto filterDto, IQueryable<Series> query)
     {
-        if (filterDto.Statements == null || !filterDto.Statements.Any()) return query;
+        if (filterDto.Statements == null || filterDto.Statements.Count == 0) return query;
 
 
         var queries = filterDto.Statements
@@ -1509,7 +1518,7 @@ public class SeriesRepository : ISeriesRepository
 
     public async Task<PagedList<SeriesDto>> GetMoreIn(int userId, int libraryId, int genreId, UserParams userParams)
     {
-        var libraryIds = GetLibraryIdsForUser(userId, libraryId, QueryContext.Recommended)
+        var libraryIds = GetLibraryIdsForUser(userId, libraryId, QueryContext.Dashboard)
             .Where(id => libraryId == 0 || id == libraryId);
         var usersSeriesIds = GetSeriesIdsForLibraryIds(libraryIds);
 
@@ -1992,17 +2001,25 @@ public class SeriesRepository : ISeriesRepository
     public async Task<PagedList<SeriesDto>> GetWantToReadForUserV2Async(int userId, UserParams userParams, FilterV2Dto filter)
     {
         var libraryIds = await _context.Library.GetUserLibraries(userId).ToListAsync();
-        var query = _context.AppUser
+        var seriesIds = await _context.AppUser
             .Where(user => user.Id == userId)
             .SelectMany(u => u.WantToRead)
             .Where(s => libraryIds.Contains(s.Series.LibraryId))
-            .Select(w => w.Series)
+            .Select(w => w.Series.Id)
+            .Distinct()
+            .ToListAsync();
+
+        var query = await CreateFilteredSearchQueryableV2(userId, filter, QueryContext.None);
+
+        // Apply the Want to Read filtering
+        query = query.Where(s => seriesIds.Contains(s.Id));
+
+        var retSeries = query
+            .ProjectTo<SeriesDto>(_mapper.ConfigurationProvider)
             .AsSplitQuery()
             .AsNoTracking();
 
-        var filteredQuery = await CreateFilteredSearchQueryableV2(userId, filter, QueryContext.None, query);
-
-        return await PagedList<SeriesDto>.CreateAsync(filteredQuery.ProjectTo<SeriesDto>(_mapper.ConfigurationProvider), userParams.PageNumber, userParams.PageSize);
+        return await PagedList<SeriesDto>.CreateAsync(retSeries, userParams.PageNumber, userParams.PageSize);
     }
 
     public async Task<IList<Series>> GetWantToReadForUserAsync(int userId)
@@ -2022,9 +2039,6 @@ public class SeriesRepository : ISeriesRepository
     /// Uses multiple names to find a match against a series. If not, returns null.
     /// </summary>
     /// <remarks>This does not restrict to the user at all. That is handled at the API level.</remarks>
-    /// <param name="userId"></param>
-    /// <param name="names"></param>
-    /// <returns></returns>
     public async Task<SeriesDto?> GetSeriesDtoByNamesAndMetadataIds(IEnumerable<string> names, LibraryType libraryType, string aniListUrl, string malUrl)
     {
         var libraryIds = await _context.Library
@@ -2055,6 +2069,47 @@ public class SeriesRepository : ISeriesRepository
             .Where(s => libraryIds.Contains(s.Library.Id))
             .ProjectTo<SeriesDto>(_mapper.ConfigurationProvider)
             .AsSplitQuery()
+            .FirstOrDefaultAsync(); // Some users may have improperly configured libraries
+    }
+
+    public async Task<Series?> MatchSeries(ExternalSeriesDetailDto externalSeries)
+    {
+        var libraryIds = await _context.Library
+            .Where(lib => externalSeries.PlusMediaFormat.ConvertToLibraryTypes().Contains(lib.Type))
+            .Select(l => l.Id)
+            .ToListAsync();
+
+        var normalizedNames = (externalSeries.Synonyms ?? Enumerable.Empty<string>())
+            .Prepend(externalSeries.Name)
+            .Select(n => n.ToNormalized())
+            .ToList();
+
+        var aniListWebLink =
+            ScrobblingService.CreateUrl(ScrobblingService.AniListWeblinkWebsite, externalSeries.AniListId);
+        var malWebLink =
+            ScrobblingService.CreateUrl(ScrobblingService.MalWeblinkWebsite, externalSeries.MALId);
+
+        Series? result = null;
+        if (!string.IsNullOrEmpty(aniListWebLink) || !string.IsNullOrEmpty(malWebLink))
+        {
+            result = await _context.Series
+                .Where(s => !string.IsNullOrEmpty(s.Metadata.WebLinks))
+                .Where(s => libraryIds.Contains(s.Library.Id))
+                .WhereIf(!string.IsNullOrEmpty(aniListWebLink), s => s.Metadata.WebLinks.Contains(aniListWebLink))
+                .WhereIf(!string.IsNullOrEmpty(malWebLink), s => s.Metadata.WebLinks.Contains(malWebLink))
+                .Include(s => s.Metadata)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync();
+        }
+
+        if (result != null) return result;
+
+        return await _context.Series
+            .Where(s => normalizedNames.Contains(s.NormalizedName) ||
+                        normalizedNames.Contains(s.NormalizedLocalizedName))
+            .Where(s => libraryIds.Contains(s.Library.Id))
+            .AsSplitQuery()
+            .Include(s => s.Metadata)
             .FirstOrDefaultAsync(); // Some users may have improperly configured libraries
     }
 

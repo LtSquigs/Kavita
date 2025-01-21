@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using API.Entities;
 using API.Entities.Enums;
 using API.Entities.Enums.UserPreferences;
+using API.Entities.History;
 using API.Entities.Interfaces;
 using API.Entities.Metadata;
 using API.Entities.Scrobble;
@@ -68,6 +69,7 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<AppUserCollection> AppUserCollection { get; set; } = null!;
     public DbSet<ChapterPeople> ChapterPeople { get; set; } = null!;
     public DbSet<SeriesMetadataPeople> SeriesMetadataPeople { get; set; } = null!;
+    public DbSet<EmailHistory> EmailHistory { get; set; } = null!;
 
 
     protected override void OnModelCreating(ModelBuilder builder)

@@ -129,15 +129,6 @@ public class ServerController : BaseApiController
         return Ok();
     }
 
-    /// <summary>
-    /// Returns non-sensitive information about the current system
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet("server-info")]
-    public async Task<ActionResult<ServerInfoDto>> GetVersion()
-    {
-        return Ok(await _statsService.GetServerInfo());
-    }
 
     /// <summary>
     /// Returns non-sensitive information about the current system
@@ -145,7 +136,7 @@ public class ServerController : BaseApiController
     /// <remarks>This is just for the UI and is extremely lightweight</remarks>
     /// <returns></returns>
     [HttpGet("server-info-slim")]
-    public async Task<ActionResult<ServerInfoDto>> GetSlimVersion()
+    public async Task<ActionResult<ServerInfoSlimDto>> GetSlimVersion()
     {
         return Ok(await _statsService.GetServerInfoSlim());
     }
@@ -222,15 +213,16 @@ public class ServerController : BaseApiController
     /// <summary>
     /// Pull the Changelog for Kavita from Github and display
     /// </summary>
+    /// <param name="count">How many releases from the latest to return</param>
     /// <returns></returns>
     [AllowAnonymous]
     [HttpGet("changelog")]
-    public async Task<ActionResult<IEnumerable<UpdateNotificationDto>>> GetChangelog()
+    public async Task<ActionResult<IEnumerable<UpdateNotificationDto>>> GetChangelog(int count = 0)
     {
         // Strange bug where [Authorize] doesn't work
         if (User.GetUserId() == 0) return Unauthorized();
 
-        return Ok(await _versionUpdaterService.GetAllReleases());
+        return Ok(await _versionUpdaterService.GetAllReleases(count));
     }
 
     /// <summary>

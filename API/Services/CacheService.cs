@@ -118,8 +118,6 @@ public class CacheService : ICacheService
             Cache.MaxFiles = originalCacheSize;
         }
 
-        _logger.LogDebug("File Dimensions call for {Length} images took {Time}ms", dimensions.Count, sw.ElapsedMilliseconds);
-
         return dimensions;
     }
 
@@ -171,7 +169,7 @@ public class CacheService : ICacheService
         var chapter = await _unitOfWork.ChapterRepository.GetChapterAsync(chapterId);
         var extractPath = GetCachePath(chapterId);
 
-        SemaphoreSlim extractLock = ExtractLocks.GetOrAdd(chapterId, id => new SemaphoreSlim(1,1));
+        var extractLock = ExtractLocks.GetOrAdd(chapterId, id => new SemaphoreSlim(1,1));
 
         await extractLock.WaitAsync();
         try {

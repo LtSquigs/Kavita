@@ -32,6 +32,10 @@ public interface IDirectoryService
     string TemplateDirectory { get; }
     string PublisherDirectory { get; }
     /// <summary>
+    /// Used for caching documents that may need to stay on disk for more than a day
+    /// </summary>
+    string LongTermCacheDirectory { get; }
+    /// <summary>
     /// Original BookmarkDirectory. Only used for resetting directory. Use <see cref="ServerSettingKey.BackupDirectory"/> for actual path.
     /// </summary>
     string BookmarkDirectory { get; }
@@ -90,6 +94,7 @@ public class DirectoryService : IDirectoryService
     public string CustomizedTemplateDirectory { get; }
     public string TemplateDirectory { get; }
     public string PublisherDirectory { get; }
+    public string LongTermCacheDirectory { get; }
     private readonly ILogger<DirectoryService> _logger;
     private const RegexOptions MatchOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
@@ -127,6 +132,8 @@ public class DirectoryService : IDirectoryService
         ExistOrCreate(TemplateDirectory);
         PublisherDirectory = FileSystem.Path.Join(FileSystem.Directory.GetCurrentDirectory(), "config", "images", "publishers");
         ExistOrCreate(PublisherDirectory);
+        LongTermCacheDirectory = FileSystem.Path.Join(FileSystem.Directory.GetCurrentDirectory(), "config", "cache-long");
+        ExistOrCreate(LongTermCacheDirectory);
     }
 
     /// <summary>
@@ -709,7 +716,7 @@ public class DirectoryService : IDirectoryService
         if (!FileSystem.Directory.Exists(folderPath)) return ImmutableArray<string>.Empty;
         var directories = new List<string>();
 
-        var foundDirs = GetDirectories(folderPath);
+        var foundDirs = GetDirectories(folderPath, matcher);
         foreach (var foundDir in foundDirs)
         {
             directories.Add(foundDir);
@@ -747,7 +754,6 @@ public class DirectoryService : IDirectoryService
     public IList<string> ScanFiles(string folderPath, string fileTypes, GlobMatcher? matcher = null,
         SearchOption searchOption = SearchOption.AllDirectories)
     {
-        _logger.LogTrace("[ScanFiles] called on {Path}", folderPath);
         var files = new List<string>();
 
         if (!Exists(folderPath)) return files;

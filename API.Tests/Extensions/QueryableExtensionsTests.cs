@@ -123,14 +123,14 @@ public class QueryableExtensionsTests
 
     [Theory]
     [InlineData(true, 2)]
-    [InlineData(false, 1)]
-    public void RestrictAgainstAgeRestriction_Person_ShouldRestrictEverythingAboveTeen(bool includeUnknowns, int expectedCount)
+    [InlineData(false, 2)]
+    public void RestrictAgainstAgeRestriction_Person_ShouldRestrictEverythingAboveTeen(bool includeUnknowns, int expectedPeopleCount)
     {
         // Arrange
         var items = new List<Person>
         {
             CreatePersonWithSeriesMetadata("Test1", AgeRating.Teen),
-            CreatePersonWithSeriesMetadata("Test2", AgeRating.Unknown, AgeRating.Teen),
+            CreatePersonWithSeriesMetadata("Test2", AgeRating.Unknown, AgeRating.Teen), // 2 series on this person, restrict will still allow access
             CreatePersonWithSeriesMetadata("Test3", AgeRating.X18Plus)
         };
 
@@ -144,7 +144,7 @@ public class QueryableExtensionsTests
         var filtered = items.AsQueryable().RestrictAgainstAgeRestriction(ageRestriction);
 
         // Assert
-        Assert.Equal(expectedCount, filtered.Count());
+        Assert.Equal(expectedPeopleCount, filtered.Count());
     }
 
     private static Person CreatePersonWithSeriesMetadata(string name, params AgeRating[] ageRatings)

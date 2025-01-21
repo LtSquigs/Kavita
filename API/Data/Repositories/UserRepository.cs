@@ -7,6 +7,7 @@ using API.DTOs;
 using API.DTOs.Account;
 using API.DTOs.Dashboard;
 using API.DTOs.Filtering.v2;
+using API.DTOs.KavitaPlus.Account;
 using API.DTOs.Reader;
 using API.DTOs.Scrobbling;
 using API.DTOs.SeriesDetail;
@@ -15,6 +16,7 @@ using API.Entities;
 using API.Extensions;
 using API.Extensions.QueryExtensions;
 using API.Extensions.QueryExtensions.Filtering;
+using API.Helpers;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Identity;
@@ -78,7 +80,7 @@ public interface IUserRepository
     Task<IEnumerable<AppUserPreferences>> GetAllPreferencesByThemeAsync(int themeId);
     Task<bool> HasAccessToLibrary(int libraryId, int userId);
     Task<bool> HasAccessToSeries(int userId, int seriesId);
-    Task<IEnumerable<AppUser>> GetAllUsersAsync(AppUserIncludes includeFlags = AppUserIncludes.None);
+    Task<IEnumerable<AppUser>> GetAllUsersAsync(AppUserIncludes includeFlags = AppUserIncludes.None, bool track = true);
     Task<AppUser?> GetUserByConfirmationToken(string token);
     Task<AppUser> GetDefaultAdminUser(AppUserIncludes includes = AppUserIncludes.None);
     Task<IEnumerable<AppUserRating>> GetSeriesWithRatings(int userId);
@@ -96,6 +98,8 @@ public interface IUserRepository
     Task<IList<AppUserSideNavStream>> GetSideNavStreamsByLibraryId(int libraryId);
     Task<IList<AppUserSideNavStream>> GetSideNavStreamWithExternalSource(int externalSourceId);
     Task<IList<AppUserSideNavStream>> GetDashboardStreamsByIds(IList<int> streamIds);
+    Task<IEnumerable<UserTokenInfo>> GetUserTokenInfo();
+    Task<AppUser?> GetUserByDeviceEmail(string deviceEmail);
 }
 
 public class UserRepository : IUserRepository
@@ -283,10 +287,17 @@ public class UserRepository : IUserRepository
             .AnyAsync(s => s.Id == seriesId);
     }
 
-    public async Task<IEnumerable<AppUser>> GetAllUsersAsync(AppUserIncludes includeFlags = AppUserIncludes.None)
+    public async Task<IEnumerable<AppUser>> GetAllUsersAsync(AppUserIncludes includeFlags = AppUserIncludes.None, bool track = true)
     {
-        return await _context.AppUser
-            .Includes(includeFlags)
+        var query = _context.AppUser
+            .Includes(includeFlags);
+        if (track)
+        {
+            return await query.ToListAsync();
+        }
+
+        return await query
+            .AsNoTracking()
             .ToListAsync();
     }
 
@@ -481,6 +492,43 @@ public class UserRepository : IUserRepository
         return await _context.AppUserSideNavStream
             .Where(d => streamIds.Contains(d.Id))
             .ToListAsync();
+    }
+
+    public async Task<IEnumerable<UserTokenInfo>> GetUserTokenInfo()
+    {
+        var users = await _context.AppUser
+            .Select(u => new
+            {
+                u.Id,
+                u.UserName,
+                u.AniListAccessToken, // JWT Token
+                u.MalAccessToken // JWT Token
+            })
+            .ToListAsync();
+
+        var userTokenInfos = users.Select(user => new UserTokenInfo
+        {
+            UserId = user.Id,
+            Username = user.UserName,
+            IsAniListTokenSet = !string.IsNullOrEmpty(user.AniListAccessToken),
+            AniListValidUntilUtc = JwtHelper.GetTokenExpiry(user.AniListAccessToken),
+            IsAniListTokenValid = JwtHelper.IsTokenValid(user.AniListAccessToken),
+            IsMalTokenSet = !string.IsNullOrEmpty(user.MalAccessToken),
+        });
+
+        return userTokenInfos;
+    }
+
+    /// <summary>
+    /// Returns the first user with a device email matching
+    /// </summary>
+    /// <param name="deviceEmail"></param>
+    /// <returns></returns>
+    public async Task<AppUser> GetUserByDeviceEmail(string deviceEmail)
+    {
+        return await _context.AppUser
+            .Where(u => u.Devices.Any(d => d.EmailAddress == deviceEmail))
+            .FirstOrDefaultAsync();
     }
 
 

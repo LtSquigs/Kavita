@@ -129,6 +129,7 @@ export class ManageUserPreferencesComponent implements OnInit {
 
   get Locale() {
     if (!this.settingsForm.get('locale')) return 'English';
+    console.log(this.locales.filter(l => l.isoCode === this.settingsForm.get('locale')!.value)[0])
     return this.locales.filter(l => l.isoCode === this.settingsForm.get('locale')!.value)[0].title;
   }
 
@@ -139,6 +140,7 @@ export class ManageUserPreferencesComponent implements OnInit {
 
     this.localizationService.getLocales().subscribe(res => {
       this.locales = res;
+
       this.cdRef.markForCheck();
     });
   }
@@ -197,9 +199,6 @@ export class ManageUserPreferencesComponent implements OnInit {
       this.settingsForm.addControl('shareReviews', new FormControl(this.user.preferences.shareReviews, []));
       this.settingsForm.addControl('locale', new FormControl(this.user.preferences.locale || 'en', []));
 
-      if (this.locales.length === 1) {
-        this.settingsForm.get('locale')?.disable();
-      }
 
       // Automatically save settings as we edit them
       this.settingsForm.valueChanges.pipe(
