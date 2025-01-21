@@ -16,7 +16,7 @@ namespace API.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
 
             modelBuilder.Entity("API.Entities.AppRole", b =>
                 {
@@ -1001,6 +1001,57 @@ namespace API.Data.Migrations
                     b.ToTable("Device");
                 });
 
+            modelBuilder.Entity("API.Entities.EmailHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Body")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeliveryStatus")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmailTemplate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SendDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Sent")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Subject")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("Sent", "AppUserId", "EmailTemplate", "SendDate");
+
+                    b.ToTable("EmailHistory");
+                });
+
             modelBuilder.Entity("API.Entities.FolderPath", b =>
                 {
                     b.Property<int>("Id")
@@ -1882,10 +1933,16 @@ namespace API.Data.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("DontMatch")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("FolderPath")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Format")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsBlacklisted")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("LastChapterAdded")
@@ -2669,6 +2726,17 @@ namespace API.Data.Migrations
                 {
                     b.HasOne("API.Entities.AppUser", "AppUser")
                         .WithMany("Devices")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("API.Entities.EmailHistory", b =>
+                {
+                    b.HasOne("API.Entities.AppUser", "AppUser")
+                        .WithMany()
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

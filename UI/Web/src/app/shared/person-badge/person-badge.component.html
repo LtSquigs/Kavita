@@ -1,25 +1,26 @@
 @if (person !== undefined) {
-  <div class="tagbadge cursor clickable">
-    <div class="d-flex flex-column">
-      @if (HasCoverImage) {
-        <app-image height="24px" width="24px" [styles]="{'object-fit': 'contain'}"
-                   classes="align-self-center text-center mb-2"
-                   [imageUrl]="ImageUrl"
-                   [errorImage]="imageService.noPersonImage">
-        </app-image>
-      } @else {
-        <i class="fas fa-user mx-auto" aria-hidden="true"></i>
-      }
+  <a class="btn btn-icon p-0" routerLink="/person/{{person.name}}">
+    <div class="tagbadge cursor clickable">
+      <div class="d-flex flex-column align-items-center justify-content-center">
+        <div class="image-container d-flex align-items-center justify-content-center">
+          @if (HasCoverImage) {
+            <app-image
+                      objectFit="cover" 
+                      height="96px"
+                      width="96px"
+                      [imageUrl]="ImageUrl"
+                      [errorImage]="imageService.noPersonImage">
+            </app-image>
+          } @else {
+              <i class="fas fa-user" aria-hidden="true"></i>
+          }
+        </div>
 
-
-      <div class="flex-grow-1 text-center mt-2">
-        @if (isStaff) {
+        <div class="flex-grow-1 text-center mt-2">
           <span class="mt-1 mb-0">{{person.name}}</span>
-        } @else {
-          <a class="btn btn-icon p-0" routerLink="/person/{{person.name}}">{{person.name}}</a>
-        }
+        </div>
       </div>
     </div>
-  </div>
+  </a>
 }
 

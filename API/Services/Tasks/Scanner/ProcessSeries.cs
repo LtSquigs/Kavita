@@ -220,9 +220,8 @@ public class ProcessSeries : IProcessSeries
             return;
         }
 
-        BackgroundJob.Enqueue(() =>
-            _metadataService.GenerateCoversForSeries(series.LibraryId, series.Id, false, false));
-        BackgroundJob.Enqueue(() => _wordCountAnalyzerService.ScanSeries(series.LibraryId, series.Id, forceUpdate));
+        await _metadataService.GenerateCoversForSeries(series.LibraryId, series.Id, false, false);
+        await _wordCountAnalyzerService.ScanSeries(series.LibraryId, series.Id, forceUpdate);
     }
 
     private async Task ReportDuplicateSeriesLookup(Library library, ParserInfo firstInfo, Exception ex)
@@ -333,7 +332,7 @@ public class ProcessSeries : IProcessSeries
             var personSw = Stopwatch.StartNew();
             var chapterPeople = chapters.SelectMany(c => c.People.Where(p => p.Role == PersonRole.Writer)).ToList();
             await UpdateSeriesMetadataPeople(series.Metadata, series.Metadata.People, chapterPeople, PersonRole.Writer);
-            _logger.LogDebug("[TIME] Kavita took {Time} ms to process writer on Series: {File} for {Count} people", personSw.ElapsedMilliseconds, series.Name, chapterPeople.Count);
+            _logger.LogTrace("[TIME] Kavita took {Time} ms to process writer on Series: {File} for {Count} people", personSw.ElapsedMilliseconds, series.Name, chapterPeople.Count);
         }
 
         if (!series.Metadata.ColoristLocked)
@@ -465,7 +464,7 @@ public class ProcessSeries : IProcessSeries
             await _unitOfWork.CollectionTagRepository.UpdateCollectionAgeRating(collectionTag);
         }
 
-        _logger.LogDebug("[TIME] Kavita took {Time} ms to process collections on Series: {Name}", sw.ElapsedMilliseconds, series.Name);
+        _logger.LogTrace("[TIME] Kavita took {Time} ms to process collections on Series: {Name}", sw.ElapsedMilliseconds, series.Name);
     }
 
 
@@ -965,7 +964,7 @@ public class ProcessSeries : IProcessSeries
             var personSw = Stopwatch.StartNew();
             var people = TagHelper.GetTagValues(comicInfo.Writer);
             await UpdateChapterPeopleAsync(chapter, people, PersonRole.Writer);
-            _logger.LogDebug("[TIME] Kavita took {Time} ms to process writer on Chapter: {File} for {Count} people", personSw.ElapsedMilliseconds, chapter.Files.First().FileName, people.Count);
+            _logger.LogTrace("[TIME] Kavita took {Time} ms to process writer on Chapter: {File} for {Count} people", personSw.ElapsedMilliseconds, chapter.Files.First().FileName, people.Count);
         }
 
         if (!chapter.EditorLocked)
@@ -1034,7 +1033,7 @@ public class ProcessSeries : IProcessSeries
             await UpdateChapterTags(chapter, tags);
         }
 
-        _logger.LogDebug("[TIME] Kavita took {Time} ms to create/update Chapter: {File}", sw.ElapsedMilliseconds, chapter.Files.First().FileName);
+        _logger.LogTrace("[TIME] Kavita took {Time} ms to create/update Chapter: {File}", sw.ElapsedMilliseconds, chapter.Files.First().FileName);
     }
 
     private async Task UpdateChapterGenres(Chapter chapter, IEnumerable<string> genreNames)

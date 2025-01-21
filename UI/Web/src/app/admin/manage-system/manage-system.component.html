@@ -1,22 +1,37 @@
 <ng-container *transloco="let t; read: 'manage-system'">
   <div class="container-fluid">
 
-    <div class="mb-3" *ngIf="serverInfo">
-      <h3>{{t('title')}}</h3>
-      <dl>
-        <dt>{{t('version-title')}}</dt>
-        <dd>{{serverInfo.kavitaVersion}}</dd>
+    @if (serverInfo) {
+      <div class="mb-3">
+        <h3>{{t('title')}}</h3>
 
-        <dt>{{t('installId-title')}}</dt>
-        <dd>{{serverInfo.installId}}</dd>
+        <div class="row">
+          <div class="col-4">
+            <div>{{t('version-title')}}</div>
+            <div>{{serverInfo.kavitaVersion}}</div>
+          </div>
 
-        <dt>{{t('first-install-version-title')}}</dt>
-        <dd>{{serverInfo.firstInstallVersion | defaultValue}}</dd>
+          <div class="col-4">
+            <div>{{t('installId-title')}}</div>
+            <div>{{serverInfo.installId}}</div>
+          </div>
+        </div>
 
-        <dt>{{t('first-install-date-title')}}</dt>
-        <dd>{{serverInfo.firstInstallDate | date:'shortDate'}}</dd>
-      </dl>
-    </div>
+        <div class="row">
+          <div class="col-4">
+            <div>{{t('first-install-version-title')}}</div>
+            <div>{{serverInfo.firstInstallVersion}}</div>
+          </div>
+
+          <div class="col-4">
+            <div>{{t('first-install-date-title')}}</div>
+            <div>{{serverInfo.firstInstallDate | date:'shortDate'}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-section-break"></div>
+    }
 
     <div class="mb-3">
       <h3>{{t('more-info-title')}}</h3>
@@ -49,6 +64,8 @@
         <div class="col"><a href="https://github.com/Kareadita/Kavita/discussions/2529" target="_blank" rel="noopener noreferrer">https://github.com/Kareadita/Kavita/discussions/</a><br/></div>
       </div>
     </div>
+
+    <div class="setting-section-break"></div>
 
     <div class="mb-3">
       <h3>{{t('updates-title')}}</h3>

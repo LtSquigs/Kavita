@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using API.Entities;
+using API.Entities.History;
 using API.Services.Tasks.Scanner.Parser;
 using API.Structs;
 using Kavita.Common.EnvironmentInfo;

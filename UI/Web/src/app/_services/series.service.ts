@@ -21,6 +21,8 @@ import {Recommendation} from "../_models/series-detail/recommendation";
 import {ExternalSeriesDetail} from "../_models/series-detail/external-series-detail";
 import {NextExpectedChapter} from "../_models/series-detail/next-expected-chapter";
 import {QueryContext} from "../_models/metadata/v2/query-context";
+import {ExternalSeries} from "../_models/series-detail/external-series";
+import {ExternalSeriesMatch} from "../_models/series-detail/external-series-match";
 
 @Injectable({
   providedIn: 'root'
@@ -233,6 +235,18 @@ export class SeriesService {
 
   getNextExpectedChapterDate(seriesId: number) {
     return this.httpClient.get<NextExpectedChapter>(this.baseUrl + 'series/next-expected?seriesId=' + seriesId);
+  }
+
+  matchSeries(model: any) {
+    return this.httpClient.post<Array<ExternalSeriesMatch>>(this.baseUrl + 'series/match', model);
+  }
+
+  updateMatch(seriesId: number, series: ExternalSeriesDetail) {
+    return this.httpClient.post<string>(this.baseUrl + 'series/update-match?seriesId=' + seriesId, series, TextResonse);
+  }
+
+  updateDontMatch(seriesId: number, dontMatch: boolean) {
+    return this.httpClient.post<string>(this.baseUrl + `series/dont-match?seriesId=${seriesId}&dontMatch=${dontMatch}`, {}, TextResonse);
   }
 
 }

@@ -1,11 +1,8 @@
 import {
   AsyncPipe,
-  DecimalPipe,
   DOCUMENT,
-  JsonPipe,
   Location,
   NgClass,
-  NgOptimizedImage,
   NgStyle,
   NgTemplateOutlet
 } from '@angular/common';
@@ -16,7 +13,6 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  HostListener,
   Inject,
   inject,
   OnInit,
@@ -37,11 +33,10 @@ import {
   NgbNavItem,
   NgbNavLink,
   NgbNavOutlet,
-  NgbProgressbar,
   NgbTooltip
 } from '@ng-bootstrap/ng-bootstrap';
 import {ToastrService} from 'ngx-toastr';
-import {catchError, forkJoin, Observable, of, tap} from 'rxjs';
+import {catchError, debounceTime, forkJoin, Observable, of, ReplaySubject, tap} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {BulkSelectionService} from 'src/app/cards/bulk-selection.service';
 import {
@@ -49,7 +44,7 @@ import {
   EditSeriesModalComponent
 } from 'src/app/cards/_modals/edit-series-modal/edit-series-modal.component';
 import {DownloadEvent, DownloadService} from 'src/app/shared/_services/download.service';
-import {Breakpoint, KEY_CODES, UtilityService} from 'src/app/shared/_services/utility.service';
+import {Breakpoint, UtilityService} from 'src/app/shared/_services/utility.service';
 import {Chapter, LooseLeafOrDefaultNumber, SpecialVolumeNumber} from 'src/app/_models/chapter';
 import {Device} from 'src/app/_models/device/device';
 import {ScanSeriesEvent} from 'src/app/_models/events/scan-series-event';
@@ -81,30 +76,20 @@ import {
 import {PageLayoutMode} from 'src/app/_models/page-layout-mode';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {UserReview} from "../../../_single-module/review-card/user-review";
-import {LoadingComponent} from '../../../shared/loading/loading.component';
 import {ExternalSeriesCardComponent} from '../../../cards/external-series-card/external-series-card.component';
 import {SeriesCardComponent} from '../../../cards/series-card/series-card.component';
-import {EntityTitleComponent} from '../../../cards/entity-title/entity-title.component';
-import {CardItemComponent} from '../../../cards/card-item/card-item.component';
 import {VirtualScrollerModule} from '@iharbeck/ngx-virtual-scroller';
 import {BulkOperationsComponent} from '../../../cards/bulk-operations/bulk-operations.component';
 import {ReviewCardComponent} from '../../../_single-module/review-card/review-card.component';
 import {CarouselReelComponent} from '../../../carousel/_components/carousel-reel/carousel-reel.component';
-import {ImageComponent} from '../../../shared/image/image.component';
-import {TagBadgeComponent} from '../../../shared/tag-badge/tag-badge.component';
-import {
-  SideNavCompanionBarComponent
-} from '../../../sidenav/_components/side-nav-companion-bar/side-nav-companion-bar.component';
 import {translate, TranslocoDirective, TranslocoService} from "@jsverse/transloco";
 import {CardActionablesComponent} from "../../../_single-module/card-actionables/card-actionables.component";
 import {PublicationStatus} from "../../../_models/metadata/publication-status";
 import {NextExpectedChapter} from "../../../_models/series-detail/next-expected-chapter";
 import {NextExpectedCardComponent} from "../../../cards/next-expected-card/next-expected-card.component";
-import {ProviderImagePipe} from "../../../_pipes/provider-image.pipe";
 import {MetadataService} from "../../../_services/metadata.service";
 import {Rating} from "../../../_models/rating";
 import {ThemeService} from "../../../_services/theme.service";
-import {PersonBadgeComponent} from "../../../shared/person-badge/person-badge.component";
 import {DetailsTabComponent} from "../../../_single-module/details-tab/details-tab.component";
 import {
   EditChapterModalCloseResult,
@@ -116,35 +101,27 @@ import {VolumeCardComponent} from "../../../cards/volume-card/volume-card.compon
 import {SettingsTabId} from "../../../sidenav/preference-nav/preference-nav.component";
 import {FilterField} from "../../../_models/metadata/v2/filter-field";
 import {AgeRating} from "../../../_models/metadata/age-rating";
-import {AgeRatingPipe} from "../../../_pipes/age-rating.pipe";
 import {DefaultValuePipe} from "../../../_pipes/default-value.pipe";
 import {ExternalRatingComponent} from "../external-rating/external-rating.component";
 import {ReadMoreComponent} from "../../../shared/read-more/read-more.component";
-import {ReadTimePipe} from "../../../_pipes/read-time.pipe";
 import {FilterComparison} from "../../../_models/metadata/v2/filter-comparison";
 import {FilterUtilitiesService} from "../../../shared/_services/filter-utilities.service";
-import {TimeAgoPipe} from "../../../_pipes/time-ago.pipe";
-import {AgeRatingImageComponent} from "../../../_single-modules/age-rating-image/age-rating-image.component";
-import {CompactNumberPipe} from "../../../_pipes/compact-number.pipe";
-import {IconAndTitleComponent} from "../../../shared/icon-and-title/icon-and-title.component";
-import {SafeHtmlPipe} from "../../../_pipes/safe-html.pipe";
 import {BadgeExpanderComponent} from "../../../shared/badge-expander/badge-expander.component";
-import {A11yClickDirective} from "../../../shared/a11y-click.directive";
 import {ScrobblingService} from "../../../_services/scrobbling.service";
 import {HourEstimateRange} from "../../../_models/series-detail/hour-estimate-range";
-import {ReadTimeLeftPipe} from "../../../_pipes/read-time-left.pipe";
 import {PublicationStatusPipe} from "../../../_pipes/publication-status.pipe";
 import {MetadataDetailRowComponent} from "../metadata-detail-row/metadata-detail-row.component";
 import {DownloadButtonComponent} from "../download-button/download-button.component";
 import {hasAnyCast} from "../../../_models/common/i-has-cast";
 import {EditVolumeModalComponent} from "../../../_single-module/edit-volume-modal/edit-volume-modal.component";
 import {CoverUpdateEvent} from "../../../_models/events/cover-update-event";
-import {RelatedSeriesPair, RelatedTabComponent} from "../../../_single-modules/related-tab/related-tab.component";
+import {RelatedSeriesPair, RelatedTabComponent} from "../../../_single-module/related-tab/related-tab.component";
 import {CollectionTagService} from "../../../_services/collection-tag.service";
 import {UserCollection} from "../../../_models/collection-tag";
-import {SeriesFormatComponent} from "../../../shared/series-format/series-format.component";
-import {MangaFormatPipe} from "../../../_pipes/manga-format.pipe";
 import {CoverImageComponent} from "../../../_single-module/cover-image/cover-image.component";
+import {DefaultModalOptions} from "../../../_models/default-modal-options";
+import {LicenseService} from "../../../_services/license.service";
+
 
 
 enum TabID {
@@ -170,16 +147,14 @@ interface StoryLineItem {
     styleUrls: ['./series-detail.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-  imports: [SideNavCompanionBarComponent, CardActionablesComponent, ReactiveFormsModule, NgStyle,
-    TagBadgeComponent, ImageComponent, NgbTooltip, NgbProgressbar, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu,
+  imports: [CardActionablesComponent, ReactiveFormsModule, NgStyle,
+    NgbTooltip, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu,
     NgbDropdownItem, CarouselReelComponent, ReviewCardComponent, BulkOperationsComponent,
-    NgbNav, NgbNavItem, NgbNavLink, NgbNavContent, VirtualScrollerModule, CardItemComponent,
-    EntityTitleComponent, SeriesCardComponent, ExternalSeriesCardComponent, NgbNavOutlet,
-    LoadingComponent, DecimalPipe, TranslocoDirective, NgTemplateOutlet, NextExpectedCardComponent,
-    NgClass, NgOptimizedImage, ProviderImagePipe, AsyncPipe, PersonBadgeComponent, DetailsTabComponent, ChapterCardComponent,
-    VolumeCardComponent, JsonPipe, AgeRatingPipe, DefaultValuePipe, ExternalRatingComponent, ReadMoreComponent, ReadTimePipe,
-    RouterLink, TimeAgoPipe, AgeRatingImageComponent, CompactNumberPipe, IconAndTitleComponent, SafeHtmlPipe, BadgeExpanderComponent,
-    A11yClickDirective, ReadTimeLeftPipe, PublicationStatusPipe, MetadataDetailRowComponent, DownloadButtonComponent, RelatedTabComponent, SeriesFormatComponent, MangaFormatPipe, CoverImageComponent]
+    NgbNav, NgbNavItem, NgbNavLink, NgbNavContent, VirtualScrollerModule, SeriesCardComponent, ExternalSeriesCardComponent, NgbNavOutlet,
+    TranslocoDirective, NgTemplateOutlet, NextExpectedCardComponent,
+    NgClass, AsyncPipe, DetailsTabComponent, ChapterCardComponent,
+    VolumeCardComponent, DefaultValuePipe, ExternalRatingComponent, ReadMoreComponent, RouterLink, BadgeExpanderComponent,
+    PublicationStatusPipe, MetadataDetailRowComponent, DownloadButtonComponent, RelatedTabComponent, CoverImageComponent]
 })
 export class SeriesDetailComponent implements OnInit, AfterContentChecked {
 
@@ -191,6 +166,7 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
   private readonly modalService = inject(NgbModal);
   private readonly toastr = inject(ToastrService);
   protected readonly accountService = inject(AccountService);
+  protected readonly licenseService = inject(LicenseService);
   private readonly actionFactoryService = inject(ActionFactoryService);
   private readonly libraryService = inject(LibraryService);
   private readonly titleService = inject(Title);
@@ -273,6 +249,8 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
   downloadInProgress: boolean = false;
 
   nextExpectedChapter: NextExpectedChapter | undefined;
+  loadPageSource = new ReplaySubject<boolean>(1);
+  loadPage$ = this.loadPageSource.asObservable();
 
   /**
    * Track by function for Volume to tell when to refresh card data
@@ -282,14 +260,6 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
    * Track by function for Chapter to tell when to refresh card data
    */
   trackByChapterIdentity = (index: number, item: Chapter) => `${item.title}_${item.minNumber}_${item.maxNumber}_${item.volumeId}_${item.pagesRead}`;
-  trackByRelatedSeriesIdentify = (index: number, item: RelatedSeriesPair) => `${item.series.name}_${item.series.libraryId}_${item.series.pagesRead}_${item.relation}`;
-  trackBySeriesIdentify = (index: number, item: Series) => `${item.name}_${item.libraryId}_${item.pagesRead}`;
-  trackByStoryLineIdentity = (index: number, item: StoryLineItem) => {
-    if (item.isChapter) {
-      return this.trackByChapterIdentity(index, item!.chapter!)
-    }
-    return this.trackByVolumeIdentity(index, item!.volume!);
-  };
 
   /**
    * Are there any related series
@@ -333,7 +303,7 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
    */
   download$: Observable<DownloadEvent | null> | null = null;
 
-  bulkActionCallback = (action: ActionItem<any>, data: any) => {
+  bulkActionCallback = async (action: ActionItem<any>, data: any) => {
     if (this.series === undefined) {
       return;
     }
@@ -377,6 +347,19 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
         this.actionService.markMultipleAsUnread(seriesId, selectedVolumeIds, chapters,  () => {
           this.setContinuePoint();
           // TODO: BUG: This doesn't update series pagesRead
+          this.bulkSelectionService.deselectAll();
+          this.cdRef.markForCheck();
+        });
+        break;
+      case Action.SendTo:
+        const device = (action._extra!.data as Device);
+        this.actionService.sendToDevice(chapters.map(c => c.id), device);
+        this.bulkSelectionService.deselectAll();
+        this.cdRef.markForCheck();
+        break;
+      case Action.Delete:
+        await this.actionService.deleteMultipleChapters(seriesId, chapters, () => {
+          // No need to update the page as the backend will spam volume/chapter deletions
           this.bulkSelectionService.deselectAll();
           this.cdRef.markForCheck();
         });
@@ -485,6 +468,8 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       return this.downloadService.mapToEntityType(events, this.series);
     }));
 
+    this.loadPage$.pipe(takeUntilDestroyed(this.destroyRef), debounceTime(300), tap(val => this.loadSeries(this.seriesId, val))).subscribe();
+
     this.messageHub.messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
       if (event.event === EVENTS.SeriesRemoved) {
         const seriesRemovedEvent = event.payload as SeriesRemovedEvent;
@@ -495,7 +480,8 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       } else if (event.event === EVENTS.ScanSeries) {
         const seriesScanEvent = event.payload as ScanSeriesEvent;
         if (seriesScanEvent.seriesId === this.seriesId) {
-          this.loadSeries(this.seriesId);
+          //this.loadSeries(this.seriesId);
+          this.loadPageSource.next(false);
         }
       } else if (event.event === EVENTS.CoverUpdate) {
         const coverUpdateEvent = event.payload as CoverUpdateEvent;
@@ -505,7 +491,8 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       } else if (event.event === EVENTS.ChapterRemoved) {
         const removedEvent = event.payload as ChapterRemovedEvent;
         if (removedEvent.seriesId !== this.seriesId) return;
-        this.loadSeries(this.seriesId, false);
+        //this.loadSeries(this.seriesId, false);
+        this.loadPageSource.next(false);
       }
     });
 
@@ -534,7 +521,8 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       }
     }), takeUntilDestroyed(this.destroyRef)).subscribe();
 
-    this.loadSeries(this.seriesId, true);
+    //this.loadSeries(this.seriesId, true);
+    this.loadPageSource.next(true);
 
     this.pageExtrasGroup.get('renderMode')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((val: PageLayoutMode | null) => {
       if (val == null) return;
@@ -543,19 +531,6 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
     });
   }
 
-  @HostListener('document:keydown.shift', ['$event'])
-  handleKeypress(event: KeyboardEvent) {
-    if (event.key === KEY_CODES.SHIFT) {
-      this.bulkSelectionService.isShiftDown = true;
-    }
-  }
-
-  @HostListener('document:keyup.shift', ['$event'])
-  handleKeyUp(event: KeyboardEvent) {
-    if (event.key === KEY_CODES.SHIFT) {
-      this.bulkSelectionService.isShiftDown = false;
-    }
-  }
 
   onNavChange(event: NgbNavChangeEvent) {
     this.bulkSelectionService.deselectAll();
@@ -574,12 +549,12 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
     switch(action.action) {
       case(Action.MarkAsRead):
         this.actionService.markSeriesAsRead(series, (series: Series) => {
-          this.loadSeries(series.id);
+          this.loadPageSource.next(false);
         });
         break;
       case(Action.MarkAsUnread):
         this.actionService.markSeriesAsUnread(series, (series: Series) => {
-          this.loadSeries(series.id);
+          this.loadPageSource.next(false);
         });
         break;
       case(Action.Scan):
@@ -613,6 +588,13 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
         if (this.downloadInProgress) return;
         this.downloadSeries();
         break;
+      case Action.Match:
+        this.actionService.matchSeries(this.series, (refreshNeeded) => {
+          if (refreshNeeded) {
+            this.loadSeries(this.series.id, refreshNeeded);
+          }
+        });
+        break;
       case Action.SendTo:
         {
           const chapterIds = [...this.volumes.map(v => v.chapters.map(c => c.id)).flat(), ...this.specials.map(c => c.id)]
@@ -639,7 +621,7 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       case(Action.Delete):
         await this.actionService.deleteVolume(volume.id, (b) => {
           if (!b) return;
-          this.loadSeries(this.seriesId, false);
+          this.loadPageSource.next(false);
         });
         break;
       case(Action.AddToReadingList):
@@ -699,7 +681,7 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
 
   loadSeries(seriesId: number, loadExternal: boolean = false) {
     this.seriesService.getMetadata(seriesId).subscribe(metadata => {
-      this.seriesMetadata = metadata;
+      this.seriesMetadata = {...metadata};
       this.cdRef.markForCheck();
 
       if (![PublicationStatus.Ended, PublicationStatus.OnGoing].includes(this.seriesMetadata.publicationStatus)) return;
@@ -1041,7 +1023,7 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
   }
 
   openEditChapter(chapter: Chapter) {
-    const ref = this.modalService.open(EditChapterModalComponent, { size: 'xl' });
+    const ref = this.modalService.open(EditChapterModalComponent, DefaultModalOptions);
     ref.componentInstance.chapter = chapter;
     ref.componentInstance.libraryType = this.libraryType;
     ref.componentInstance.seriesId = this.series?.id;
@@ -1049,13 +1031,13 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
 
     ref.closed.subscribe((res: EditChapterModalCloseResult) => {
       if (res.success && res.isDeleted) {
-        this.loadSeries(this.seriesId, false);
+        this.loadPageSource.next(false);
       }
     });
   }
 
   openEditVolume(volume: Volume) {
-    const ref = this.modalService.open(EditVolumeModalComponent, { size: 'xl' });
+    const ref = this.modalService.open(EditVolumeModalComponent, DefaultModalOptions);
     ref.componentInstance.volume = volume;
     ref.componentInstance.libraryType = this.libraryType;
     ref.componentInstance.seriesId = this.series?.id;
@@ -1063,20 +1045,20 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
 
     ref.closed.subscribe((res: EditChapterModalCloseResult) => {
       if (res.success && res.isDeleted) {
-        this.loadSeries(this.seriesId, false);
+        this.loadPageSource.next(false);
       }
     });
   }
 
   openEditSeriesModal() {
-    const modalRef = this.modalService.open(EditSeriesModalComponent, {  size: 'xl' });
+    const modalRef = this.modalService.open(EditSeriesModalComponent, DefaultModalOptions);
     modalRef.componentInstance.series = this.series;
     modalRef.closed.subscribe((closeResult: EditSeriesModalCloseResult) => {
       if (closeResult.success) {
         window.scrollTo(0, 0);
-        this.loadSeries(this.seriesId, closeResult.updateExternal);
+        this.loadPageSource.next(closeResult.updateExternal);
       } else if (closeResult.updateExternal) {
-        this.loadSeries(this.seriesId, closeResult.updateExternal);
+        this.loadPageSource.next(closeResult.updateExternal);
       }
     });
   }
@@ -1088,7 +1070,7 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
   openReviewModal() {
     const userReview = this.getUserReview();
 
-    const modalRef = this.modalService.open(ReviewSeriesModalComponent, { scrollable: true, size: 'lg' });
+    const modalRef = this.modalService.open(ReviewSeriesModalComponent, DefaultModalOptions);
     modalRef.componentInstance.series = this.series;
     if (userReview.length > 0) {
       modalRef.componentInstance.review = userReview[0];

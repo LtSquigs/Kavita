@@ -12,8 +12,10 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Helpers;
 #nullable enable
 
+
 public static class GenreHelper
 {
+
     public static async Task UpdateChapterGenres(Chapter chapter, IEnumerable<string> genreNames, IUnitOfWork unitOfWork)
     {
         // Normalize genre names once and store them in a hash set for quick lookups

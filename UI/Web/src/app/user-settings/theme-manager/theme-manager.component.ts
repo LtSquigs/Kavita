@@ -31,6 +31,7 @@ import {Select2Module} from "ng-select2-component";
 import {LoadingComponent} from "../../shared/loading/loading.component";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {PreviewImageModalComponent} from "../../shared/_components/carousel-modal/preview-image-modal.component";
+import {DefaultModalOptions} from "../../_models/default-modal-options";
 
 interface ThemeContainer {
   downloadable?: DownloadableSiteTheme;
@@ -69,6 +70,12 @@ export class ThemeManagerComponent {
   hasAdmin$ = this.accountService.currentUser$.pipe(
     takeUntilDestroyed(this.destroyRef),
     map(c => c && this.accountService.hasAdminRole(c)),
+    shareReplay({refCount: true, bufferSize: 1}),
+  );
+
+  canUseThemes$ = this.accountService.currentUser$.pipe(
+    takeUntilDestroyed(this.destroyRef),
+    map(c => c && !this.accountService.hasReadOnlyRole(c)),
     shareReplay({refCount: true, bufferSize: 1}),
   );
 
@@ -191,7 +198,7 @@ export class ThemeManagerComponent {
   previewImage(imgUrl: string) {
     if (imgUrl === '') return;
 
-    const ref = this.modalService.open(PreviewImageModalComponent, {size: 'xl', fullscreen: 'lg'});
+    const ref = this.modalService.open(PreviewImageModalComponent, DefaultModalOptions);
     ref.componentInstance.title = this.selectedTheme!.name;
     ref.componentInstance.image = imgUrl;
   }

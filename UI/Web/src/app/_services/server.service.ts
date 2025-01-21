@@ -62,8 +62,8 @@ export class ServerService {
     return this.http.get<UpdateVersionEvent>(this.baseUrl + 'server/check-for-updates', {});
   }
 
-  getChangelog() {
-    return this.http.get<UpdateVersionEvent[]>(this.baseUrl + 'server/changelog', {});
+  getChangelog(count: number = 0) {
+    return this.http.get<UpdateVersionEvent[]>(this.baseUrl + 'server/changelog?count=' + count, {});
   }
 
   getRecurringJobs() {

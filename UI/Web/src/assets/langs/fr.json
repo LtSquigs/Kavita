@@ -125,7 +125,7 @@
         "layout-mode-tooltip": "Rendu d'une seule image à l'écran ou de deux images côte à côte",
         "background-color-label": "Couleur d'arrière-plan",
         "background-color-tooltip": "Couleur de fond du lecteur d'image",
-        "auto-close-menu-label": "Menu de fermeture automatique",
+        "auto-close-menu-label": "Fermeture automatique du Menu",
         "auto-close-menu-tooltip": "Le menu devrait se fermer tout seul",
         "show-screen-hints-label": "Afficher les conseils à l'écran",
         "show-screen-hints-tooltip": "Afficher une superposition pour aider à comprendre la zone et la direction de la pagination",
@@ -145,9 +145,9 @@
         "writing-style-label": "Style d'écriture",
         "writing-style-tooltip": "Change la direction du texte. Horizontal est de gauche à droite, vertical est de haut en bas.",
         "layout-mode-book-label": "Mise en page",
-        "layout-mode-book-tooltip": "Comment le contenu devrait être mis en page. Défilement correspond à la présentation du livre. 1 ou 2 Colonnes utilise 1 ou 2 colonnes adaptées à la hauteur de l'appareil par page",
+        "layout-mode-book-tooltip": "Comment le contenu devrait être mis en page. Défilement correspond à la présentation d'origine du livre. 1 ou 2 Colonnes adapte le texte à la hauteur de l'appareil avec une 1 ou 2 colonnes par page",
         "color-theme-book-label": "Couleur du thème",
-        "color-theme-book-tooltip": "Quelle theme de couleur appliquer aux contenu et menu du lecteur de livre",
+        "color-theme-book-tooltip": "Quel thème de couleur appliquer aux contenu et menu du lecteur de livre",
         "font-size-book-label": "Taille de la Police",
         "font-size-book-tooltip": "Pourcentage de mise à l'échelle à appliquer à la police du livre",
         "line-height-book-label": "Espacement de l'interligne",
@@ -155,7 +155,7 @@
         "margin-book-label": "Marge",
         "margin-book-tooltip": "Quel espace de chaque côté de l'écran. Cela sera remplacé par 0 sur les appareils mobiles indépendamment de ce réglage.",
         "pdf-reader-settings-title": "Lecteur PDF",
-        "pdf-scroll-mode-label": "mode de défilement",
+        "pdf-scroll-mode-label": "Mode de défilement",
         "pdf-scroll-mode-tooltip": "Mode de défilement des pages. Vertical/Horizontal et Tapez pour paginer (pas de défilement)",
         "pdf-spread-mode-label": "Mode d'étalement",
         "pdf-spread-mode-tooltip": "Comment les pages doivent être mises en page. Simple ou double (paire/impaire)",
@@ -304,7 +304,7 @@
         "token-set": "Jeton configuré",
         "generate": "Générer",
         "generic-instructions": "Renseignez les informations sur les différents services externes que vous avez pour permettre à Kavita+ d’interagir avec eux.",
-        "instructions": "Les nouveaux utilisateurs doivent cliquer sur \"{{scrobbling-providers.generate}}\" ci-dessous pour autoriser Kavita+ à échanger avec {{service}}. Une fois le programme autorisé, vous pouvez copier-coller le Jeton dans le formulaire ci-dessous. Si besoin, vous pouvez regénérer votre Jeton à tout moment",
+        "instructions": "Les nouveaux utilisateurs doivent cliquer sur \"{{scrobbling-providers.generate}}\" ci-dessous pour autoriser Kavita+ à échanger avec {{service}}. Une fois le programme autorisé, vous pouvez copier-coller le Jeton dans le formulaire ci-dessous. Si besoin, vous pouvez regénérer votre Jeton à tout moment.",
         "mal-instructions": "Kavita utilise un identifiant client MAL pour l'authentification. Créez un nouveau client pour Kavita et une fois approuvé, fournissez l'identifiant du client et votre nom d'utilisateur.",
         "scrobbling-applicable-label": "Suivi d'activité (Scrobbling) possible",
         "token-input-label": "Mettre ici le token pour {{service}}",
@@ -563,8 +563,8 @@
         "nightly": "Nightly : {{version}}",
         "published-label": "Publié : ",
         "available": "Disponible",
-        "description": "Si vous ne voyez pas un {{installed}}",
-        "description-continued": "étiquette, vous êtes sur une version de développement quotidienne (nightly release). Seules les versions majeures seront disponibles. Une étiquette spécifique sera affichée lorsqu'il s'agit d'une version quotidienne (nightly release) à partir de la version stable."
+        "description": "Si vous ne voyez pas une étiquette {{installed}}",
+        "description-continued": ", vous êtes sur une version de développement quotidienne (nightly release). Seules les versions majeures seront disponibles. Une étiquette spécifique sera affichée lorsqu'il s'agit d'une version quotidienne (nightly release) à partir de la version stable."
     },
     "invite-user": {
         "title": "Inviter un utilisateur",
@@ -617,7 +617,8 @@
         "kavita+-desc-part-2": "avantages premium",
         "kavita+-desc-part-3": "aujourd'hui !",
         "kavita+-requirement": "Kavita+ est conçu pour fonctionner uniquement avec la dernière version - 2 versions. Toute autre version est susceptible de ne pas fonctionner.",
-        "kavita+-releases": "Voir les versions"
+        "kavita+-releases": "Voir les versions",
+        "help-label": "{{common.help}}"
     },
     "book-line-overlay": {
         "copy": "Copier",
@@ -819,7 +820,8 @@
         "donate-tooltip": "Vous pouvez supprimer ce message en vous abonnant à Kavita+",
         "back": "Retour",
         "more": "Plus",
-        "customize": "{{settings.customize}}"
+        "customize": "{{settings.customize}}",
+        "browse-authors": "Parcourir les auteurs"
     },
     "library-settings-modal": {
         "close": "{{common.close}}",
@@ -957,7 +959,12 @@
         "imprints-title": "{{metadata-fields.imprints-title}}",
         "genres-title": "{{metadata-fields.genres-title}}",
         "tags-title": "{{metadata-fields.tags-title}}",
-        "weblinks-title": "{{tabs.weblink-tab}}"
+        "weblinks-title": "{{tabs.weblink-tab}}",
+        "release-title": "{{sort-field-pipe.release-year}}",
+        "language-title": "{{edit-chapter-modal.language-label}}",
+        "format-title": "{{metadata-filter.format-label}}",
+        "read-time-title": "{{edit-chapter-modal.reading-time-label}}",
+        "length-title": "{{edit-chapter-modal.words-label}}"
     },
     "related-tab": {
         "reading-lists-title": "{{reading-lists.title}}",
@@ -1006,7 +1013,9 @@
         "special": "Spécial",
         "issue-num": "{{common.issue-hash-num}}",
         "chapter": "{{common.chapter-num}}",
-        "book-num": "{{common.book-num-shorthand}}"
+        "book-num": "{{common.book-num-shorthand}}",
+        "vol-num": "{{user-scrobble-history.volume-num}}",
+        "single-volume": "Volume unique"
     },
     "external-series-card": {
         "open-external": "Ouvrir à l'extérieur"
@@ -1032,7 +1041,7 @@
         "reset": "{{common.reset}}",
         "test": "Test",
         "host-name-label": "Nom d'hôte",
-        "host-name-tooltip": "Nom de domaine (du proxy inversé). Si défini, la génération d'e-mails l'utilisera toujours.",
+        "host-name-tooltip": "Nom de domaine (du Reverse Proxy). Nécessaire pour la fonctionnalité de messagerie. S'il n'y a pas de reverse proxy, utiliser n'importe quelle url.",
         "host-name-validation": "Le nom d'hôte doit commencer par http(s) et ne pas se terminer par /",
         "sender-address-label": "Adresse d’expéditeur",
         "sender-address-tooltip": "Il s'agit de l'adresse électronique que le destinataire verra lorsqu'il recevra l'e-mail. Il s'agit généralement de l'adresse électronique associée au compte.",
@@ -1245,7 +1254,10 @@
         "sync-themes-task-desc": "Synchroniser les thèmes téléchargés avec les modifications du dépôt d'origine si les versions correspondent.",
         "sync-themes-success": "La synchronisation des thèmes a été mise en file d'attente",
         "check-for-updates-task": "Rechercher des mises à jour",
-        "check-for-updates-task-desc": "Vérifier s'il y a des versions stables en avance sur votre version."
+        "check-for-updates-task-desc": "Vérifier s'il y a des versions stables en avance sur votre version.",
+        "clean-up-task": "Nettoyage général",
+        "clean-up-task-desc": "Effectue des activités de nettoyage nocturnes sur le serveur. Peut prendre beaucoup de temps, ne doit pas être exécuté lorsque des utilisateurs ou des analyses sont actifs. S'exécute toutes les 24 heures.",
+        "clean-up-task-success": "Nettoyage terminé"
     },
     "manage-users": {
         "title": "Utilisateurs actifs",
@@ -1300,7 +1312,8 @@
         "last-sync-title": "Dernière synchro :",
         "source-url-title": "URL source :",
         "total-series-title": "Total de séries :",
-        "missing-series-title": "Séries manquantes :"
+        "missing-series-title": "Séries manquantes :",
+        "last-sync-tooltip": "Kavita se synchronise quotidiennement avec le fournisseur de collections en ligne."
     },
     "library-recommended": {
         "no-data": "Il n'y a rien à montrer ici. Ajoutez des métadonnées à votre bibliothèque, lisez quelque chose ou évaluez quelque chose. Il est possible que les recommandations soient désactivées dans cette bibliothèque.",
@@ -1522,7 +1535,8 @@
         "dry-run-step": "Simuler",
         "final-import-step": "Dernière étape",
         "comicvine-parsing-label": "Utiliser la correspondance des séries de Comic Vine",
-        "cbl-repo": "Vous trouverez de nombreuses listes de lecture dans la communauté <a href='https://github.com/DieselTech/CBL-ReadingLists' target='_blank' rel='noopener noreferrer'>repo</a>."
+        "cbl-repo": "Vous trouverez de nombreuses listes de lecture dans la communauté <a href='https://github.com/DieselTech/CBL-ReadingLists' target='_blank' rel='noopener noreferrer'>repo</a>.",
+        "help-label": "{{common.help}}"
     },
     "pdf-reader": {
         "loading-message": "Chargement......de PDF peut prendre plus de temps que prévu",
@@ -1569,7 +1583,7 @@
         "last-page-tooltip": "Dernière page",
         "left-to-right-alt": "De gauche à droite",
         "right-to-left-alt": "De droite à gauche",
-        "reading-direction-tooltip": "Sens de lecture : ",
+        "reading-direction-tooltip": "Sens de lecture : ",
         "reading-mode-tooltip": "Mode de lecture",
         "collapse": "Cacher",
         "fullscreen": "Plein écran",
@@ -1639,7 +1653,8 @@
         "unit-reading-date": "Date",
         "unit-average-rating": "Notation externe de Kavita+, en pourcentage",
         "unit-reading-progress": "Pourcentage",
-        "unit-user-rating": "{{metadata-filter-row.unit-reading-progress}}"
+        "unit-user-rating": "0,0 - 5,0 étoiles",
+        "unit-read-last": "Jours à partir d'AUJOURD'HUI"
     },
     "sort-field-pipe": {
         "sort-name": "Nom",
@@ -1870,7 +1885,8 @@
         "provided-by-label": "Fourni par"
     },
     "next-expected-card": {
-        "title": "~{{date}}"
+        "title": "~{{date}}",
+        "upcoming-title": "Prochainement"
     },
     "server-stats": {
         "total-series-label": "Nombre de séries",
@@ -1997,14 +2013,15 @@
         "collections": "{{side-nav.collections}}",
         "reading-lists": "{{side-nav.reading-lists}}",
         "bookmarks": "{{side-nav.bookmarks}}",
-        "all-series": "{{side-nav.all-series}}"
+        "all-series": "{{side-nav.all-series}}",
+        "browse-authors": "{{side-nav.browse-authors}}"
     },
     "filter-field-pipe": {
         "age-rating": "{{metadata-fields.age-rating-title}}",
         "characters": "{{metadata-fields.characters-title}}",
         "collection-tags": "Étiquettes de la collection",
         "colorist": "Coloriste",
-        "cover-artist": "{{person-role-pipe.cover-artist}}",
+        "cover-artist": "{{person-role-pipe.artist}}",
         "editor": "Correcteur",
         "formats": "Formats",
         "genres": "{{metadata-fields.genres-title}}",
@@ -2031,7 +2048,8 @@
         "file-path": "Chemin du fichier",
         "want-to-read": "À Lire",
         "read-date": "Date de lecture",
-        "average-rating": "Note moyenne"
+        "average-rating": "Note moyenne",
+        "read-last": "Dernièrement lu"
     },
     "filter-comparison-pipe": {
         "begins-with": "Commence par",
@@ -2165,7 +2183,9 @@
         "confirm-reset-server-settings": "Cette opération réinitialisera vos paramètres aux valeurs de la première installation. Êtes-vous sûr de vouloir continuer ?",
         "bulk-scan": "Balayer plusieurs bibliothèques sera réalisé l'une après l'autre. En fonction de la taille de la bibliothèque cela peut prendre beaucoup de temps ou même échouer.",
         "bulk-covers": "Rafraichir les couvertures pour plusieurs bibliothèques est lourd pour le serveur et peut prendre longtemps. Êtes vous sûr de vouloir continuer ?",
-        "must-select-library": "Au moins une bibliothèque doit être sélectionnée"
+        "must-select-library": "Au moins une bibliothèque doit être sélectionnée",
+        "person-image-downloaded": "La couverture de la personne a été téléchargée et appliquée.",
+        "confirm-delete-multiple-chapters": "Etes-vous sûr de vouloir supprimer {{count}} chapitres/volumes ? Cela ne modifiera pas les fichiers sur le disque."
     },
     "read-time-pipe": {
         "less-than-hour": "<1 Heure",
@@ -2189,7 +2209,7 @@
         "mark-as-read-tooltip": "Marquer comme entièrement lu",
         "mark-as-unread": "Marquer comme non lu",
         "mark-as-unread-tooltip": "Marquer comme non lu",
-        "scan-series": "Scanner les séries",
+        "scan-series": "Scanner la/les série(s)",
         "scan-series-tooltip": "Rechercher des modifications dans les séries",
         "add-to": "Ajouter à",
         "add-to-want-to-read": "Ajouter à la liste des envies",
@@ -2240,7 +2260,7 @@
     "preferences": {
         "left-to-right": "De gauche à droite",
         "right-to-left": "De droite à gauche",
-        "horizontal": "Horizontale",
+        "horizontal": "Horizontal",
         "vertical": "Verticale",
         "automatic": "Automatique",
         "fit-to-height": "Ajuster à la hauteur",
@@ -2351,10 +2371,46 @@
         "book-nums": "Livres",
         "issue-nums": "Numéros",
         "chapter-nums": "Chapitres",
-        "volume-nums": "Volumes"
+        "volume-nums": "Volumes",
+        "author-count": "{{num}} Auteurs"
     },
     "confirm": {
         "alert": "Alerte",
         "confirm": "Confirmer"
+    },
+    "person-detail": {
+        "all-roles": "Roles",
+        "browse-person-by-role-title": "Toutes les œuvres de {{name}} en tant que {{role}}",
+        "known-for-title": "Connu pour",
+        "individual-role-title": "En tant que {{role}}",
+        "browse-person-title": "Toutes les œuvres de {{name}}"
+    },
+    "edit-person-modal": {
+        "save": "{{common.save}}",
+        "close": "{{common.close}}",
+        "mal-tooltip": "https://myanimelist.net/people/{MalId}/",
+        "asin-tooltip": "https://www.amazon.com/stores/J.K.-Rowling/author/{ASIN}",
+        "anilist-tooltip": "https://anilist.co/staff/{AniListId}/",
+        "title": "Détails de {{personName}}",
+        "general-tab": "{{edit-series-modal.general-tab}}",
+        "cover-image-tab": "{{edit-series-modal.cover-image-tab}}",
+        "loading": "{{common.loading}}",
+        "name-label": "{{edit-series-modal.name-label}}",
+        "hardcover-id-label": "Hardcover Id",
+        "role-label": "Role",
+        "mal-id-label": "MAL Id",
+        "anilist-id-label": "AniList Id",
+        "asin-label": "ASIN",
+        "hardcover-tooltip": "https://hardcover.app/authors/{HardcoverId}",
+        "description-label": "Description",
+        "required-field": "{{validations.required-field}}",
+        "cover-image-description": "{{edit-series-modal.cover-image-description}}",
+        "cover-image-description-extra": "Vous pouvez également télécharger une couverture à partir de CoversDB, si elle est disponible.",
+        "download-coversdb": "Télécharger à partir de CoversDB"
+    },
+    "browse-authors": {
+        "title": "Parcourir les auteurs et écrivains",
+        "author-count": "{{num}} Personnes",
+        "cover-image-description": "{{edit-series-modal.cover-image-description}}"
     }
 }

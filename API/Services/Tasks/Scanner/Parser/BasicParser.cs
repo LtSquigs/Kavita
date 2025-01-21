@@ -31,23 +31,11 @@ public class BasicParser(IDirectoryService directoryService, IDefaultParser imag
             Format = Parser.ParseFormat(filePath),
             Title = Parser.RemoveExtensionIfSupported(fileName)!,
             FileMetadata = new FileMetadata(filePath).Normalized(),
-            Series = string.Empty,
-            ComicInfo = comicInfo
+            Series = Parser.ParseSeries(fileName, type),
+            ComicInfo = comicInfo,
+            Chapters = Parser.ParseChapter(fileName, type),
+            Volumes = Parser.ParseVolume(fileName, type),
         };
-
-        // This will be called if the epub is already parsed once then we call and merge the information, if the
-        if (Parser.IsEpub(filePath))
-        {
-            ret.Chapters = Parser.ParseChapter(fileName, type);
-            ret.Series = Parser.ParseSeries(fileName, type);
-            ret.Volumes = Parser.ParseVolume(fileName, type);
-        }
-        else
-        {
-            ret.Chapters = Parser.ParseChapter(fileName, type);
-            ret.Series = type == LibraryType.Comic ? Parser.ParseComicSeries(fileName) : Parser.ParseSeries(fileName, type);
-            ret.Volumes = type == LibraryType.Comic ? Parser.ParseComicVolume(fileName) : Parser.ParseVolume(fileName, type);
-        }
 
         if (ret.Series == string.Empty || Parser.IsImage(filePath))
         {

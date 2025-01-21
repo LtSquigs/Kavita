@@ -9,6 +9,7 @@ using API.DTOs.Dashboard;
 using API.DTOs.Filtering;
 using API.DTOs.Filtering.v2;
 using API.DTOs.Metadata;
+using API.DTOs.Metadata.Matching;
 using API.DTOs.Recommendation;
 using API.DTOs.SeriesDetail;
 using API.Entities;
@@ -134,7 +135,7 @@ public class SeriesController : BaseApiController
         var username = User.GetUsername();
         _logger.LogInformation("Series {SeriesId} is being deleted by {UserName}", seriesId, username);
 
-        return Ok(await _seriesService.DeleteMultipleSeries(new[] {seriesId}));
+        return Ok(await _seriesService.DeleteMultipleSeries([seriesId]));
     }
 
     [Authorize(Policy = "RequireAdminRole")]
@@ -344,7 +345,7 @@ public class SeriesController : BaseApiController
     /// <param name="libraryId"></param>
     /// <returns></returns>
     [HttpPost("all")]
-    [Obsolete("User all-v2")]
+    [Obsolete("Use all-v2")]
     public async Task<ActionResult<IEnumerable<SeriesDto>>> GetAllSeries(FilterDto filterDto, [FromQuery] UserParams userParams, [FromQuery] int libraryId = 0)
     {
         var userId = User.GetUserId();
@@ -614,6 +615,44 @@ public class SeriesController : BaseApiController
         var userId = User.GetUserId();
 
         return Ok(await _seriesService.GetEstimatedChapterCreationDate(seriesId, userId));
+    }
+
+    /// <summary>
+    /// Sends a request to Kavita+ API for all potential matches, sorted by relevance
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
+    [HttpPost("match")]
+    public async Task<ActionResult<IList<ExternalSeriesMatchDto>>> MatchSeries(MatchSeriesDto dto)
+    {
+        return Ok(await _externalMetadataService.MatchSeries(dto));
+    }
+
+    /// <summary>
+    /// This will perform the fix match
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <param name="seriesId"></param>
+    /// <returns></returns>
+    [HttpPost("update-match")]
+    public async Task<ActionResult> UpdateSeriesMatch(ExternalSeriesDetailDto dto, [FromQuery] int seriesId)
+    {
+        await _externalMetadataService.FixSeriesMatch(seriesId, dto);
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// When true, will not perform a match and will prevent Kavita from attempting to match/scrobble against this series
+    /// </summary>
+    /// <param name="seriesId"></param>
+    /// <param name="dontMatch"></param>
+    /// <returns></returns>
+    [HttpPost("dont-match")]
+    public async Task<ActionResult> UpdateDontMatch([FromQuery] int seriesId, [FromQuery] bool dontMatch)
+    {
+        await _externalMetadataService.UpdateSeriesDontMatch(seriesId, dontMatch);
+        return Ok();
     }
 
 }

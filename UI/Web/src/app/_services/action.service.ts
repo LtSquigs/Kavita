@@ -1,7 +1,6 @@
-import {inject, Injectable, OnDestroy} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
-import {Subject, tap} from 'rxjs';
 import { take } from 'rxjs/operators';
 import { BulkAddToCollectionComponent } from '../cards/_modals/bulk-add-to-collection/bulk-add-to-collection.component';
 import { AddToListModalComponent, ADD_FLOW } from '../reading-list/_modals/add-to-list-modal/add-to-list-modal.component';
@@ -22,11 +21,13 @@ import { SeriesService } from './series.service';
 import {translate} from "@jsverse/transloco";
 import {UserCollection} from "../_models/collection-tag";
 import {CollectionTagService} from "./collection-tag.service";
-import {SmartFilter} from "../_models/metadata/v2/smart-filter";
 import {FilterService} from "./filter.service";
 import {ReadingListService} from "./reading-list.service";
 import {ChapterService} from "./chapter.service";
 import {VolumeService} from "./volume.service";
+import {DefaultModalOptions} from "../_models/default-modal-options";
+import {MatchSeriesModalComponent} from "../_single-module/match-series-modal/match-series-modal.component";
+
 
 export type LibraryActionCallback = (library: Partial<Library>) => void;
 export type SeriesActionCallback = (series: Series) => void;
@@ -121,7 +122,7 @@ export class ActionService {
   }
 
   editLibrary(library: Partial<Library>, callback?: LibraryActionCallback) {
-    const modalRef = this.modalService.open(LibrarySettingsModalComponent, {size: 'xl', fullscreen: 'md'});
+    const modalRef = this.modalService.open(LibrarySettingsModalComponent, DefaultModalOptions);
       modalRef.componentInstance.library = library;
       modalRef.closed.subscribe((closeResult: {success: boolean, library: Library, coverImageUpdate: boolean}) => {
         if (callback) callback(library)
@@ -467,6 +468,16 @@ export class ActionService {
     });
   }
 
+  async deleteMultipleChapters(seriesId: number, chapterIds: Array<Chapter>, callback?: BooleanActionCallback) {
+    if (!await this.confirmService.confirm(translate('toasts.confirm-delete-multiple-chapters'))) return;
+
+    this.chapterService.deleteMultipleChapters(seriesId, chapterIds.map(c => c.id)).subscribe(() => {
+      if (callback) {
+        callback(true);
+      }
+    });
+  }
+
   /**
    * Deletes multiple collections
    * @param readingLists ReadingList, should have id
@@ -759,6 +770,16 @@ export class ActionService {
         callback();
       }
     });
+  }
+
+  matchSeries(series: Series, callback?: BooleanActionCallback) {
+   const ref = this.modalService.open(MatchSeriesModalComponent, {size: 'lg'});
+   ref.componentInstance.series = series;
+   ref.closed.subscribe(saved => {
+     if (callback) {
+       callback(saved);
+     }
+   });
   }
 
   async deleteFilter(filterId: number, callback?: BooleanActionCallback) {

@@ -62,6 +62,7 @@ import {ActionService} from "../../../_services/action.service";
 import {DownloadService} from "../../../shared/_services/download.service";
 import {SettingItemComponent} from "../../../settings/_components/setting-item/setting-item.component";
 import {ReadTimePipe} from "../../../_pipes/read-time.pipe";
+import {LicenseService} from "../../../_services/license.service";
 
 enum TabID {
   General = 0,
@@ -134,6 +135,7 @@ export class EditSeriesModalComponent implements OnInit {
   private readonly metadataService = inject(MetadataService);
   private readonly cdRef = inject(ChangeDetectorRef);
   public readonly accountService = inject(AccountService);
+  protected readonly licenseService = inject(LicenseService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly toastr = inject(ToastrService);
   private readonly actionFactoryService = inject(ActionFactoryService);
@@ -515,7 +517,7 @@ export class EditSeriesModalComponent implements OnInit {
     };
 
     personSettings.addTransformFn = ((title: string) => {
-      return {id: 0, name: title, description: '', coverImageLocked: false };
+      return {id: 0, name: title, description: '', coverImageLocked: false, primaryColor: '', secondaryColor: '' };
     });
 
     return personSettings;
@@ -551,6 +553,7 @@ export class EditSeriesModalComponent implements OnInit {
     // We only need to call updateSeries if we changed name, sort name, or localized name or reset a cover image
     const nameFieldsDirty = this.editSeriesForm.get('name')?.dirty || this.editSeriesForm.get('sortName')?.dirty || this.editSeriesForm.get('localizedName')?.dirty;
     const nameFieldLockChanged = this.series.nameLocked !== this.initSeries.nameLocked || this.series.sortNameLocked !== this.initSeries.sortNameLocked || this.series.localizedNameLocked !== this.initSeries.localizedNameLocked;
+
     if (nameFieldsDirty || nameFieldLockChanged || this.coverImageReset) {
       model.nameLocked = this.series.nameLocked;
       model.sortNameLocked = this.series.sortNameLocked;

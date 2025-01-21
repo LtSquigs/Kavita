@@ -23,6 +23,9 @@ import {OutOfDateModalComponent} from "./announcements/_components/out-of-date-m
 import {PreferenceNavComponent} from "./sidenav/preference-nav/preference-nav.component";
 import {Breakpoint, UtilityService} from "./shared/_services/utility.service";
 import {TranslocoService} from "@jsverse/transloco";
+import {User} from "./_models/user";
+import {VersionService} from "./_services/version.service";
+import {LicenseService} from "./_services/license.service";
 
 @Component({
     selector: 'app-root',
@@ -48,13 +51,15 @@ export class AppComponent implements OnInit {
   private readonly themeService = inject(ThemeService);
   private readonly document = inject(DOCUMENT);
   private readonly translocoService = inject(TranslocoService);
+  private readonly versionService = inject(VersionService); // Needs to be injected to run background job
+  private readonly licenseService = inject(LicenseService);
 
   protected readonly Breakpoint = Breakpoint;
 
 
   constructor(ratingConfig: NgbRatingConfig, modalConfig: NgbModalConfig) {
 
-    modalConfig.fullscreen = 'md';
+    modalConfig.fullscreen = 'lg';
 
     // Setup default rating config
     ratingConfig.max = 5;
@@ -119,46 +124,6 @@ export class AppComponent implements OnInit {
     // Bootstrap anything that's needed
     this.themeService.getThemes().subscribe();
     this.libraryService.getLibraryNames().pipe(take(1), shareReplay({refCount: true, bufferSize: 1})).subscribe();
-
-    // Get the server version, compare vs localStorage, and if different bust locale cache
-    const versionKey = 'kavita--version';
-    this.serverService.getVersion(user.apiKey).subscribe(version => {
-      const cachedVersion = localStorage.getItem(versionKey);
-      console.log('Kavita version: ', version, ' Running version: ', cachedVersion);
-
-      if (cachedVersion == null || cachedVersion != version) {
-        // Bust locale cache
-        this.bustLocaleCache();
-        localStorage.setItem(versionKey, version);
-        location.reload();
-      }
-      localStorage.setItem(versionKey, version);
-    });
-
-    // Every hour, have the UI check for an update. People seriously stay out of date
-    interval(2* 60 * 60 * 1000) // 2 hours in milliseconds
-      .pipe(
-        switchMap(() => this.accountService.currentUser$),
-        filter(u => u !== undefined && this.accountService.hasAdminRole(u)),
-        switchMap(_ => this.serverService.checkHowOutOfDate()),
-        filter(versionOutOfDate => {
-          return !isNaN(versionOutOfDate) && versionOutOfDate > 2;
-        }),
-        tap(versionOutOfDate => {
-          if (!this.ngbModal.hasOpenModals()) {
-            const ref = this.ngbModal.open(OutOfDateModalComponent, {size: 'xl', fullscreen: 'md'});
-            ref.componentInstance.versionsOutOfDate = versionOutOfDate;
-          }
-        })
-      )
-      .subscribe();
-  }
-
-  private bustLocaleCache() {
-    localStorage.removeItem('@transloco/translations/timestamp');
-    localStorage.removeItem('@transloco/translations');
-    localStorage.removeItem('translocoLang');
-    (this.translocoService as any).cache.delete(localStorage.getItem('kavita-locale') || 'en');
-    (this.translocoService as any).cache.clear();
+    this.licenseService.licenseInfo().subscribe();
   }
 }

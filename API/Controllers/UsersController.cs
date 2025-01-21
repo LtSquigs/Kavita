@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using API.Constants;
 using API.Data;
 using API.Data.Repositories;
 using API.DTOs;
+using API.DTOs.KavitaPlus.Account;
 using API.Extensions;
 using API.Services;
+using API.Services.Plus;
 using API.SignalR;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -22,14 +25,16 @@ public class UsersController : BaseApiController
     private readonly IMapper _mapper;
     private readonly IEventHub _eventHub;
     private readonly ILocalizationService _localizationService;
+    private readonly ILicenseService _licenseService;
 
     public UsersController(IUnitOfWork unitOfWork, IMapper mapper, IEventHub eventHub,
-        ILocalizationService localizationService)
+        ILocalizationService localizationService, ILicenseService licenseService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _eventHub = eventHub;
         _localizationService = localizationService;
+        _licenseService = licenseService;
     }
 
     [Authorize(Policy = "RequireAdminRole")]
@@ -82,12 +87,20 @@ public class UsersController : BaseApiController
         return Ok(libs.Any(x => x.Id == libraryId));
     }
 
+    /// <summary>
+    /// Update the user preferences
+    /// </summary>
+    /// <remarks>If the user has ReadOnly role, they will not be able to perform this action</remarks>
+    /// <param name="preferencesDto"></param>
+    /// <returns></returns>
     [HttpPost("update-preferences")]
     public async Task<ActionResult<UserPreferencesDto>> UpdatePreferences(UserPreferencesDto preferencesDto)
     {
         var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUsername(),
             AppUserIncludes.UserPreferences);
         if (user == null) return Unauthorized();
+        if (User.IsInRole(PolicyConstants.ReadOnlyRole)) return BadRequest(await _localizationService.Translate(User.GetUserId(), "permission-denied"));
+
         var existingPreferences = user!.UserPreferences;
 
         existingPreferences.ReadingDirection = preferencesDto.ReadingDirection;
@@ -163,5 +176,19 @@ public class UsersController : BaseApiController
     public async Task<ActionResult<IEnumerable<string>>> GetUserNames()
     {
         return Ok((await _unitOfWork.UserRepository.GetAllUsersAsync()).Select(u => u.UserName));
+    }
+
+    /// <summary>
+    /// Returns all users with tokens registered and their token information. Does not send the tokens.
+    /// </summary>
+    /// <remarks>Kavita+ only</remarks>
+    /// <returns></returns>
+    [Authorize(Policy = "RequireAdminRole")]
+    [HttpGet("tokens")]
+    public async Task<ActionResult<IEnumerable<UserTokenInfo>>> GetUserTokens()
+    {
+        if (!await _licenseService.HasActiveLicense()) return BadRequest(_localizationService.Translate(User.GetUserId(), "kavitaplus-restricted"));
+
+        return Ok((await _unitOfWork.UserRepository.GetUserTokenInfo()));
     }
 }

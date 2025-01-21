@@ -334,13 +334,16 @@ public class SeriesService : ISeriesService
     private async Task HandlePeopleUpdateAsync(SeriesMetadata metadata, ICollection<PersonDto> peopleDtos, PersonRole role)
     {
         // Normalize all names from the DTOs
-        var normalizedNames = peopleDtos.Select(p => Parser.Normalize(p.Name)).ToList();
+        var normalizedNames = peopleDtos
+            .Select(p => Parser.Normalize(p.Name))
+            .Distinct()
+            .ToList();
 
         // Bulk select people who already exist in the database
         var existingPeople = await _unitOfWork.PersonRepository.GetPeopleByNames(normalizedNames);
 
         // Use a dictionary for quick lookups
-        var existingPeopleDictionary = existingPeople.ToDictionary(p => p.NormalizedName, p => p);
+        var existingPeopleDictionary = existingPeople.DistinctBy(p => p.NormalizedName).ToDictionary(p => p.NormalizedName, p => p);
 
         // List to track people that will be added to the metadata
         var peopleToAdd = new List<Person>();
@@ -910,9 +913,14 @@ public class SeriesService : ISeriesService
         }
 
         // Calculate the forecast for when the next chapter is expected
-        var nextChapterExpected = chapters.Any()
-            ? chapters.Max(c => c.CreatedUtc) + TimeSpan.FromDays(forecastedTimeDifference)
-            : (DateTime?)null;
+        // var nextChapterExpected = chapters.Count > 0
+        //     ? chapters.Max(c => c.CreatedUtc) + TimeSpan.FromDays(forecastedTimeDifference)
+        //     : (DateTime?)null;
+        var lastChapterDate = chapters.Max(c => c.CreatedUtc);
+        var estimatedDate = lastChapterDate.AddDays(forecastedTimeDifference);
+        var nextChapterExpected = estimatedDate.Day > DateTime.DaysInMonth(estimatedDate.Year, estimatedDate.Month)
+            ? new DateTime(estimatedDate.Year, estimatedDate.Month, DateTime.DaysInMonth(estimatedDate.Year, estimatedDate.Month))
+            : estimatedDate;
 
         // For number and volume number, we need the highest chapter, not the latest created
         var lastChapter = chapters.MaxBy(c => c.MaxNumber)!;
@@ -936,6 +944,7 @@ public class SeriesService : ISeriesService
             {
                 LibraryType.Manga => await _localizationService.Translate(userId, "chapter-num", result.ChapterNumber),
                 LibraryType.Comic => await _localizationService.Translate(userId, "issue-num", "#", result.ChapterNumber),
+                LibraryType.ComicVine => await _localizationService.Translate(userId, "issue-num", "#", result.ChapterNumber),
                 LibraryType.Book => await _localizationService.Translate(userId, "book-num", result.ChapterNumber),
                 LibraryType.LightNovel => await _localizationService.Translate(userId, "book-num", result.ChapterNumber),
                 _ => await _localizationService.Translate(userId, "chapter-num", result.ChapterNumber)
