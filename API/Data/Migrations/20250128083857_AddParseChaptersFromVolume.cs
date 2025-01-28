@@ -5,7 +5,7 @@
 namespace API.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddFileMetadataStruct : Migration
+    public partial class AddParseChaptersFromVolume : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,11 +15,12 @@ namespace API.Data.Migrations
                 table: "MangaFile",
                 newName: "FileMetadata_Path");
 
-            migrationBuilder.AddColumn<string>(
+            migrationBuilder.AddColumn<int>(
                 name: "FileMetadata_CoverIndex",
                 table: "MangaFile",
                 type: "INTEGER",
-                nullable: true);
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.AddColumn<long>(
                 name: "FileMetadata_FileSize",
@@ -33,6 +34,13 @@ namespace API.Data.Migrations
                 table: "MangaFile",
                 type: "TEXT",
                 nullable: true);
+
+            migrationBuilder.AddColumn<bool>(
+                name: "ParseChaptersFromVolumes",
+                table: "Library",
+                type: "INTEGER",
+                nullable: false,
+                defaultValue: false);
         }
 
         /// <inheritdoc />
@@ -49,6 +57,10 @@ namespace API.Data.Migrations
             migrationBuilder.DropColumn(
                 name: "FileMetadata_PageRange",
                 table: "MangaFile");
+
+            migrationBuilder.DropColumn(
+                name: "ParseChaptersFromVolumes",
+                table: "Library");
 
             migrationBuilder.RenameColumn(
                 name: "FileMetadata_Path",
