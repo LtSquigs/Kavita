@@ -16,7 +16,7 @@ namespace API.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
 
             modelBuilder.Entity("API.Entities.AppRole", b =>
                 {
@@ -1094,6 +1094,26 @@ namespace API.Data.Migrations
                     b.ToTable("Genre");
                 });
 
+            modelBuilder.Entity("API.Entities.History.ManualMigrationHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductVersion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RanAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ManualMigrationHistory");
+                });
+
             modelBuilder.Entity("API.Entities.Library", b =>
                 {
                     b.Property<int>("Id")
@@ -1113,9 +1133,6 @@ namespace API.Data.Migrations
 
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("ParseChaptersFromVolumes")
-                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("FolderWatching")
                         .HasColumnType("INTEGER");
@@ -1146,6 +1163,9 @@ namespace API.Data.Migrations
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("ParseChaptersFromVolumes")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PrimaryColor")
                         .HasColumnType("TEXT");
@@ -1243,8 +1263,8 @@ namespace API.Data.Migrations
 
                     b.ComplexProperty<Dictionary<string, object>>("FileMetadata", "API.Entities.MangaFile.FileMetadata#FileMetadata", b1 =>
                         {
-                            b1.Property<string>("CoverFile")
-                                .HasColumnType("TEXT");
+                            b1.Property<int>("CoverIndex")
+                                .HasColumnType("INTEGER");
 
                             b1.Property<long>("FileSize")
                                 .HasColumnType("INTEGER");
@@ -1261,26 +1281,6 @@ namespace API.Data.Migrations
                     b.HasIndex("ChapterId");
 
                     b.ToTable("MangaFile");
-                });
-
-            modelBuilder.Entity("API.Entities.ManualMigrationHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductVersion")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("RanAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ManualMigrationHistory");
                 });
 
             modelBuilder.Entity("API.Entities.MediaError", b =>
