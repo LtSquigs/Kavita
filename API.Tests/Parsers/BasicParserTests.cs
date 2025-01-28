@@ -33,7 +33,7 @@ public class BasicParserTests
         fileSystem.AddFile("C:/Books/Batman/Batman #1.cbz", new MockFileData(""));
 
         var ds = new DirectoryService(_dsLogger, fileSystem);
-        var _is = new ImageService(null, ds, Substitute.For<IEasyCachingProviderFactory>());
+        var _is = new ImageService(null, ds);
         var _as = new ArchiveService(new NullLogger<ArchiveService>(), ds, _is, Substitute.For<IMediaErrorService>());
         _parser = new BasicParser(ds, new ImageParser(ds), _as);
     }
