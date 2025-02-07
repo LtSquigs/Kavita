@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.4.6",
+    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.4.10",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
@@ -11093,28 +11093,17 @@
               "type": "integer",
               "format": "int32"
             }
-          }
-        ],
-        "requestBody": {
-          "description": "",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExternalSeriesDetailDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExternalSeriesDetailDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExternalSeriesDetailDto"
-              }
+          },
+          {
+            "name": "aniListId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -11952,6 +11941,84 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EmailTestResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Settings/metadata-settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get the metadata settings for Kavita+ users.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSettingsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSettingsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update the metadata settings for Kavita+ users",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetadataSettingsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetadataSettingsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetadataSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSettingsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSettingsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetadataSettingsDto"
                 }
               }
             }
@@ -14544,6 +14611,28 @@
   },
   "components": {
     "schemas": {
+      "ALMediaTitle": {
+        "type": "object",
+        "properties": {
+          "englishTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "romajiTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "nativeTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "preferredTitle": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AgeRatingDto": {
         "required": [
           "title"
@@ -15486,6 +15575,14 @@
             "type": "string",
             "description": "UI Site Global Setting: The language locale that should be used for the user",
             "nullable": true
+          },
+          "aniListScrobblingEnabled": {
+            "type": "boolean",
+            "description": "Should this account have Scrobbling enabled for AniList"
+          },
+          "wantToReadSync": {
+            "type": "boolean",
+            "description": "Should this account have Want to Read Sync enabled"
           },
           "appUser": {
             "$ref": "#/components/schemas/AppUser"
@@ -18143,16 +18240,6 @@
             "type": "string",
             "nullable": true
           },
-          "volumeCount": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "chapterCount": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
           "provider": {
             "enum": [
               0,
@@ -18162,9 +18249,46 @@
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
             "format": "int32"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "averageScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chapters": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "volumes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "relations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeriesRelationship"
+            },
+            "nullable": true
+          },
+          "characters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeriesCharacter"
+            },
+            "nullable": true
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "This is AniListSeries"
       },
       "ExternalSeriesDto": {
         "required": [
@@ -19091,6 +19215,10 @@
             "type": "boolean",
             "description": "Should this library allow Scrobble events to emit from it"
           },
+          "allowMetadataMatching": {
+            "type": "boolean",
+            "description": "Allow any series within this Library to download metadata."
+          },
           "created": {
             "type": "string",
             "format": "date-time"
@@ -19245,6 +19373,10 @@
             },
             "description": "A set of globs that will exclude matching content from being scanned",
             "nullable": true
+          },
+          "allowMetadataMatching": {
+            "type": "boolean",
+            "description": "Allow any series within this Library to download metadata."
           }
         },
         "additionalProperties": false
@@ -19798,6 +19930,167 @@
         },
         "additionalProperties": false,
         "description": "Represents a member of a Kavita server."
+      },
+      "MetadataFieldMappingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sourceType": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "destinationType": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "sourceValue": {
+            "type": "string",
+            "description": "The string in the source",
+            "nullable": true
+          },
+          "destinationValue": {
+            "type": "string",
+            "description": "Write the string as this in the Destination (can also just be the Source)",
+            "nullable": true
+          },
+          "excludeFromSource": {
+            "type": "boolean",
+            "description": "If true, the tag will be Moved over vs Copied over"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MetadataSettingsDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "If writing any sort of metadata from upstream (AniList, Hardcover) source is allowed"
+          },
+          "enableSummary": {
+            "type": "boolean",
+            "description": "Allow the Summary to be written"
+          },
+          "enablePublicationStatus": {
+            "type": "boolean",
+            "description": "Allow Publication status to be derived and updated"
+          },
+          "enableRelationships": {
+            "type": "boolean",
+            "description": "Allow Relationships between series to be set"
+          },
+          "enablePeople": {
+            "type": "boolean",
+            "description": "Allow People to be created (including downloading images)"
+          },
+          "enableStartDate": {
+            "type": "boolean",
+            "description": "Allow Start date to be set within the Series"
+          },
+          "enableLocalizedName": {
+            "type": "boolean",
+            "description": "Allow setting the Localized name"
+          },
+          "enableGenres": {
+            "type": "boolean"
+          },
+          "enableTags": {
+            "type": "boolean"
+          },
+          "firstLastPeopleNaming": {
+            "type": "boolean",
+            "description": "For Authors and Writers, how should names be stored (Exclusively applied for AniList). This does not affect Character names."
+          },
+          "ageRatingMappings": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                -1
+              ],
+              "type": "integer",
+              "description": "Represents Age Rating for content.",
+              "format": "int32"
+            },
+            "description": "Any Genres or Tags that if present, will trigger an Age Rating Override. Highest rating will be prioritized for matching.",
+            "nullable": true
+          },
+          "fieldMappings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataFieldMappingDto"
+            },
+            "description": "A list of rules that allow mapping a genre/tag to another genre/tag",
+            "nullable": true
+          },
+          "blacklist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Do not allow any Genre/Tag in this list to be written to Kavita",
+            "nullable": true
+          },
+          "whitelist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Only allow these Tags to be written to Kavita",
+            "nullable": true
+          },
+          "personRoles": {
+            "type": "array",
+            "items": {
+              "enum": [
+                1,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Which Roles to allow metadata downloading for",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "MetadataTagDto": {
         "type": "object",
@@ -21413,6 +21706,32 @@
         },
         "additionalProperties": false
       },
+      "SeriesCharacter": {
+        "required": [
+          "description",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SeriesDetailDto": {
         "type": "object",
         "properties": {
@@ -21481,6 +21800,9 @@
               "$ref": "#/components/schemas/RatingDto"
             },
             "nullable": true
+          },
+          "series": {
+            "$ref": "#/components/schemas/ExternalSeriesDetailDto"
           }
         },
         "additionalProperties": false,
@@ -22155,6 +22477,67 @@
         "additionalProperties": false,
         "description": "A relation flows between one series and another.\r\nSeries ---kind---> target"
       },
+      "SeriesRelationship": {
+        "type": "object",
+        "properties": {
+          "aniListId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "malId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "seriesName": {
+            "$ref": "#/components/schemas/ALMediaTitle"
+          },
+          "relation": {
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14
+            ],
+            "type": "integer",
+            "description": "Represents a relationship between Series",
+            "format": "int32"
+          },
+          "provider": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Misleading name but is the source of data (like a review coming from AniList)",
+            "format": "int32"
+          },
+          "plusMediaFormat": {
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "type": "integer",
+            "description": "Represents PlusMediaFormat",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "SeriesStaffDto": {
         "required": [
           "name",
@@ -22164,6 +22547,14 @@
         "type": "object",
         "properties": {
           "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
             "type": "string",
             "nullable": true
           },
@@ -23595,6 +23986,7 @@
       },
       "UpdateLibraryDto": {
         "required": [
+          "allowMetadataMatching",
           "allowScrobbling",
           "excludePatterns",
           "fileGroupTypes",
@@ -23652,6 +24044,9 @@
             "type": "boolean"
           },
           "allowScrobbling": {
+            "type": "boolean"
+          },
+          "allowMetadataMatching": {
             "type": "boolean"
           },
           "fileGroupTypes": {
@@ -24675,6 +25070,14 @@
             "type": "integer",
             "description": "PDF Reader: Spread Mode of the reader",
             "format": "int32"
+          },
+          "aniListScrobblingEnabled": {
+            "type": "boolean",
+            "description": "Kavita+: Should this account have Scrobbling enabled for AniList"
+          },
+          "wantToReadSync": {
+            "type": "boolean",
+            "description": "Kavita+: Should this account have Want to Read Sync enabled"
           }
         },
         "additionalProperties": false

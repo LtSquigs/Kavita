@@ -52,7 +52,8 @@
         "not-processed": "Not Processed",
         "special": "{{entity-title.special}}",
         "generate-scrobble-events": "Backfill Events",
-        "token-expired": "Your AniList token is Expired! Scrobbling events will not process until you renew on Accounts page."
+        "token-expired": "Your AniList token is Expired! Scrobbling events will not process until you renew on Accounts page.",
+        "scrobbling-disabled": "Scrobbling is disabled on your Account Settings."
     },
 
     "scrobble-event-type-pipe": {
@@ -127,6 +128,12 @@
         "collapse-series-relationships-tooltip": "Should Kavita show Series that have no relationships or is the parent/prequel",
         "share-series-reviews-label": "Share Series Reviews",
         "share-series-reviews-tooltip": "Should Kavita include your reviews of Series for other users",
+
+        "kavitaplus-settings-title": "Kavita+",
+        "anilist-scrobbling-label": "AniList Scrobbling",
+        "anilist-scrobbling-tooltip": "Allow Kavita to Scrobble (one-way sync) reading progress and ratings to AniList",
+        "want-to-read-sync-label": "Want To Read Sync",
+        "want-to-read-sync-tooltip": "Allow Kavita to add items to your Want to Read list based on AniList and MAL series in Pending readlist",
 
         "image-reader-settings-title": "Image Reader",
         "reading-direction-label": "Reading Direction",
@@ -756,6 +763,7 @@
         "matched-status-label": "Matched",
         "unmatched-status-label": "Not Matched",
         "blacklist-status-label": "Needs Manual Match",
+        "dont-match-status-label": "{{dont-match-label}}",
         "all-status-label": "All",
         "dont-match-label": "Don't Match",
         "no-data": "{{common.no-data}}"
@@ -769,6 +777,42 @@
         "token-set-label": "Token Set",
         "no-data": "{{common.no-data}}",
         "expires-label": "Expires: {{date}}"
+    },
+
+    "manage-metadata-settings": {
+        "description": "Kavita+ has the ability to download and write some limited metadata to the Database. This page allows for you to toggle what is in scope.",
+        "enabled-label": "Enable Metadata Download",
+        "enabled-tooltip": "Allow Kavita to download metadata and write to it's database.",
+        "summary-label": "Summary",
+        "summary-tooltip": "Allow Summary to be written when the field is unlocked.",
+        "derive-publication-status-label": "Publication Status",
+        "derive-publication-status-tooltip": "Allow Publication Status to be derived from Total Chapter/Volume counts.",
+        "enable-relations-label": "Relationships",
+        "enable-relations-tooltip": "Allow Series Relationships to be <b>added</b>.",
+        "enable-people-label": "People",
+        "enable-people-tooltip": "Allow People (Characters, Writers, etc) to be <b>added</b>. All people include images.",
+        "enable-start-date-label": "Start Date",
+        "enable-start-date-tooltip": "Allow Start Date of Series to be written to the Series",
+        "enable-genres-label": "Genres",
+        "enable-genres-tooltip": "Allow Series Genres to be written.",
+        "enable-tags-label": "Tags",
+        "enable-tags-tooltip": "Allow Series Tags to be written.",
+        "blacklist-label": "Blacklist Genres/Tags",
+        "blacklist-tooltip": "Anything in this list will be removed from both Genre and Tag processing. This is a place to add genres/tags you <b>do not</b> want written. Ensure they are comma-separated.",
+        "whitelist-label": "Whitelist Tags",
+        "whitelist-tooltip": "Only allow a string in this list from being written for <b>Tags</b>. Ensure they are comma-separated.",
+        "age-rating-mapping-title": "Age Rating Mapping",
+        "age-rating-mapping-description": "Any strings on the left if found in either Genre or Tags will set the Age Rating on the Series.",
+        "genre": "Genre",
+        "tag": "Tag",
+        "remove-source-tag-label": "Remove Source Tag",
+        "add-field-mapping-label": "Add Field Mapping",
+        "add-age-rating-mapping-label": "Add Age Rating Mapping",
+        "field-mapping-title": "Field Mapping",
+        "field-mapping-description": "Setup rules for certain strings found in Genre/Tag field and map it to a new string in Genre/Tag and optionally remove it from the Source list. Only applicable when Genre/Tag are enabled to be written.",
+        "first-last-name-label": "First Last Naming",
+        "first-last-name-tooltip": "Ensure People's names are written First then Last",
+        "person-roles-label": "Roles"
     },
 
     "book-line-overlay": {
@@ -938,7 +982,8 @@
         "volume-count": "{{server-stats.volume-count}}",
         "chapter-count": "{{common.chapter-count}}",
         "releasing": "Releasing",
-        "details": "View page"
+        "details": "View page",
+        "updating-metadata-status": "Updating Metadata"
     },
 
     "metadata-fields": {
@@ -1027,7 +1072,8 @@
         "individual-role-title": "As a {{role}}",
         "browse-person-title": "All Works of {{name}}",
         "browse-person-by-role-title": "All Works of {{name}} as a {{role}}",
-        "all-roles": "Roles"
+        "all-roles": "Roles",
+        "anilist-url": "{{edit-person-modal.anilist-tooltip}}"
     },
 
     "library-settings-modal": {
@@ -1062,6 +1108,8 @@
         "manage-reading-list-tooltip": "Should Kavita create Reading Lists from StoryArc/StoryArcNumber and AlternativeSeries/AlternativeCount tags found within ComicInfo.xml/opf files",
         "allow-scrobbling-label": "Allow Scrobbling",
         "allow-scrobbling-tooltip": "Should Kavita scrobble reading events, want to read status, ratings, and reviews to configured providers. This will only occur if the server has an active Kavita+ Subscription.",
+        "allow-metadata-matching-label": "Allow Metadata Matching",
+        "allow-metadata-matching-tooltip": "Should Kavita download metadata for Series within this Library. This will only occur if the server has an active Kavita+ Subscription.",
         "folder-watching-label": "Folder Watching",
         "folder-watching-tooltip": "Override Server folder watching for this library. If off, folder watching won't run on the folders this library contains. If libraries share folders, then folders may still be ran against. Will always wait 10 minutes before triggering scan.",
         "include-in-dashboard-label": "Include in Dashboard",
@@ -1618,6 +1666,7 @@
         "admin-kavitaplus": "License",
         "admin-matched-metadata": "Matched Metadata",
         "admin-manage-tokens": "Manage User Tokens",
+        "admin-metadata": "Manage Metadata",
         "scrobble-holds": "Scrobble Holds",
         "account": "Account",
         "preferences": "Preferences",
@@ -2632,7 +2681,7 @@
         "title": "Actions",
         "copy-settings": "Copy Settings From",
         "match": "Match",
-        "match-description": "Match Series with Kavita+ manually"
+        "match-tooltip": "Match Series with Kavita+ manually"
     },
 
     "preferences": {

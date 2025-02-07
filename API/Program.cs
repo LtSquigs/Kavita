@@ -58,7 +58,7 @@ public class Program
         }
 
         Configuration.KavitaPlusApiUrl = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == Environments.Development
-            ?  "http://localhost:5020" : "https://plus.kavitareader.com";
+            ?  "http://localhost:5020" : "https://plus-next.kavitareader.com";
 
         try
         {
@@ -129,6 +129,7 @@ public class Program
                 await Seed.SeedDefaultStreams(unitOfWork);
                 await Seed.SeedDefaultSideNavStreams(unitOfWork);
                 await Seed.SeedUserApiKeys(context);
+                await Seed.SeedMetadataSettings(context);
             }
             catch (Exception ex)
             {

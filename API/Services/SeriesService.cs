@@ -14,6 +14,7 @@ using API.DTOs.CollectionTags;
 using API.DTOs.SeriesDetail;
 using API.Entities;
 using API.Entities.Enums;
+using API.Entities.Interfaces;
 using API.Entities.Metadata;
 using API.Extensions;
 using API.Helpers;
@@ -44,6 +45,7 @@ public interface ISeriesService
         bool withHash);
     Task<string> FormatChapterName(int userId, LibraryType libraryType, bool withHash = false);
     Task<NextExpectedChapterDto> GetEstimatedChapterCreationDate(int seriesId, int userId);
+
 }
 
 public class SeriesService : ISeriesService
@@ -54,6 +56,7 @@ public class SeriesService : ISeriesService
     private readonly ILogger<SeriesService> _logger;
     private readonly IScrobblingService _scrobblingService;
     private readonly ILocalizationService _localizationService;
+    private readonly IImageService _imageService;
 
     private readonly NextExpectedChapterDto _emptyExpectedChapter = new NextExpectedChapterDto
     {
@@ -63,7 +66,7 @@ public class SeriesService : ISeriesService
     };
 
     public SeriesService(IUnitOfWork unitOfWork, IEventHub eventHub, ITaskScheduler taskScheduler,
-        ILogger<SeriesService> logger, IScrobblingService scrobblingService, ILocalizationService localizationService)
+        ILogger<SeriesService> logger, IScrobblingService scrobblingService, ILocalizationService localizationService, IImageService imageService)
     {
         _unitOfWork = unitOfWork;
         _eventHub = eventHub;
@@ -71,6 +74,7 @@ public class SeriesService : ISeriesService
         _logger = logger;
         _scrobblingService = scrobblingService;
         _localizationService = localizationService;
+        _imageService = imageService;
     }
 
     /// <summary>
@@ -206,73 +210,73 @@ public class SeriesService : ISeriesService
                     // Writers
                     if (!series.Metadata.WriterLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Writers, PersonRole.Writer);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Writers, PersonRole.Writer, _unitOfWork);
                     }
 
                     // Cover Artists
                     if (!series.Metadata.CoverArtistLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.CoverArtists, PersonRole.CoverArtist);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.CoverArtists, PersonRole.CoverArtist, _unitOfWork);
                     }
 
                     // Colorists
                     if (!series.Metadata.ColoristLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Colorists, PersonRole.Colorist);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Colorists, PersonRole.Colorist, _unitOfWork);
                     }
 
                     // Editors
                     if (!series.Metadata.EditorLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Editors, PersonRole.Editor);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Editors, PersonRole.Editor, _unitOfWork);
                     }
 
                     // Inkers
                     if (!series.Metadata.InkerLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Inkers, PersonRole.Inker);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Inkers, PersonRole.Inker, _unitOfWork);
                     }
 
                     // Letterers
                     if (!series.Metadata.LettererLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Letterers, PersonRole.Letterer);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Letterers, PersonRole.Letterer, _unitOfWork);
                     }
 
                     // Pencillers
                     if (!series.Metadata.PencillerLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Pencillers, PersonRole.Penciller);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Pencillers, PersonRole.Penciller, _unitOfWork);
                     }
 
                     // Publishers
                     if (!series.Metadata.PublisherLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Publishers, PersonRole.Publisher);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Publishers, PersonRole.Publisher, _unitOfWork);
                     }
 
                     // Imprints
                     if (!series.Metadata.ImprintLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Imprints, PersonRole.Imprint);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Imprints, PersonRole.Imprint, _unitOfWork);
                     }
 
                     // Teams
                     if (!series.Metadata.TeamLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Teams, PersonRole.Team);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Teams, PersonRole.Team, _unitOfWork);
                     }
 
                     // Locations
                     if (!series.Metadata.LocationLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Locations, PersonRole.Location);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Locations, PersonRole.Location, _unitOfWork);
                     }
 
                     // Translators
                     if (!series.Metadata.TranslatorLocked)
                     {
-                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Translators, PersonRole.Translator);
+                        await HandlePeopleUpdateAsync(series.Metadata, updateSeriesMetadataDto.SeriesMetadata.Translators, PersonRole.Translator, _unitOfWork);
                     }
 
                 }
@@ -331,8 +335,10 @@ public class SeriesService : ISeriesService
     /// <param name="metadata"></param>
     /// <param name="peopleDtos"></param>
     /// <param name="role"></param>
-    private async Task HandlePeopleUpdateAsync(SeriesMetadata metadata, ICollection<PersonDto> peopleDtos, PersonRole role)
+    public static async Task HandlePeopleUpdateAsync(SeriesMetadata metadata, ICollection<PersonDto> peopleDtos, PersonRole role, IUnitOfWork unitOfWork)
     {
+        // TODO: Cleanup this code so we aren't using UnitOfWork like this
+
         // Normalize all names from the DTOs
         var normalizedNames = peopleDtos
             .Select(p => Parser.Normalize(p.Name))
@@ -340,10 +346,11 @@ public class SeriesService : ISeriesService
             .ToList();
 
         // Bulk select people who already exist in the database
-        var existingPeople = await _unitOfWork.PersonRepository.GetPeopleByNames(normalizedNames);
+        var existingPeople = await unitOfWork.PersonRepository.GetPeopleByNames(normalizedNames);
 
         // Use a dictionary for quick lookups
-        var existingPeopleDictionary = existingPeople.DistinctBy(p => p.NormalizedName).ToDictionary(p => p.NormalizedName, p => p);
+        var existingPeopleDictionary = existingPeople.DistinctBy(p => p.NormalizedName)
+            .ToDictionary(p => p.NormalizedName, p => p);
 
         // List to track people that will be added to the metadata
         var peopleToAdd = new List<Person>();
@@ -353,13 +360,26 @@ public class SeriesService : ISeriesService
             var normalizedPersonName = Parser.Normalize(personDto.Name);
 
             // Check if the person exists in the dictionary
-            if (existingPeopleDictionary.TryGetValue(normalizedPersonName, out _)) continue;
+            if (existingPeopleDictionary.TryGetValue(normalizedPersonName, out var p))
+            {
+                if (personDto.AniListId > 0 && p.AniListId <= 0 && p.AniListId != personDto.AniListId)
+                {
+                    p.AniListId = personDto.AniListId;
+                }
+                continue; // If we ever want to update metadata for existing people, we'd do it here
+            }
 
             // Person doesn't exist, so create a new one
             var newPerson = new Person
             {
                 Name = personDto.Name,
-                NormalizedName = normalizedPersonName
+                NormalizedName = normalizedPersonName,
+                AniListId = personDto.AniListId,
+                Description = personDto.Description,
+                Asin = personDto.Asin,
+                CoverImage = personDto.CoverImage,
+                MalId =  personDto.MalId,
+                HardcoverId = personDto.HardcoverId,
             };
 
             peopleToAdd.Add(newPerson);
@@ -369,7 +389,7 @@ public class SeriesService : ISeriesService
         // Add any new people to the database in bulk
         if (peopleToAdd.Count != 0)
         {
-            _unitOfWork.PersonRepository.Attach(peopleToAdd);
+            unitOfWork.PersonRepository.Attach(peopleToAdd);
         }
 
         // Now that we have all the people (new and existing), update the SeriesMetadataPeople
