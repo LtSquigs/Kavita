@@ -976,7 +976,10 @@ public static partial class Parser
 
                 var value = groups["Title"].Value;
 
-                return CleanTitle(value);
+                value = value.Trim(SpacesAndSeparators);
+                value = EmptySpaceRegex.Replace(value, " ");
+
+                return value;
             }
         }
 
