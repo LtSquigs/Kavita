@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
@@ -61,14 +62,78 @@ public static partial class Parser
     /// </summary>
     public const string BalancedBracket = @"(?:[^\[\]]|(?<open>\[)|(?<-open>\]))*?(?(open)(?!))";
     /// <summary>
+    /// non greedy matching of a string where curly brackets are balanced
+    /// </summary>
+    public const string BalancedCurly = @"(?:[^{}]|(?<opencurly>{})|(?<-opencurly>}))*?(?(opencurly)(?!))";
+    /// <summary>
     /// Matches [Complete], release tags like [kmts] but not [ Complete ] or [kmts ]
     /// </summary>
     private const string TagsInBrackets = $@"\[(?!\s){BalancedBracket}(?<!\s)\]";
+    /// <summary>
+    /// Matches revision tags like {r1} or {v1}
+    /// </summary>
+    private const string TagsInCurly = $@"{{(?!\s){BalancedCurly}(?<!\s)}}";
     /// <summary>
     /// Common regex patterns present in both Comics and Mangas
     /// </summary>
     private const string CommonSpecial = @"Specials?|One[- ]?Shot|Extra(?:\sChapter)?(?=\s)|Art Collection|Side Stories|Bonus";
 
+
+    /// <summary>
+    /// Used as a greedy match to match everything at the start of the filename that is not part
+    /// of the other aspects of the Daiz naming scheme, anything left over is assumed to be the series
+    /// name
+    /// </summary>
+    private const string DaizSeries = @"(?<series>.*?)";
+    /// <summary>
+    /// Matches the language code in the Daiz naming tree, which must be in the format [code]
+    /// Note: This can also just be part of the series title if the title ends with a word in brackets
+    /// so one must check if this is a valid language code or not, and if it is not rejoin it with the
+    /// series title.
+    /// </summary>
+    private const string DaizLang = @"(?<lang>\[[^\]]*\])?";
+    /// <summary>
+    /// Matches the chapter numbering of the Daiz numbering scheme. This should be of the format
+    /// c000, or d0000 if the number is above 3 digits. Rangers look like c000-001, or c999-d1001
+    /// on transition. Numbers can also be "naked" e.g. just 000. Finally they can have an optional
+    /// numeric demarcation to represent a non standard chapter seperated by "x" e.g. c90x1
+    /// </summary>
+    private const string DaizChapter = @"[cd]?(?<chapter_start>\d+(?:[\.x]\d+)*)(?:-[cd]?(?<chapter_end>\d+(?:[\.x]\d+)*))?";
+    /// <summary>
+    /// Matches the volume tags for the Daiz number scheme, only returning a group if
+    /// a numeric number is matched. These tags should only be of the form (v00), (w000),
+    /// (mag), (web), (mix) by standard, but we loosely match any content within parens
+    /// for broader compatability (thouguh only v and w are treated as volume markers).
+    /// </summary>
+    private const string DaizVolumeTag = @"(?:\((?:[vw](?<volume>\d+(?:[\.x]\d+)*)|[^)]+)\)\s*)*";
+    /// <summary>
+    /// Matches the page numbering of the Daiz numbering scheme. This should be of the format
+    /// p000 or p000-000 with a range. We also match for q to match the same sorting behavior
+    /// of the chapter/volume numbers. e.g. p997-q1002, q1523
+    /// </summary>
+    private const string DaizPage = @"[pq]?(?<page_start>\d+(?:[\.x]\d+)*)(?:-[pq]?(?<page_end>\d+(?:[\.x]\d+)*))?";
+    /// <summary>
+    /// Matches the extra tags of the Daiz naming scheme, these should always be in the
+    /// format of [Tag], e.g. [ToC], [Cover], etc
+    /// </summary>
+    private const string DaizExtras = $@"(?:\s*(?<tags>{TagsInBrackets})\s*)*";
+    /// <summary>
+    /// Matches the revision tag at the end of the Daiz naming scheme,
+    /// strictly this should be in the form of {v\d+} or {r\d+} but we match multiple
+    /// to account for inconsistencies.
+    /// </summary>
+    private const string DaizRevision = $@"(?:\s*(?<revision>{TagsInCurly}))?";
+    /// <summary>
+    /// This pattern represents the full Daiz naming scheme for pages. This is a semi-standard naming convention
+    /// used for a lot of manga archives, that we use to parse out chapters from volumes if possible.
+    /// 
+    /// e.g. Name of Manga [lang] - c000x0 (mag/web/mix/v00) - p000 [Extra Information] [Group]{revision}
+    /// </summary>
+    private static Regex DaizPagePattern = new Regex($@"^{DaizSeries}{DaizLang}\s*-\s*{DaizChapter}\s*{DaizVolumeTag}\s*-\s*{DaizPage}{DaizExtras}{DaizRevision}", MatchOptions, RegexTimeout);
+    /// <summary>
+    /// Matches special tags to help heuristically identify the title of a manga from the extr tags
+    /// </summary>
+    public readonly static Regex DaizSpecialPattern = new Regex($@"^(?:{CommonSpecial}|Omake)$", MatchOptions, RegexTimeout);
 
     /// <summary>
     /// Matches against font-family css syntax. Does not match if url import has data: starting, as that is binary data
@@ -837,7 +902,7 @@ public static partial class Parser
     }
 
 
-    private static string FormatValue(string value, bool hasPart)
+    public static string FormatValue(string value, bool hasPart)
     {
         if (!value.Contains('-'))
         {
@@ -911,11 +976,33 @@ public static partial class Parser
 
                 var value = groups["Title"].Value;
 
-                return CleanTitle(value);
+                value = value.Trim(SpacesAndSeparators);
+                value = EmptySpaceRegex.Replace(value, " ");
+
+                return value;
             }
         }
 
         return string.Empty;
+    }
+
+    public static (bool success, string chapter, HashSet<string> tags) ParseDaizInfo(string filename)
+    {
+        var matches = DaizPagePattern.Matches(filename);
+        if (matches.Count != 1) return (false, "", new HashSet<string>());
+
+        // If we have reached this point than this is a valid Daiz file, we only
+        // need to extract the info we need for the chapter info.
+        var groups = matches[0].Groups;
+        var chapter_start = groups["chapter_start"];
+        var chapter_end = groups["chapter_end"];
+        var tags = groups["tags"];
+
+        // If a page has no or multiple chapters defined, we can not determine what chapter
+        // it actually belongs to, so we return null.
+        if (!chapter_start.Success || chapter_end.Success) return (false, "", new HashSet<string>());
+
+        return (true, chapter_start.Value, tags.Success ? new HashSet<string>(tags.Captures.Select(t => t.Value.Substring(1, t.Value.Length - 2))) : new HashSet<string>());
     }
     private static string ParseMangaChapter(string filename)
     {
@@ -964,7 +1051,7 @@ public static partial class Parser
         return DefaultChapter;
     }
 
-    public static string RemoveEditionTagHolders(string title)
+    private static string RemoveEditionTagHolders(string title)
     {
         title = CleanupRegex.Replace(title, string.Empty);
 

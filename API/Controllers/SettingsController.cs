@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using API.Data;
 using API.DTOs.Email;
+using API.DTOs.KavitaPlus.Metadata;
 using API.DTOs.Settings;
 using API.Entities;
 using API.Entities.Enums;
@@ -533,5 +534,74 @@ public class SettingsController : BaseApiController
         var user = await _unitOfWork.UserRepository.GetUserByIdAsync(User.GetUserId());
         if (string.IsNullOrEmpty(user?.Email)) return BadRequest("Your account has no email on record. Cannot email.");
         return Ok(await _emailService.SendTestEmail(user!.Email));
+    }
+
+    /// <summary>
+    /// Get the metadata settings for Kavita+ users.
+    /// </summary>
+    /// <returns></returns>
+    [Authorize(Policy = "RequireAdminRole")]
+    [HttpGet("metadata-settings")]
+    public async Task<ActionResult<MetadataSettingsDto>> GetMetadataSettings()
+    {
+        return Ok(await _unitOfWork.SettingsRepository.GetMetadataSettingDto());
+
+    }
+
+    /// <summary>
+    /// Update the metadata settings for Kavita+ users
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
+    [Authorize(Policy = "RequireAdminRole")]
+    [HttpPost("metadata-settings")]
+    public async Task<ActionResult<MetadataSettingsDto>> UpdateMetadataSettings(MetadataSettingsDto dto)
+    {
+        var existingMetadataSetting = await _unitOfWork.SettingsRepository.GetMetadataSettings();
+        existingMetadataSetting.Enabled = dto.Enabled;
+        existingMetadataSetting.EnableSummary = dto.EnableSummary;
+        existingMetadataSetting.EnablePublicationStatus = dto.EnablePublicationStatus;
+        existingMetadataSetting.EnableRelationships = dto.EnableRelationships;
+        existingMetadataSetting.EnablePeople = dto.EnablePeople;
+        existingMetadataSetting.EnableStartDate = dto.EnableStartDate;
+        existingMetadataSetting.EnableGenres = dto.EnableGenres;
+        existingMetadataSetting.EnableTags = dto.EnableTags;
+        existingMetadataSetting.PersonRoles = dto.PersonRoles;
+        existingMetadataSetting.FirstLastPeopleNaming = dto.FirstLastPeopleNaming;
+
+        existingMetadataSetting.AgeRatingMappings = dto.AgeRatingMappings ?? [];
+
+        existingMetadataSetting.Blacklist = dto.Blacklist.DistinctBy(d => d.ToNormalized()).ToList() ?? [];
+        existingMetadataSetting.Whitelist = dto.Whitelist.DistinctBy(d => d.ToNormalized()).ToList() ?? [];
+
+        // Handle Field Mappings
+        if (dto.FieldMappings != null)
+        {
+            // Clear existing mappings
+            existingMetadataSetting.FieldMappings ??= [];
+            _unitOfWork.SettingsRepository.RemoveRange(existingMetadataSetting.FieldMappings);
+
+            existingMetadataSetting.FieldMappings.Clear();
+
+
+            // Add new mappings
+            foreach (var mappingDto in dto.FieldMappings)
+            {
+                existingMetadataSetting.FieldMappings.Add(new MetadataFieldMapping
+                {
+                    SourceType = mappingDto.SourceType,
+                    DestinationType = mappingDto.DestinationType,
+                    SourceValue = mappingDto.SourceValue,
+                    DestinationValue = mappingDto.DestinationValue,
+                    ExcludeFromSource = mappingDto.ExcludeFromSource
+                });
+            }
+        }
+
+        // Save changes
+        await _unitOfWork.CommitAsync();
+
+        // Return updated settings
+        return Ok(await _unitOfWork.SettingsRepository.GetMetadataSettingDto());
     }
 }

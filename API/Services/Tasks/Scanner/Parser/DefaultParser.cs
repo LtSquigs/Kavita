@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using API.Data.Metadata;
 using API.Entities.Enums;
 using API.Structs;
+using DotNet.Globbing.Token;
+using Microsoft.Extensions.Logging;
 
 namespace API.Services.Tasks.Scanner.Parser;
 #nullable enable
@@ -230,20 +233,98 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
 
         // If we do not find any chapters from the ComicInfo, we attempt to use the filenames
         // in the volume to detect chapter boundaries and titles.
-        var chaptersFromPages = pages.Select((f, idx) => {
-            string chapter = Parser.ParseChapter(Parser.RemoveEditionTagHolders(f.Name), type);
-            var fileParts = Parser.NormalizePath(f.Name.Replace(Path.GetExtension(f.Name), string.Empty)).Split(Path.AltDirectorySeparatorChar);
-            var titlePart = fileParts.FirstOrDefault(p => {
-                return !String.IsNullOrEmpty(Parser.ParseChapterTitle(p, type));
-            }, string.Empty);
-            return new ParsedChapter() { Page = idx, Chapter = chapter, TitleStr = titlePart};
-        }).Where(y => y.Chapter != Parser.DefaultChapter);
+        var allDaiz = true;
+        var tagCount = new Dictionary<string, int>();
+        var chapterPagesCount = new Dictionary<string, int>();
+        var tagChapters = new Dictionary<string, HashSet<string>>();
 
-        if (chaptersFromPages.Any()) {
-            var dedupedChapters = chaptersFromPages.GroupBy((x) => x.Chapter).Select((x) => x.First()).ToList();
-            return ParsedChaptersToInfo(baseParserInfo, type, pages, dedupedChapters);
+        var parsedChapters = new List<(bool success, string chapter, HashSet<string> tags)>();
+        for(var idx  = 0; idx < pages.Count; idx++) {
+            var page = pages[idx];
+
+            if (!allDaiz) continue;
+
+            var parsedInfo = Parser.ParseDaizInfo(page.Name);
+            if (!parsedInfo.success) {
+                allDaiz = false;
+                continue;
+            }
+
+            if(chapterPagesCount.ContainsKey(parsedInfo.chapter)) {
+                chapterPagesCount[parsedInfo.chapter] = chapterPagesCount[parsedInfo.chapter] + 1;
+            } else {
+                chapterPagesCount[parsedInfo.chapter] = 1;
+            }
+
+            var tags = parsedInfo.tags;
+            if (tags != null) {
+                foreach(var tag in tags) {
+                    if(tagCount.ContainsKey(tag)) {
+                        tagCount[tag] = tagCount[tag] + 1;
+                    } else {
+                        tagCount[tag] = 1;
+                    }
+
+                    if (tagChapters.ContainsKey(tag)) {
+                        tagChapters[tag].Add(tag);
+                    } else {
+                        tagChapters[tag] = new HashSet<string>([tag]);
+                    }
+                }
+            }
+
+            parsedChapters.Add(parsedInfo);
         }
+        if (!allDaiz) return [baseParserInfo];
 
-        return [baseParserInfo];
+        var chaptersFromPages = parsedChapters.Select((p, idx) => {
+            var chapter = p.chapter;
+            var tags = p.tags;
+            // We attempt to use the extra tags from the filename to discover what the
+            // title of the chapter is. In order to do that we look for a tag that fulfills
+            // the following conditions:
+            //   1. Is not present on multiple chapters in the list (eliminates group tags, scan tags, format tags, etc.)
+            //   2. Is present for all files in the chapter (eliminates one off tags like ToC or Cover)
+            //   3. Is not one of the known tags for special chapters/formats (e.g. OneShot, Omake, etc)
+            var title = string.Empty;
+            if (tags != null) {
+                foreach(var tag in tags) {
+                    Console.WriteLine(tag);
+                    Console.WriteLine(tagChapters[tag].Count);
+                    // Present on multiple chapters then not the title
+                    if (tagChapters[tag].Count > 1) {
+                        continue;
+                    }
+                    Console.WriteLine(tagCount[tag]);
+                    Console.WriteLine(chapterPagesCount[chapter]);
+                    // If not present on every page in chapter then not title
+                    if (tagCount[tag] != chapterPagesCount[chapter]) {
+                        continue;
+                    }
+                    // If one of the common format tag values then not title
+                    if (Parser.DaizSpecialPattern.IsMatch(tag)) {
+                        continue;
+                    }
+
+                    Console.WriteLine($"title = {tag}");
+                    title = tag;
+                    break;
+                }
+            }
+
+            // We treat the chapters formatted with and x like 15x1 as if its a decimal 15.1
+            string chapterFormatted = chapter;
+            if (chapterFormatted.IndexOf('.') != -1) {
+                chapterFormatted = chapterFormatted.Replace("x", string.Empty);
+            } else {
+                chapterFormatted = chapterFormatted.Replace("x", ".");
+            }
+
+            chapterFormatted = Parser.FormatValue(chapterFormatted, false);
+            return new ParsedChapter() { Page = idx, Chapter = chapterFormatted, TitleStr = $"Chapter {chapterFormatted} - {title}"};
+        });
+
+        var dedupedChapters = chaptersFromPages.GroupBy((x) => x.Chapter).Select((x) => x.First()).ToList();
+        return ParsedChaptersToInfo(baseParserInfo, type, pages, dedupedChapters);
     }
 }

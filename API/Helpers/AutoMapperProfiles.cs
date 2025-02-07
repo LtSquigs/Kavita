@@ -12,6 +12,7 @@ using API.DTOs.Email;
 using API.DTOs.Filtering;
 using API.DTOs.Filtering.v2;
 using API.DTOs.KavitaPlus.Manage;
+using API.DTOs.KavitaPlus.Metadata;
 using API.DTOs.MediaErrors;
 using API.DTOs.Metadata;
 using API.DTOs.Progress;
@@ -344,10 +345,13 @@ public class AutoMapperProfiles : Profile
                     opt.MapFrom(src => src))
             .ForMember(dest => dest.IsMatched,
                 opt =>
-                    opt.MapFrom(src => src.ExternalSeriesMetadata != null && src.ExternalSeriesMetadata.AniListId != 0 && src.ExternalSeriesMetadata.ValidUntilUtc > DateTime.MinValue))
+                    opt.MapFrom(src => src.ExternalSeriesMetadata != null && src.ExternalSeriesMetadata.AniListId != 0
+                                                                          && src.ExternalSeriesMetadata.ValidUntilUtc > DateTime.MinValue))
             .ForMember(dest => dest.ValidUntilUtc,
-                opt =>
-                    opt.MapFrom(src => src.ExternalSeriesMetadata.ValidUntilUtc));
+                opt => opt.MapFrom(src =>
+                    src.ExternalSeriesMetadata != null
+                        ? src.ExternalSeriesMetadata.ValidUntilUtc
+                        : DateTime.MinValue));
 
 
         CreateMap<MangaFile, FileExtensionExportDto>();
@@ -359,5 +363,15 @@ public class AutoMapperProfiles : Profile
             .ForMember(dest => dest.VolumeTitle, opt => opt.MapFrom(src => src.Volume.Name))
             .ForMember(dest => dest.LibraryId, opt => opt.MapFrom(src => src.Volume.Series.LibraryId))
             .ForMember(dest => dest.LibraryType, opt => opt.MapFrom(src => src.Volume.Series.Library.Type));
+
+        CreateMap<MetadataFieldMapping, MetadataFieldMappingDto>();
+
+        CreateMap<MetadataSettings, MetadataSettingsDto>()
+            .ForMember(dest => dest.Blacklist, opt => opt.MapFrom(src => src.Blacklist ?? new List<string>()))
+            .ForMember(dest => dest.Whitelist, opt => opt.MapFrom(src => src.Whitelist ?? new List<string>()))
+            .ForMember(dest => dest.AgeRatingMappings, opt => opt.MapFrom(src => src.AgeRatingMappings ?? new Dictionary<string, AgeRating>()));
+
+
+
     }
 }

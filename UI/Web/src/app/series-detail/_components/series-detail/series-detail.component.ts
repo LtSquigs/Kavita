@@ -480,7 +480,6 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       } else if (event.event === EVENTS.ScanSeries) {
         const seriesScanEvent = event.payload as ScanSeriesEvent;
         if (seriesScanEvent.seriesId === this.seriesId) {
-          //this.loadSeries(this.seriesId);
           this.loadPageSource.next(false);
         }
       } else if (event.event === EVENTS.CoverUpdate) {
@@ -491,7 +490,6 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       } else if (event.event === EVENTS.ChapterRemoved) {
         const removedEvent = event.payload as ChapterRemovedEvent;
         if (removedEvent.seriesId !== this.seriesId) return;
-        //this.loadSeries(this.seriesId, false);
         this.loadPageSource.next(false);
       }
     });
@@ -750,6 +748,13 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
       this.chapterActions = this.actionFactoryService.getChapterActions(this.handleChapterActionCallback.bind(this));
       this.seriesActions = this.actionFactoryService.getSeriesActions(this.handleSeriesActionCallback.bind(this))
               .filter(action => action.action !== Action.Edit);
+
+      this.licenseService.hasValidLicense$.subscribe(hasLic => {
+        if (!hasLic) {
+          this.seriesActions = this.seriesActions.filter(action => action.action !== Action.Match);
+          this.cdRef.markForCheck();
+        }
+      });
 
 
       this.seriesService.getRelatedForSeries(this.seriesId).subscribe((relations: RelatedSeries) => {

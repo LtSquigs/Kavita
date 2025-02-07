@@ -25,6 +25,7 @@ export interface Library {
     manageCollections: boolean;
     manageReadingLists: boolean;
     allowScrobbling: boolean;
+    allowMetadataMatching: boolean;
     collapseSeriesRelationships: boolean;
     libraryFileTypes: Array<FileTypeGroup>;
     excludePatterns: Array<string>;
