@@ -19,11 +19,13 @@ using API.Helpers;
 using API.Services;
 using API.Services.Plus;
 using EasyCaching.Core;
+using Hangfire;
 using Kavita.Common;
 using Kavita.Common.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace API.Controllers;
@@ -39,14 +41,17 @@ public class SeriesController : BaseApiController
     private readonly ILicenseService _licenseService;
     private readonly ILocalizationService _localizationService;
     private readonly IExternalMetadataService _externalMetadataService;
+    private readonly IHostEnvironment _environment;
     private readonly IEasyCachingProvider _externalSeriesCacheProvider;
+    private readonly IEasyCachingProvider _matchSeriesCacheProvider;
     private const string CacheKey = "externalSeriesData_";
+    private const string MatchSeriesCacheKey = "matchSeries_";
 
 
     public SeriesController(ILogger<SeriesController> logger, ITaskScheduler taskScheduler, IUnitOfWork unitOfWork,
         ISeriesService seriesService, ILicenseService licenseService,
         IEasyCachingProviderFactory cachingProviderFactory, ILocalizationService localizationService,
-        IExternalMetadataService externalMetadataService)
+        IExternalMetadataService externalMetadataService, IHostEnvironment environment)
     {
         _logger = logger;
         _taskScheduler = taskScheduler;
@@ -55,8 +60,10 @@ public class SeriesController : BaseApiController
         _licenseService = licenseService;
         _localizationService = localizationService;
         _externalMetadataService = externalMetadataService;
+        _environment = environment;
 
         _externalSeriesCacheProvider = cachingProviderFactory.GetCachingProvider(EasyCacheProfiles.KavitaPlusExternalSeries);
+        _matchSeriesCacheProvider = cachingProviderFactory.GetCachingProvider(EasyCacheProfiles.KavitaPlusMatchSeries);
     }
 
     /// <summary>
@@ -501,7 +508,7 @@ public class SeriesController : BaseApiController
     /// <param name="ageRating"></param>
     /// <returns></returns>
     /// <remarks>This is cached for an hour</remarks>
-    [ResponseCache(CacheProfileName = "Month", VaryByQueryKeys = new [] {"ageRating"})]
+    [ResponseCache(CacheProfileName = "Month", VaryByQueryKeys = ["ageRating"])]
     [HttpGet("age-rating")]
     public async Task<ActionResult<string>> GetAgeRating(int ageRating)
     {
@@ -625,7 +632,17 @@ public class SeriesController : BaseApiController
     [HttpPost("match")]
     public async Task<ActionResult<IList<ExternalSeriesMatchDto>>> MatchSeries(MatchSeriesDto dto)
     {
-        return Ok(await _externalMetadataService.MatchSeries(dto));
+        var cacheKey = $"{MatchSeriesCacheKey}-{dto.SeriesId}-{dto.Query}";
+        var results = await _matchSeriesCacheProvider.GetAsync<IList<ExternalSeriesMatchDto>>(cacheKey);
+        if (results.HasValue && !_environment.IsDevelopment())
+        {
+            return Ok(results.Value);
+        }
+
+        var ret = await _externalMetadataService.MatchSeries(dto);
+        await _matchSeriesCacheProvider.SetAsync(cacheKey, ret, TimeSpan.FromMinutes(5));
+
+        return Ok(ret);
     }
 
     /// <summary>
@@ -635,9 +652,9 @@ public class SeriesController : BaseApiController
     /// <param name="seriesId"></param>
     /// <returns></returns>
     [HttpPost("update-match")]
-    public async Task<ActionResult> UpdateSeriesMatch([FromQuery] int seriesId, [FromQuery] int aniListId)
+    public ActionResult UpdateSeriesMatch([FromQuery] int seriesId, [FromQuery] int aniListId)
     {
-        await _externalMetadataService.FixSeriesMatch(seriesId, aniListId);
+        BackgroundJob.Enqueue(() => _externalMetadataService.FixSeriesMatch(seriesId, aniListId));
 
         return Ok();
     }

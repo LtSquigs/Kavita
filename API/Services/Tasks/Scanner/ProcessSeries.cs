@@ -201,7 +201,7 @@ public class ProcessSeries : IProcessSeries
                 {
                     // See if any recommendations can link up to the series and pre-fetch external metadata for the series
                     BackgroundJob.Enqueue(() =>
-                        _externalMetadataService.GetNewSeriesData(series.Id, series.Library.Type));
+                        _externalMetadataService.FetchSeriesMetadata(series.Id, series.Library.Type));
 
                     await _eventHub.SendMessageAsync(MessageFactory.SeriesAdded,
                         MessageFactory.SeriesAddedEvent(series.Id, series.Name, series.LibraryId), false);
@@ -305,7 +305,19 @@ public class ProcessSeries : IProcessSeries
         }
 
         // Set the AgeRating as highest in all the comicInfos
-        if (!series.Metadata.AgeRatingLocked) series.Metadata.AgeRating = chapters.Max(chapter => chapter.AgeRating);
+        if (!series.Metadata.AgeRatingLocked)
+        {
+            series.Metadata.AgeRating = chapters.Max(chapter => chapter.AgeRating);
+
+            // Get the MetadataSettings and apply Age Rating Mappings here
+            var metadataSettings = await _unitOfWork.SettingsRepository.GetMetadataSettingDto();
+            var allTags = series.Metadata.Tags.Select(t => t.Title).Concat(series.Metadata.Genres.Select(g => g.Title));
+            var updatedRating = ExternalMetadataService.DetermineAgeRating(allTags, metadataSettings.AgeRatingMappings);
+            if (updatedRating > series.Metadata.AgeRating)
+            {
+                series.Metadata.AgeRating = updatedRating;
+            }
+        }
 
         DeterminePublicationStatus(series, chapters);
 
@@ -324,7 +336,6 @@ public class ProcessSeries : IProcessSeries
         {
             await UpdateCollectionTags(series, firstChapter);
         }
-
 
         #region PeopleAndTagsAndGenres
         if (!series.Metadata.WriterLocked)
@@ -421,6 +432,7 @@ public class ProcessSeries : IProcessSeries
         }
 
         #endregion
+
     }
 
     private async Task UpdateCollectionTags(Series series, Chapter firstChapter)

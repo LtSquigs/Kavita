@@ -238,7 +238,7 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
         var chapterPagesCount = new Dictionary<string, int>();
         var tagChapters = new Dictionary<string, HashSet<string>>();
 
-        var parsedChapters = new List<(bool success, string chapter, HashSet<string> tags)>();
+        var parsedPages = new List<(bool success, string chapter, HashSet<string> tags)>();
         for(var idx  = 0; idx < pages.Count; idx++) {
             var page = pages[idx];
 
@@ -273,11 +273,12 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
                 }
             }
 
-            parsedChapters.Add(parsedInfo);
+            parsedPages.Add(parsedInfo);
         }
-        if (!allDaiz) return [baseParserInfo];
+        // If the file is not all Daiz formatted, or is not multiple chapters we ignore it
+        if (!allDaiz || chapterPagesCount.Keys.Count < 2) return [baseParserInfo];
 
-        var chaptersFromPages = parsedChapters.Select((p, idx) => {
+        var chaptersFromPages = parsedPages.Select((p, idx) => {
             var chapter = p.chapter;
             var tags = p.tags;
             // We attempt to use the extra tags from the filename to discover what the

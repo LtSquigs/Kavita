@@ -36,7 +36,7 @@ public interface IExternalSeriesMetadataRepository
     Task<SeriesDetailPlusDto?> GetSeriesDetailPlusDto(int seriesId);
     Task LinkRecommendationsToSeries(Series series);
     Task<bool> IsBlacklistedSeries(int seriesId);
-    Task<IList<int>> GetAllSeriesIdsWithoutMetadata(int limit);
+    Task<IList<int>> GetSeriesThatNeedExternalMetadata(int limit, bool includeStaleData = false);
     Task<IList<ManageMatchSeriesDto>> GetAllSeries(ManageMatchFilterDto filter);
 }
 
@@ -209,11 +209,13 @@ public class ExternalSeriesMetadataRepository : IExternalSeriesMetadataRepositor
     }
 
 
-    public async Task<IList<int>> GetAllSeriesIdsWithoutMetadata(int limit)
+    public async Task<IList<int>> GetSeriesThatNeedExternalMetadata(int limit, bool includeStaleData = false)
     {
         return await _context.Series
             .Where(s => !ExternalMetadataService.NonEligibleLibraryTypes.Contains(s.Library.Type))
-            .Where(s => s.ExternalSeriesMetadata == null || s.ExternalSeriesMetadata.ValidUntilUtc < DateTime.UtcNow)
+            .WhereIf(includeStaleData, s => s.ExternalSeriesMetadata == null || s.ExternalSeriesMetadata.ValidUntilUtc < DateTime.UtcNow)
+            .Where(s => s.ExternalSeriesMetadata == null || s.ExternalSeriesMetadata.ValidUntilUtc == DateTime.MinValue)
+            .Where(s => s.Library.AllowMetadataMatching)
             .OrderByDescending(s => s.Library.Type)
             .ThenBy(s => s.NormalizedName)
             .Select(s => s.Id)
@@ -225,6 +227,7 @@ public class ExternalSeriesMetadataRepository : IExternalSeriesMetadataRepositor
     {
         return await _context.Series
             .Include(s => s.Library)
+            .Include(s => s.ExternalSeriesMetadata)
             .Where(s => !ExternalMetadataService.NonEligibleLibraryTypes.Contains(s.Library.Type))
             .FilterMatchState(filter.MatchStateOption)
             .OrderBy(s => s.NormalizedName)
