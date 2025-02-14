@@ -560,6 +560,7 @@ public class SettingsController : BaseApiController
         var existingMetadataSetting = await _unitOfWork.SettingsRepository.GetMetadataSettings();
         existingMetadataSetting.Enabled = dto.Enabled;
         existingMetadataSetting.EnableSummary = dto.EnableSummary;
+        existingMetadataSetting.EnableLocalizedName = dto.EnableLocalizedName;
         existingMetadataSetting.EnablePublicationStatus = dto.EnablePublicationStatus;
         existingMetadataSetting.EnableRelationships = dto.EnableRelationships;
         existingMetadataSetting.EnablePeople = dto.EnablePeople;
@@ -571,8 +572,9 @@ public class SettingsController : BaseApiController
 
         existingMetadataSetting.AgeRatingMappings = dto.AgeRatingMappings ?? [];
 
-        existingMetadataSetting.Blacklist = dto.Blacklist.DistinctBy(d => d.ToNormalized()).ToList() ?? [];
-        existingMetadataSetting.Whitelist = dto.Whitelist.DistinctBy(d => d.ToNormalized()).ToList() ?? [];
+        existingMetadataSetting.Blacklist = dto.Blacklist.Where(s => !string.IsNullOrWhiteSpace(s)).DistinctBy(d => d.ToNormalized()).ToList() ?? [];
+        existingMetadataSetting.Whitelist = dto.Whitelist.Where(s => !string.IsNullOrWhiteSpace(s)).DistinctBy(d => d.ToNormalized()).ToList() ?? [];
+        existingMetadataSetting.Overrides = dto.Overrides.ToList() ?? [];
 
         // Handle Field Mappings
         if (dto.FieldMappings != null)
