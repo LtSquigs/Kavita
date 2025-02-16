@@ -18,11 +18,7 @@ using Kavita.Common;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
 using SharpCompress.Common;
-<<<<<<< HEAD
 using SharpCompress.Writers;
-=======
-using YamlDotNet.Core;
->>>>>>> develop
 
 namespace API.Services;
 
