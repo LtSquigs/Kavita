@@ -35,6 +35,7 @@ import {ReaderService} from "../../_services/reader.service";
 import {LibraryType} from "../../_models/library/library";
 import {Device} from "../../_models/device/device";
 import {ActionService} from "../../_services/action.service";
+import {MangaFormat} from "../../_models/manga-format";
 
 @Component({
   selector: 'app-chapter-card',
@@ -49,8 +50,7 @@ import {ActionService} from "../../_services/action.service";
     EntityTitleComponent,
     CardActionablesComponent,
     RouterLink,
-    TranslocoDirective,
-    DefaultValuePipe
+    TranslocoDirective
   ],
   templateUrl: './chapter-card.component.html',
   styleUrl: './chapter-card.component.scss',
@@ -213,4 +213,5 @@ export class ChapterCardComponent implements OnInit {
 
 
   protected readonly LibraryType = LibraryType;
+  protected readonly MangaFormat = MangaFormat;
 }

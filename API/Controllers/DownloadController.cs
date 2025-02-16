@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using API.Data;
 using API.DTOs.Downloads;
 using API.Entities;
+using API.Entities.Enums;
 using API.Extensions;
 using API.Helpers.Builders;
 using API.Services;
@@ -171,7 +172,7 @@ public class DownloadController : BaseApiController
             await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
                 MessageFactory.DownloadProgressEvent(username,
                     filename, $"Downloading {filename}", 0F, "started"));
-            if (files.Count == 1)
+            if (files.Count == 1 && files.First().Format != MangaFormat.Image)
             {
                 await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
                     MessageFactory.DownloadProgressEvent(username,
