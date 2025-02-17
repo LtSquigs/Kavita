@@ -5,17 +5,15 @@ import {take} from 'rxjs/operators';
 import {ServerService} from 'src/app/_services/server.service';
 import {SettingsService} from '../settings.service';
 import {ServerSettings} from '../_models/server-settings';
-import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
-import {NgTemplateOutlet, TitleCasePipe} from '@angular/common';
+import {TitleCasePipe} from '@angular/common';
 import {translate, TranslocoModule, TranslocoService} from "@jsverse/transloco";
 import {WikiLink} from "../../_models/wiki";
-import {PageLayoutModePipe} from "../../_pipes/page-layout-mode.pipe";
 import {SettingItemComponent} from "../../settings/_components/setting-item/setting-item.component";
 import {SettingSwitchComponent} from "../../settings/_components/setting-switch/setting-switch.component";
-import {SafeHtmlPipe} from "../../_pipes/safe-html.pipe";
 import {ConfirmService} from "../../shared/confirm.service";
 import {debounceTime, distinctUntilChanged, filter, of, switchMap, tap} from "rxjs";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {DefaultValuePipe} from "../../_pipes/default-value.pipe";
 
 const ValidIpAddress = /^(\s*((([12]?\d{1,2}\.){3}[12]?\d{1,2})|(([\da-f]{0,4}\:){0,7}([\da-f]{0,4})))\s*\,)*\s*((([12]?\d{1,2}\.){3}[12]?\d{1,2})|(([\da-f]{0,4}\:){0,7}([\da-f]{0,4})))\s*$/i;
 
@@ -25,7 +23,7 @@ const ValidIpAddress = /^(\s*((([12]?\d{1,2}\.){3}[12]?\d{1,2})|(([\da-f]{0,4}\:
   styleUrls: ['./manage-settings.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TitleCasePipe, TranslocoModule, SettingItemComponent, SettingSwitchComponent]
+  imports: [ReactiveFormsModule, TitleCasePipe, TranslocoModule, SettingItemComponent, SettingSwitchComponent, DefaultValuePipe]
 })
 export class ManageSettingsComponent implements OnInit {
 
@@ -81,7 +79,7 @@ export class ManageSettingsComponent implements OnInit {
       // Automatically save settings as we edit them
       this.settingsForm.valueChanges.pipe(
         distinctUntilChanged(),
-        debounceTime(100),
+        debounceTime(300),
         filter(_ => this.settingsForm.valid),
         takeUntilDestroyed(this.destroyRef),
         switchMap(_ => {
