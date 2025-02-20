@@ -290,14 +290,10 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
             var title = string.Empty;
             if (tags != null) {
                 foreach(var tag in tags) {
-                    Console.WriteLine(tag);
-                    Console.WriteLine(tagChapters[tag].Count);
                     // Present on multiple chapters then not the title
                     if (tagChapters[tag].Count > 1) {
                         continue;
                     }
-                    Console.WriteLine(tagCount[tag]);
-                    Console.WriteLine(chapterPagesCount[chapter]);
                     // If not present on every page in chapter then not title
                     if (tagCount[tag] != chapterPagesCount[chapter]) {
                         continue;
@@ -307,7 +303,6 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
                         continue;
                     }
 
-                    Console.WriteLine($"title = {tag}");
                     title = tag;
                     break;
                 }

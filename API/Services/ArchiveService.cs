@@ -145,25 +145,7 @@ public class ArchiveService : IArchiveService
         var min = fileMetadata.MinRange();
         var max = fileMetadata.MaxRange();
 
-        IEnumerable<T> slicedEntries = imageEntries.ToList().GetRange(min, max-min+1);
-
-        // Special logic to handle Covers in internal chapters, if it exists we want to
-        // return the cover file only in the first "slice" e.g. if it includes the 0th page
-        var coverEntry = imageEntries.FirstOrDefault(f => Tasks.Scanner.Parser.Parser.IsCoverImage(getName(f)));
-        if (coverEntry == null) {
-            return slicedEntries;
-        }
-
-        if (min == 0) {
-            if(slicedEntries.Any(x => x == coverEntry)) {
-                return slicedEntries;
-            } else {
-                // We have to insert the cover and resort the files.
-                return slicedEntries.Append(coverEntry).OrderByNatural(e => getName(e).Replace(Path.GetExtension(getName(e)), string.Empty));
-            }
-        }
-
-        return slicedEntries.Where(f => f != coverEntry);
+        return imageEntries.ToList().GetRange(min, max-min+1);
     }
 
     /// <summary>
@@ -396,14 +378,7 @@ public class ArchiveService : IArchiveService
     /// <returns></returns>
     public static string? FindCoverImageFilename(FileMetadata archivePath, IEnumerable<string> entryNames)
     {
-        // For chapters derived from volumes, if a cover has not explicitly been set than we just return none
-        // this is to avoid edge cases where an archive declares a 2nd cover file (e.g. a back cover with "Cover" as its tag)
-        if (archivePath.HasPageRange() && archivePath.MinRange() != 0) {
-            return FirstFileEntry(entryNames, Path.GetFileName(archivePath.Path));
-        }
-
-        var entryName = FindFolderEntry(entryNames) ?? FirstFileEntry(entryNames, Path.GetFileName(archivePath.Path));
-        return entryName;
+        return FindFolderEntry(entryNames) ?? FirstFileEntry(entryNames, Path.GetFileName(archivePath.Path));
     }
 
     /// <summary>
