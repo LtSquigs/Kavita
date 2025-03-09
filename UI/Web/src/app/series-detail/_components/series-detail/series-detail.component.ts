@@ -829,7 +829,34 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
 
         if (!this.router.url.includes('#')) {
           this.updateSelectedTab();
+        } else if (this.activeTabId != TabID.Storyline) {
+          // Validate that the tab we are selected is still there (in case this comes from a messageHub)
+          switch (this.activeTabId) {
+            case TabID.Related:
+              if (!this.hasRelations) this.updateSelectedTab();
+              break;
+            case TabID.Specials:
+              if (!this.hasSpecials) this.updateSelectedTab();
+              break;
+            case TabID.Volumes:
+              if (this.volumes.length === 0) this.updateSelectedTab();
+              break;
+            case TabID.Chapters:
+              if (this.chapters.length === 0) this.updateSelectedTab();
+              break;
+            case TabID.Recommendations:
+              if (!this.hasRecommendations) this.updateSelectedTab();
+              break;
+            case TabID.Reviews:
+              if (this.reviews.length === 0) this.updateSelectedTab();
+              break;
+            case TabID.Details:
+              break;
+          }
+          this.cdRef.markForCheck();
         }
+
+
 
 
 
@@ -916,6 +943,8 @@ export class SeriesDetailComponent implements OnInit, AfterContentChecked {
         this.activeTabId = TabID.Storyline;
       }
     }
+
+    // BUG: Related or other tab can be in history but no longer there, need to default
 
     this.updateUrl(this.activeTabId);
     this.cdRef.markForCheck();
