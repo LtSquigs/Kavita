@@ -86,10 +86,11 @@ public partial class VersionUpdaterService : IVersionUpdaterService
     /// <returns>Latest update</returns>
     public async Task<UpdateNotificationDto?> CheckForUpdate()
     {
-        var update = await GetGithubRelease();
-        var dto = CreateDto(update);
+        return CreateDto(null);
+        // var update = await GetGithubRelease();
+        // var dto = CreateDto(update);
 
-        return dto;
+        // return dto;
     }
 
     private async Task EnrichWithNightlyInfo(List<UpdateNotificationDto> dtos)
@@ -345,8 +346,9 @@ public partial class VersionUpdaterService : IVersionUpdaterService
 
     public async Task<int> GetNumberOfReleasesBehind()
     {
-        var updates = await GetAllReleases();
-        return updates.TakeWhile(update => update.UpdateVersion != update.CurrentVersion).Count();
+        return 0;
+        // var updates = await GetAllReleases();
+        // return updates.TakeWhile(update => update.UpdateVersion != update.CurrentVersion).Count();
     }
 
     private UpdateNotificationDto? CreateDto(GithubReleaseMetadata? update)
