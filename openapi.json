@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.4.18",
+    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.5.11",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
@@ -3843,6 +3843,7 @@
         "tags": [
           "License"
         ],
+        "summary": "Remove the Kavita+ License on the Server",
         "responses": {
           "200": {
             "description": "OK"
@@ -3917,6 +3918,8 @@
         "tags": [
           "Locale"
         ],
+        "summary": "Returns all applicable locales on the server",
+        "description": "This can be cached as it will not change per version.",
         "responses": {
           "200": {
             "description": "OK",
@@ -3925,7 +3928,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/KavitaLocale"
                   }
                 }
               },
@@ -3933,7 +3936,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/KavitaLocale"
                   }
                 }
               },
@@ -3941,7 +3944,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/KavitaLocale"
                   }
                 }
               }
@@ -9529,7 +9532,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Series"
+                    "$ref": "#/components/schemas/SeriesDto"
                   }
                 }
               },
@@ -9537,7 +9540,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Series"
+                    "$ref": "#/components/schemas/SeriesDto"
                   }
                 }
               },
@@ -9545,7 +9548,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Series"
+                    "$ref": "#/components/schemas/SeriesDto"
                   }
                 }
               }
@@ -15176,7 +15179,7 @@
           },
           "missingSeriesFromSource": {
             "type": "string",
-            "description": "A \r\n separated string of all missing series",
+            "description": "A \n separated string of all missing series",
             "nullable": true
           },
           "appUser": {
@@ -15284,7 +15287,7 @@
           },
           "missingSeriesFromSource": {
             "type": "string",
-            "description": "A \r\n separated string of all missing series",
+            "description": "A \n separated string of all missing series",
             "nullable": true
           }
         },
@@ -19139,6 +19142,31 @@
         "additionalProperties": false,
         "description": "Represents an individual button in a Jump Bar"
       },
+      "KavitaLocale": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "renderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "translationCompletion": {
+            "type": "number",
+            "format": "float"
+          },
+          "isRtL": {
+            "type": "boolean"
+          },
+          "hash": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LanguageDto": {
         "required": [
           "isoCode",
@@ -20496,6 +20524,10 @@
             "nullable": true
           },
           "readDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readDateUtc": {
             "type": "string",
             "format": "date-time"
           },
@@ -24282,6 +24314,13 @@
             "nullable": true
           },
           "featureRequests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "knownIssues": {
             "type": "array",
             "items": {
               "type": "string"
