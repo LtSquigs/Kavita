@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
@@ -52,6 +53,28 @@ public class ScannerServiceTests : AbstractDbTest
     {
         _context.Library.RemoveRange(_context.Library);
         await _context.SaveChangesAsync();
+    }
+
+
+    protected async Task SetAllSeriesLastScannedInThePast(Library library, TimeSpan? duration = null)
+    {
+        foreach (var series in library.Series)
+        {
+            await SetLastScannedInThePast(series, duration, false);
+        }
+        await _context.SaveChangesAsync();
+    }
+
+    protected async Task SetLastScannedInThePast(Series series, TimeSpan? duration = null, bool save = true)
+    {
+        duration ??= TimeSpan.FromMinutes(2);
+        series.LastFolderScanned = DateTime.Now.Subtract(duration.Value);
+        _context.Series.Update(series);
+
+        if (save)
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 
     [Fact]
@@ -519,7 +542,7 @@ public class ScannerServiceTests : AbstractDbTest
     }
 
     [Fact]
-    public async Task ScanLibrary_MultipleRoots_MultipleScans_DataPersists()
+    public async Task ScanLibrary_MultipleRoots_MultipleScans_DataPersists_Forced()
     {
         const string testcase = "Multiple Roots - Manga.json";
 
@@ -552,22 +575,81 @@ public class ScannerServiceTests : AbstractDbTest
         var s2 = postLib.Series.First(s => s.Name == "Accel");
         Assert.Single(s2.Volumes);
 
+        // Make a change (copy a file into only 1 root)
+        var root1PlushFolder = Path.Join(testDirectoryPath, "Root 1/Antarctic Press/Plush");
+        File.Copy(Path.Join(root1PlushFolder, "Plush v02.cbz"), Path.Join(root1PlushFolder, "Plush v03.cbz"));
+
         // Rescan to ensure nothing changes yet again
         await scanner.ScanLibrary(library.Id, true);
 
         postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
         Assert.Equal(2, postLib.Series.Count);
         s = postLib.Series.First(s => s.Name == "Plush");
-        Assert.Equal(2, s.Volumes.Count);
+        Assert.Equal(3, s.Volumes.Count);
         s2 = postLib.Series.First(s => s.Name == "Accel");
         Assert.Single(s2.Volumes);
     }
 
-    //[Fact]
+    /// <summary>
+    /// Regression bug appeared where multi-root and one root gets a new file, on next scan of library,
+    /// the series in the other root are deleted. (This is actually failing because the file in Root 1 isn't being detected)
+    /// </summary>
+    [Fact]
+    public async Task ScanLibrary_MultipleRoots_MultipleScans_DataPersists_NonForced()
+    {
+        const string testcase = "Multiple Roots - Manga.json";
+
+        // Get the first file and generate a ComicInfo
+        var infos = new Dictionary<string, ComicInfo>();
+        var library = await _scannerHelper.GenerateScannerData(testcase, infos);
+
+        var testDirectoryPath =
+            Path.Join(
+                Path.Join(Directory.GetCurrentDirectory(), "../../../Services/Test Data/ScannerService/ScanTests"),
+                testcase.Replace(".json", string.Empty));
+        library.Folders =
+        [
+            new FolderPath() {Path = Path.Join(testDirectoryPath, "Root 1")},
+            new FolderPath() {Path = Path.Join(testDirectoryPath, "Root 2")}
+        ];
+
+        _unitOfWork.LibraryRepository.Update(library);
+        await _unitOfWork.CommitAsync();
+
+
+        var scanner = _scannerHelper.CreateServices();
+        await scanner.ScanLibrary(library.Id);
+        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+
+        Assert.NotNull(postLib);
+        Assert.Equal(2, postLib.Series.Count);
+        var s = postLib.Series.First(s => s.Name == "Plush");
+        Assert.Equal(2, s.Volumes.Count);
+        var s2 = postLib.Series.First(s => s.Name == "Accel");
+        Assert.Single(s2.Volumes);
+
+        // Make a change (copy a file into only 1 root)
+        var root1PlushFolder = Path.Join(testDirectoryPath, "Root 1/Antarctic Press/Plush");
+        File.Copy(Path.Join(root1PlushFolder, "Plush v02.cbz"), Path.Join(root1PlushFolder, "Plush v03.cbz"));
+
+        // Emulate time passage by updating lastFolderScan to be a min in the past
+        await SetLastScannedInThePast(s);
+
+        // Rescan to ensure nothing changes yet again
+        await scanner.ScanLibrary(library.Id, false);
+
+        postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.Equal(2, postLib.Series.Count);
+        s = postLib.Series.First(s => s.Name == "Plush");
+        Assert.Equal(3, s.Volumes.Count);
+        s2 = postLib.Series.First(s => s.Name == "Accel");
+        Assert.Single(s2.Volumes);
+    }
+
+    [Fact]
     public async Task ScanLibrary_AlternatingRemoval_IssueReplication()
     {
         // https://github.com/Kareadita/Kavita/issues/3476#issuecomment-2661635558
-        // TODO: Come back to this, it's complicated
         const string testcase = "Alternating Removal - Manga.json";
 
         // Setup: Generate test library
@@ -602,6 +684,14 @@ public class ScannerServiceTests : AbstractDbTest
         _unitOfWork.LibraryRepository.Update(library);
         await _unitOfWork.CommitAsync();
 
+        // Emulate time passage by updating lastFolderScan to be a min in the past
+        foreach (var s in postLib.Series)
+        {
+            s.LastFolderScanned = DateTime.Now.Subtract(TimeSpan.FromMinutes(1));
+            _context.Series.Update(s);
+        }
+        await _context.SaveChangesAsync();
+
         await scanner.ScanLibrary(library.Id);
         postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
 
@@ -617,11 +707,22 @@ public class ScannerServiceTests : AbstractDbTest
         _unitOfWork.LibraryRepository.Update(library);
         await _unitOfWork.CommitAsync();
 
+        // Emulate time passage by updating lastFolderScan to be a min in the past
+        foreach (var s in postLib.Series)
+        {
+            s.LastFolderScanned = DateTime.Now.Subtract(TimeSpan.FromMinutes(1));
+            _context.Series.Update(s);
+        }
+        await _context.SaveChangesAsync();
+
         await scanner.ScanLibrary(library.Id);
         postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
 
         Assert.Contains(postLib.Series, s => s.Name == "Accel"); // Accel should be back
         Assert.Contains(postLib.Series, s => s.Name == "Plush");
+
+        // Emulate time passage by updating lastFolderScan to be a min in the past
+        await SetAllSeriesLastScannedInThePast(postLib);
 
         // Fourth Scan: Run again to check stability (should not remove Accel)
         await scanner.ScanLibrary(library.Id);
@@ -676,5 +777,154 @@ public class ScannerServiceTests : AbstractDbTest
 
         Assert.Contains(postLib.Series, s => s.Name == "Accel"); // Ensure Accel is gone
         Assert.Contains(postLib.Series, s => s.Name == "Plush");
+    }
+
+    [Fact]
+    public async Task SubFolders_NoRemovals_ChangesFound()
+    {
+        const string testcase = "Subfolders always scanning all series changes - Manga.json";
+        var infos = new Dictionary<string, ComicInfo>();
+        var library = await _scannerHelper.GenerateScannerData(testcase, infos);
+        var testDirectoryPath = library.Folders.First().Path;
+
+        _unitOfWork.LibraryRepository.Update(library);
+        await _unitOfWork.CommitAsync();
+
+        var scanner = _scannerHelper.CreateServices();
+        await scanner.ScanLibrary(library.Id);
+
+        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.NotNull(postLib);
+        Assert.Equal(4, postLib.Series.Count);
+
+        var spiceAndWolf = postLib.Series.First(x => x.Name == "Spice and Wolf");
+        Assert.Equal(2, spiceAndWolf.Volumes.Count);
+        Assert.Equal(3, spiceAndWolf.Volumes.Sum(v => v.Chapters.Count));
+
+        var frieren = postLib.Series.First(x => x.Name == "Frieren - Beyond Journey's End");
+        Assert.Single(frieren.Volumes);
+        Assert.Equal(2, frieren.Volumes.Sum(v => v.Chapters.Count));
+
+        var executionerAndHerWayOfLife = postLib.Series.First(x => x.Name == "The Executioner and Her Way of Life");
+        Assert.Equal(2, executionerAndHerWayOfLife.Volumes.Count);
+        Assert.Equal(2, executionerAndHerWayOfLife.Volumes.Sum(v => v.Chapters.Count));
+
+        await SetAllSeriesLastScannedInThePast(postLib);
+
+        // Add a new chapter to a volume of the series, and scan. Validate that no chapters were lost, and the new
+        // chapter was added
+        var executionerCopyDir = Path.Join(Path.Join(testDirectoryPath, "The Executioner and Her Way of Life"),
+            "The Executioner and Her Way of Life Vol. 1");
+        File.Copy(Path.Join(executionerCopyDir, "The Executioner and Her Way of Life Vol. 1 Ch. 0001.cbz"),
+            Path.Join(executionerCopyDir, "The Executioner and Her Way of Life Vol. 1 Ch. 0002.cbz"));
+
+        await scanner.ScanLibrary(library.Id);
+        await _unitOfWork.CommitAsync();
+
+        postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.NotNull(postLib);
+        Assert.Equal(4, postLib.Series.Count);
+
+        spiceAndWolf = postLib.Series.First(x => x.Name == "Spice and Wolf");
+        Assert.Equal(2, spiceAndWolf.Volumes.Count);
+        Assert.Equal(3, spiceAndWolf.Volumes.Sum(v => v.Chapters.Count));
+
+        frieren = postLib.Series.First(x => x.Name == "Frieren - Beyond Journey's End");
+        Assert.Single(frieren.Volumes);
+        Assert.Equal(2, frieren.Volumes.Sum(v => v.Chapters.Count));
+
+        executionerAndHerWayOfLife = postLib.Series.First(x => x.Name == "The Executioner and Her Way of Life");
+        Assert.Equal(2, executionerAndHerWayOfLife.Volumes.Count);
+        Assert.Equal(3, executionerAndHerWayOfLife.Volumes.Sum(v => v.Chapters.Count)); // Incremented by 1
+    }
+
+    [Fact]
+    public async Task RemovalPickedUp_NoOtherChanges()
+    {
+        const string testcase = "Series removed when no other changes are made - Manga.json";
+        var infos = new Dictionary<string, ComicInfo>();
+        var library = await _scannerHelper.GenerateScannerData(testcase, infos);
+        var testDirectoryPath = library.Folders.First().Path;
+
+        _unitOfWork.LibraryRepository.Update(library);
+        await _unitOfWork.CommitAsync();
+
+        var scanner = _scannerHelper.CreateServices();
+        await scanner.ScanLibrary(library.Id);
+
+        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.NotNull(postLib);
+        Assert.Equal(2, postLib.Series.Count);
+
+        var executionerCopyDir = Path.Join(testDirectoryPath, "The Executioner and Her Way of Life");
+        Directory.Delete(executionerCopyDir, true);
+
+        await scanner.ScanLibrary(library.Id);
+        await _unitOfWork.CommitAsync();
+
+        postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.NotNull(postLib);
+        Assert.Single(postLib.Series);
+        Assert.Single(postLib.Series, s => s.Name == "Spice and Wolf");
+        Assert.Equal(2, postLib.Series.First().Volumes.Count);
+    }
+
+    [Fact]
+    public async Task SubFoldersNoSubFolders_CorrectPickupAfterAdd()
+    {
+        // This test case is used in multiple tests and can result in conflict if not separated
+        const string testcase = "Subfolders and files at root (2) - Manga.json";
+        var infos = new Dictionary<string, ComicInfo>();
+        var library = await _scannerHelper.GenerateScannerData(testcase, infos);
+        var testDirectoryPath = library.Folders.First().Path;
+
+        _unitOfWork.LibraryRepository.Update(library);
+        await _unitOfWork.CommitAsync();
+
+        var scanner = _scannerHelper.CreateServices();
+        await scanner.ScanLibrary(library.Id);
+
+        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.NotNull(postLib);
+        Assert.Single(postLib.Series);
+
+        var spiceAndWolf = postLib.Series.First(x => x.Name == "Spice and Wolf");
+        Assert.Equal(3, spiceAndWolf.Volumes.Count);
+        Assert.Equal(4, spiceAndWolf.Volumes.Sum(v => v.Chapters.Count));
+
+        await SetLastScannedInThePast(spiceAndWolf);
+
+        // Add volume to Spice and Wolf series directory
+        var spiceAndWolfDir = Path.Join(testDirectoryPath, "Spice and Wolf");
+        File.Copy(Path.Join(spiceAndWolfDir, "Spice and Wolf Vol. 1.cbz"),
+            Path.Join(spiceAndWolfDir, "Spice and Wolf Vol. 4.cbz"));
+
+        await scanner.ScanLibrary(library.Id);
+
+        postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.NotNull(postLib);
+        Assert.Single(postLib.Series);
+
+        spiceAndWolf = postLib.Series.First(x => x.Name == "Spice and Wolf");
+        Assert.Equal(4, spiceAndWolf.Volumes.Count);
+        Assert.Equal(5, spiceAndWolf.Volumes.Sum(v => v.Chapters.Count));
+
+        await SetLastScannedInThePast(spiceAndWolf);
+
+        // Add file in subfolder
+        spiceAndWolfDir = Path.Join(spiceAndWolfDir, "Spice and Wolf Vol. 3");
+        File.Copy(Path.Join(spiceAndWolfDir, "Spice and Wolf Vol. 3 Ch. 0012.cbz"),
+            Path.Join(spiceAndWolfDir, "Spice and Wolf Vol. 3 Ch. 0013.cbz"));
+
+        await scanner.ScanLibrary(library.Id);
+
+        postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        Assert.NotNull(postLib);
+        Assert.Single(postLib.Series);
+
+        spiceAndWolf = postLib.Series.First(x => x.Name == "Spice and Wolf");
+        Assert.Equal(4, spiceAndWolf.Volumes.Count);
+        Assert.Equal(6, spiceAndWolf.Volumes.Sum(v => v.Chapters.Count));
+
     }
 }

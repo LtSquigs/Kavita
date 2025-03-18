@@ -399,12 +399,21 @@ public partial class VersionUpdaterService : IVersionUpdaterService
 
     public async Task<int> GetNumberOfReleasesBehind()
     {
-        //var updates = await GetAllReleases();
         return 0;
-        // return updates
+        // var updates = await GetAllReleases();
+
+        // // If the user is on nightly, then we need to handle releases behind differently
+        // if (updates[0].IsPrerelease)
+        // {
+        //     return Math.Min(0, updates
+        //         .TakeWhile(update => update.UpdateVersion != update.CurrentVersion)
+        //         .Count() - 1);
+        // }
+
+        // return Math.Min(0, updates
         //     .Where(update => !update.IsPrerelease)
         //     .TakeWhile(update => update.UpdateVersion != update.CurrentVersion)
-        //     .Count();
+        //     .Count());
     }
 
     private UpdateNotificationDto? CreateDto(GithubReleaseMetadata? update)

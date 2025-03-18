@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250309084704_AddParseChaptersFromVolume")]
+    [Migration("20250318225656_AddParseChaptersFromVolume")]
     partial class AddParseChaptersFromVolume
     {
         /// <inheritdoc />
