@@ -184,7 +184,7 @@ public class ImageService : IImageService
     private static bool IsLikelyWideImage(int width, int height)
     {
         var aspectRatio = (double) width / height;
-        return aspectRatio > 1.25;
+        return aspectRatio > 1.01;
     }
 
     public string GetCoverImage(string path, string fileName, string outputDirectory, EncodeFormat encodeFormat, CoverImageSize size)

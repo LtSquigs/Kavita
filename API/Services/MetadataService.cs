@@ -158,7 +158,11 @@ public class MetadataService : IMetadataService
             // For cover selection, chapters need to try for issue 1 first, then fallback to first sort order
             volume.Chapters ??= new List<Chapter>();
 
+            var zerothChapter = volume.Chapters.FirstOrDefault(x => x.MinNumber.Is(0f));
             var firstChapter = volume.Chapters.FirstOrDefault(x => x.MinNumber.Is(1f));
+            if (zerothChapter != null && firstChapter != null) {
+                firstChapter = zerothChapter;
+            }
             if (firstChapter == null)
             {
                 firstChapter = volume.Chapters.MinBy(x => x.SortOrder, ChapterSortComparerDefaultFirst.Default);
