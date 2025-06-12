@@ -174,8 +174,13 @@ public class PersonRepository : IPersonRepository
     {
         List<PersonRole> roles = [PersonRole.Writer, PersonRole.CoverArtist];
         var ageRating = await _context.AppUser.GetUserAgeRestriction(userId);
+        var userLibs = await _context.Library.GetUserLibraries(userId).ToListAsync();
 
-        var query = _context.Person
+        var query = _context.Series
+            .Where(s => userLibs.Contains(s.LibraryId))
+            .RestrictAgainstAgeRestriction(ageRating)
+            .SelectMany(s => s.Metadata.People.Select(p => p.Person))
+            .Distinct()
             .Where(p => p.SeriesMetadataPeople.Any(smp => roles.Contains(smp.Role)) || p.ChapterPeople.Any(cmp => roles.Contains(cmp.Role)))
             .RestrictAgainstAgeRestriction(ageRating)
             .Select(p => new BrowsePersonDto
@@ -293,12 +298,23 @@ public class PersonRepository : IPersonRepository
     public async Task<IList<PersonDto>> GetAllPersonDtosByRoleAsync(int userId, PersonRole role)
     {
         var ageRating = await _context.AppUser.GetUserAgeRestriction(userId);
+        var userLibs = await _context.Library.GetUserLibraries(userId).ToListAsync();
 
-        return await _context.Person
+        return await _context.Series
+            .Where(s => userLibs.Contains(s.LibraryId))
+            .RestrictAgainstAgeRestriction(ageRating)
+            .SelectMany(s => s.Metadata.People.Select(p => p.Person))
+            .Distinct()
             .Where(p => p.SeriesMetadataPeople.Any(smp => smp.Role == role) || p.ChapterPeople.Any(cp => cp.Role == role)) // Filter by role in both series and chapters
             .OrderBy(p => p.Name)
-            .RestrictAgainstAgeRestriction(ageRating)
             .ProjectTo<PersonDto>(_mapper.ConfigurationProvider)
             .ToListAsync();
+
+        // return await _context.Person
+        //     .Where(p => p.SeriesMetadataPeople.Any(smp => smp.Role == role) || p.ChapterPeople.Any(cp => cp.Role == role)) // Filter by role in both series and chapters
+        //     .OrderBy(p => p.Name)
+        //     .RestrictAgainstAgeRestriction(ageRating)
+        //     .ProjectTo<PersonDto>(_mapper.ConfigurationProvider)
+        //     .ToListAsync();
     }
 }
