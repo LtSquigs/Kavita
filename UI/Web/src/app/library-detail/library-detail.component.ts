@@ -45,13 +45,12 @@ import {LoadingComponent} from "../shared/loading/loading.component";
 import {debounceTime, ReplaySubject, tap} from "rxjs";
 
 @Component({
-  selector: 'app-library-detail',
-  templateUrl: './library-detail.component.html',
-  styleUrls: ['./library-detail.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [SideNavCompanionBarComponent, CardActionablesComponent,
-    CardDetailLayoutComponent, SeriesCardComponent, BulkOperationsComponent, DecimalPipe, TranslocoDirective, LoadingComponent]
+    selector: 'app-library-detail',
+    templateUrl: './library-detail.component.html',
+    styleUrls: ['./library-detail.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [SideNavCompanionBarComponent, CardActionablesComponent,
+        CardDetailLayoutComponent, SeriesCardComponent, BulkOperationsComponent, DecimalPipe, TranslocoDirective, LoadingComponent]
 })
 export class LibraryDetailComponent implements OnInit {
 
@@ -150,6 +149,14 @@ export class LibraryDetailComponent implements OnInit {
           this.loadPage();
         });
         break;
+      case Action.SetReadingProfile:
+        this.actionService.setReadingProfileForMultiple(selectedSeries, (success) => {
+          this.bulkLoader = false;
+          this.cdRef.markForCheck();
+          if (!success) return;
+          this.bulkSelectionService.deselectAll();
+          this.loadPage();
+        })
     }
   }
 
@@ -297,8 +304,6 @@ export class LibraryDetailComponent implements OnInit {
         break;
     }
   }
-
-
 
   performAction(action: ActionItem<any>) {
     if (typeof action.callback === 'function') {

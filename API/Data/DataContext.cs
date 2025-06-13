@@ -11,6 +11,8 @@ using API.Entities.Enums.UserPreferences;
 using API.Entities.History;
 using API.Entities.Interfaces;
 using API.Entities.Metadata;
+using API.Entities.MetadataMatching;
+using API.Entities.Person;
 using API.Entities.Scrobble;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -47,6 +49,7 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<ReadingList> ReadingList { get; set; } = null!;
     public DbSet<ReadingListItem> ReadingListItem { get; set; } = null!;
     public DbSet<Person> Person { get; set; } = null!;
+    public DbSet<PersonAlias> PersonAlias { get; set; } = null!;
     public DbSet<Genre> Genre { get; set; } = null!;
     public DbSet<Tag> Tag { get; set; } = null!;
     public DbSet<SiteTheme> SiteTheme { get; set; } = null!;
@@ -69,6 +72,7 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<ExternalSeriesMetadata> ExternalSeriesMetadata { get; set; } = null!;
     public DbSet<ExternalRecommendation> ExternalRecommendation { get; set; } = null!;
     public DbSet<ManualMigrationHistory> ManualMigrationHistory { get; set; } = null!;
+    [Obsolete]
     public DbSet<SeriesBlacklist> SeriesBlacklist { get; set; } = null!;
     public DbSet<AppUserCollection> AppUserCollection { get; set; } = null!;
     public DbSet<ChapterPeople> ChapterPeople { get; set; } = null!;
@@ -76,6 +80,8 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<EmailHistory> EmailHistory { get; set; } = null!;
     public DbSet<MetadataSettings> MetadataSettings { get; set; } = null!;
     public DbSet<MetadataFieldMapping> MetadataFieldMapping { get; set; } = null!;
+    public DbSet<AppUserChapterRating> AppUserChapterRating { get; set; } = null!;
+    public DbSet<AppUserReadingProfile> AppUserReadingProfiles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -130,6 +136,9 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
             .HasDefaultValue(true);
         builder.Entity<AppUserPreferences>()
             .Property(b => b.WantToReadSync)
+            .HasDefaultValue(true);
+        builder.Entity<AppUserPreferences>()
+            .Property(b => b.AllowAutomaticWebtoonReaderDetection)
             .HasDefaultValue(true);
 
         builder.Entity<Library>()
@@ -250,6 +259,32 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
         builder.Entity<MetadataSettings>()
             .Property(b => b.EnableCoverImage)
             .HasDefaultValue(true);
+
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.BookThemeName)
+            .HasDefaultValue("Dark");
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.BackgroundColor)
+            .HasDefaultValue("#000000");
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.BookReaderWritingStyle)
+            .HasDefaultValue(WritingStyle.Horizontal);
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.AllowAutomaticWebtoonReaderDetection)
+            .HasDefaultValue(true);
+
+        builder.Entity<AppUserReadingProfile>()
+            .Property(rp => rp.LibraryIds)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, JsonSerializerOptions.Default),
+                v => JsonSerializer.Deserialize<List<int>>(v, JsonSerializerOptions.Default) ?? new List<int>())
+            .HasColumnType("TEXT");
+        builder.Entity<AppUserReadingProfile>()
+            .Property(rp => rp.SeriesIds)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, JsonSerializerOptions.Default),
+                v => JsonSerializer.Deserialize<List<int>>(v, JsonSerializerOptions.Default) ?? new List<int>())
+            .HasColumnType("TEXT");
     }
 
     #nullable enable

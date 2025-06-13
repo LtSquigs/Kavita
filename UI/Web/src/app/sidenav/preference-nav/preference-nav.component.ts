@@ -41,6 +41,7 @@ export enum SettingsTabId {
   // Non-Admin
   Account = 'account',
   Preferences = 'preferences',
+  ReadingProfiles = 'reading-profiles',
   Clients = 'clients',
   Theme = 'theme',
   Devices = 'devices',
@@ -74,18 +75,17 @@ class SideNavItem {
 }
 
 @Component({
-  selector: 'app-preference-nav',
-  standalone: true,
-  imports: [
-    TranslocoDirective,
-    NgClass,
-    AsyncPipe,
-    SideNavItemComponent,
-    SettingFragmentPipe
-  ],
-  templateUrl: './preference-nav.component.html',
-  styleUrl: './preference-nav.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'app-preference-nav',
+    imports: [
+        TranslocoDirective,
+        NgClass,
+        AsyncPipe,
+        SideNavItemComponent,
+        SettingFragmentPipe
+    ],
+    templateUrl: './preference-nav.component.html',
+    styleUrl: './preference-nav.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PreferenceNavComponent implements AfterViewInit {
 
@@ -112,6 +112,7 @@ export class PreferenceNavComponent implements AfterViewInit {
       children: [
         new SideNavItem(SettingsTabId.Account, []),
         new SideNavItem(SettingsTabId.Preferences),
+        new SideNavItem(SettingsTabId.ReadingProfiles),
         new SideNavItem(SettingsTabId.Customize, [], undefined, [Role.ReadOnly]),
         new SideNavItem(SettingsTabId.Clients),
         new SideNavItem(SettingsTabId.Theme),

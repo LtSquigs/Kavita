@@ -1,6 +1,7 @@
 ﻿namespace API.DTOs.KavitaPlus.License;
+#nullable enable
 
-public class UpdateLicenseDto
+public sealed record UpdateLicenseDto
 {
     /// <summary>
     /// License Key received from Kavita+

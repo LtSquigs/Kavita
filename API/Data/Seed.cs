@@ -11,6 +11,7 @@ using API.Data.Repositories;
 using API.Entities;
 using API.Entities.Enums;
 using API.Entities.Enums.Theme;
+using API.Entities.MetadataMatching;
 using API.Extensions;
 using API.Services;
 using Kavita.Common;
@@ -311,6 +312,11 @@ public static class Seed
                 EnableLocalizedName = false,
                 FirstLastPeopleNaming = true,
                 EnableCoverImage = true,
+                EnableChapterTitle = false,
+                EnableChapterSummary = true,
+                EnableChapterPublisher = true,
+                EnableChapterCoverImage = false,
+                EnableChapterReleaseDate = true,
                 PersonRoles = [PersonRole.Writer, PersonRole.CoverArtist, PersonRole.Character]
             };
             await context.MetadataSettings.AddAsync(existing);

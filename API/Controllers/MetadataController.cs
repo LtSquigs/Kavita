@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using API.Constants;
 using API.Data;
 using API.Data.Repositories;
-using API.DTOs;
 using API.DTOs.Filtering;
 using API.DTOs.Metadata;
+using API.DTOs.Person;
 using API.DTOs.Recommendation;
 using API.DTOs.SeriesDetail;
 using API.Entities.Enums;
 using API.Extensions;
+using API.Helpers;
 using API.Services;
 using API.Services.Plus;
 using Kavita.Common.Extensions;
@@ -73,6 +74,7 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
         {
             return Ok(await unitOfWork.PersonRepository.GetAllPeopleDtosForLibrariesAsync(User.GetUserId(), ids));
         }
+
         return Ok(await unitOfWork.PersonRepository.GetAllPeopleDtosForLibrariesAsync(User.GetUserId()));
     }
 
@@ -220,12 +222,12 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
         return Ok(ret);
     }
 
-    private async Task PrepareSeriesDetail(List<UserReviewDto> userReviews, SeriesDetailPlusDto ret)
+    private async Task PrepareSeriesDetail(List<UserReviewDto> userReviews, SeriesDetailPlusDto? ret)
     {
         var isAdmin = User.IsInRole(PolicyConstants.AdminRole);
         var user = await unitOfWork.UserRepository.GetUserByIdAsync(User.GetUserId())!;
 
-        userReviews.AddRange(ReviewService.SelectSpectrumOfReviews(ret.Reviews.ToList()));
+        userReviews.AddRange(ReviewHelper.SelectSpectrumOfReviews(ret.Reviews.ToList()));
         ret.Reviews = userReviews;
 
         if (!isAdmin && ret.Recommendations != null && user != null)
@@ -234,12 +236,12 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
             ret.Recommendations.OwnedSeries =
                 await unitOfWork.SeriesRepository.GetSeriesDtoByIdsAsync(
                     ret.Recommendations.OwnedSeries.Select(s => s.Id), user);
-            ret.Recommendations.ExternalSeries = new List<ExternalSeriesDto>();
+            ret.Recommendations.ExternalSeries = [];
         }
 
         if (ret.Recommendations != null && user != null)
         {
-            ret.Recommendations.OwnedSeries ??= new List<SeriesDto>();
+            ret.Recommendations.OwnedSeries ??= [];
             await unitOfWork.SeriesRepository.AddSeriesModifiers(user.Id, ret.Recommendations.OwnedSeries);
         }
     }

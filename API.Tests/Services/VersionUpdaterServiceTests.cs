@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 using API.DTOs.Update;
-using API.Extensions;
 using API.Services;
 using API.Services.Tasks;
 using API.SignalR;
-using Flurl.Http;
 using Flurl.Http.Testing;
 using Kavita.Common.EnvironmentInfo;
 using Microsoft.Extensions.Logging;
@@ -21,19 +16,15 @@ namespace API.Tests.Services;
 
 public class VersionUpdaterServiceTests : IDisposable
 {
-    private readonly ILogger<VersionUpdaterService> _logger;
-    private readonly IEventHub _eventHub;
-    private readonly IDirectoryService _directoryService;
+    private readonly ILogger<VersionUpdaterService> _logger = Substitute.For<ILogger<VersionUpdaterService>>();
+    private readonly IEventHub _eventHub = Substitute.For<IEventHub>();
+    private readonly IDirectoryService _directoryService = Substitute.For<IDirectoryService>();
     private readonly VersionUpdaterService _service;
     private readonly string _tempPath;
     private readonly HttpTest _httpTest;
 
     public VersionUpdaterServiceTests()
     {
-        _logger = Substitute.For<ILogger<VersionUpdaterService>>();
-        _eventHub = Substitute.For<IEventHub>();
-        _directoryService = Substitute.For<IDirectoryService>();
-
         // Create temp directory for cache
         _tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempPath);
@@ -60,18 +51,19 @@ public class VersionUpdaterServiceTests : IDisposable
 
         // Reset BuildInfo.Version
         typeof(BuildInfo).GetProperty(nameof(BuildInfo.Version))?.SetValue(null, null);
+        GC.SuppressFinalize(this);
     }
 
     [Fact]
     public async Task CheckForUpdate_ShouldReturnNull_WhenGithubApiReturnsNull()
     {
-        // Arrange
+
         _httpTest.RespondWith("null");
 
-        // Act
+
         var result = await _service.CheckForUpdate();
 
-        // Assert
+
         Assert.Null(result);
     }
 
@@ -79,7 +71,7 @@ public class VersionUpdaterServiceTests : IDisposable
     //[Fact]
     public async Task CheckForUpdate_ShouldReturnUpdateNotification_WhenNewVersionIsAvailable()
     {
-        // Arrange
+
         var githubResponse = new
         {
             tag_name = "v0.6.0",
@@ -91,10 +83,10 @@ public class VersionUpdaterServiceTests : IDisposable
 
         _httpTest.RespondWithJson(githubResponse);
 
-        // Act
+
         var result = await _service.CheckForUpdate();
 
-        // Assert
+
         Assert.NotNull(result);
         Assert.Equal("0.6.0", result.UpdateVersion);
         Assert.Equal("0.5.0.0", result.CurrentVersion);
@@ -121,10 +113,10 @@ public class VersionUpdaterServiceTests : IDisposable
 
         _httpTest.RespondWithJson(githubResponse);
 
-        // Act
+
         var result = await _service.CheckForUpdate();
 
-        // Assert
+
         Assert.NotNull(result);
         Assert.True(result.IsReleaseEqual);
         Assert.False(result.IsReleaseNewer);
@@ -134,7 +126,7 @@ public class VersionUpdaterServiceTests : IDisposable
     //[Fact]
     public async Task PushUpdate_ShouldSendUpdateEvent_WhenNewerVersionAvailable()
     {
-        // Arrange
+
         var update = new UpdateNotificationDto
         {
             UpdateVersion = "0.6.0",
@@ -145,10 +137,10 @@ public class VersionUpdaterServiceTests : IDisposable
             PublishDate = null
         };
 
-        // Act
+
         await _service.PushUpdate(update);
 
-        // Assert
+
         await _eventHub.Received(1).SendMessageAsync(
             Arg.Is(MessageFactory.UpdateAvailable),
             Arg.Any<SignalRMessage>(),
@@ -159,7 +151,7 @@ public class VersionUpdaterServiceTests : IDisposable
     [Fact]
     public async Task PushUpdate_ShouldNotSendUpdateEvent_WhenVersionIsEqual()
     {
-        // Arrange
+
         var update = new UpdateNotificationDto
         {
             UpdateVersion = "0.5.0.0",
@@ -170,10 +162,10 @@ public class VersionUpdaterServiceTests : IDisposable
             PublishDate = null
         };
 
-        // Act
+
         await _service.PushUpdate(update);
 
-        // Assert
+
         await _eventHub.DidNotReceive().SendMessageAsync(
             Arg.Any<string>(),
             Arg.Any<SignalRMessage>(),
@@ -184,7 +176,7 @@ public class VersionUpdaterServiceTests : IDisposable
     [Fact]
     public async Task GetAllReleases_ShouldReturnReleases_LimitedByCount()
     {
-        // Arrange
+
         var releases = new List<object>
         {
             new
@@ -215,10 +207,10 @@ public class VersionUpdaterServiceTests : IDisposable
 
         _httpTest.RespondWithJson(releases);
 
-        // Act
+
         var result = await _service.GetAllReleases(2);
 
-        // Assert
+
         Assert.Equal(2, result.Count);
         Assert.Equal("0.7.0.0", result[0].UpdateVersion);
         Assert.Equal("0.6.0", result[1].UpdateVersion);
@@ -227,7 +219,7 @@ public class VersionUpdaterServiceTests : IDisposable
     [Fact]
     public async Task GetAllReleases_ShouldUseCachedData_WhenCacheIsValid()
     {
-        // Arrange
+
         var releases = new List<UpdateNotificationDto>
         {
             new()
@@ -257,10 +249,10 @@ public class VersionUpdaterServiceTests : IDisposable
         await File.WriteAllTextAsync(cacheFilePath, System.Text.Json.JsonSerializer.Serialize(releases));
         File.SetLastWriteTimeUtc(cacheFilePath, DateTime.UtcNow); // Ensure it's fresh
 
-        // Act
+
         var result = await _service.GetAllReleases();
 
-        // Assert
+
         Assert.Equal(2, result.Count);
         Assert.Empty(_httpTest.CallLog); // No HTTP calls made
     }
@@ -268,7 +260,7 @@ public class VersionUpdaterServiceTests : IDisposable
     [Fact]
     public async Task GetAllReleases_ShouldFetchNewData_WhenCacheIsExpired()
     {
-        // Arrange
+
         var releases = new List<UpdateNotificationDto>
         {
             new()
@@ -303,18 +295,18 @@ public class VersionUpdaterServiceTests : IDisposable
 
         _httpTest.RespondWithJson(newReleases);
 
-        // Act
+
         var result = await _service.GetAllReleases();
 
-        // Assert
-        Assert.Equal(1, result.Count);
+
+        Assert.Single(result);
         Assert.Equal("0.7.0.0", result[0].UpdateVersion);
         Assert.NotEmpty(_httpTest.CallLog); // HTTP call was made
     }
 
     public async Task GetNumberOfReleasesBehind_ShouldReturnCorrectCount()
     {
-        // Arrange
+
         var releases = new List<object>
         {
             new
@@ -345,16 +337,16 @@ public class VersionUpdaterServiceTests : IDisposable
 
         _httpTest.RespondWithJson(releases);
 
-        // Act
+
         var result = await _service.GetNumberOfReleasesBehind();
 
-        // Assert
+
         Assert.Equal(2 + 1, result); // Behind 0.7.0 and 0.6.0  - We have to add 1 because the current release is > 0.7.0
     }
 
     public async Task GetNumberOfReleasesBehind_ShouldReturnCorrectCount_WithNightlies()
     {
-        // Arrange
+
         var releases = new List<object>
         {
             new
@@ -377,17 +369,17 @@ public class VersionUpdaterServiceTests : IDisposable
 
         _httpTest.RespondWithJson(releases);
 
-        // Act
+
         var result = await _service.GetNumberOfReleasesBehind();
 
-        // Assert
+
         Assert.Equal(2, result); //  We have to add 1 because the current release is > 0.7.0
     }
 
     [Fact]
     public async Task ParseReleaseBody_ShouldExtractSections()
     {
-        // Arrange
+
         var githubResponse = new
         {
             tag_name = "v0.6.0",
@@ -399,10 +391,10 @@ public class VersionUpdaterServiceTests : IDisposable
 
         _httpTest.RespondWithJson(githubResponse);
 
-        // Act
+
         var result = await _service.CheckForUpdate();
 
-        // Assert
+
         Assert.NotNull(result);
         Assert.Equal(2, result.Added.Count);
         Assert.Equal(2, result.Fixed.Count);
@@ -414,7 +406,7 @@ public class VersionUpdaterServiceTests : IDisposable
     [Fact]
     public async Task GetAllReleases_ShouldHandleNightlyBuilds()
     {
-        // Arrange
+
         // Set BuildInfo.Version to a nightly build version
         typeof(BuildInfo).GetProperty(nameof(BuildInfo.Version))?.SetValue(null, new Version("0.7.1.0"));
 
@@ -444,10 +436,10 @@ public class VersionUpdaterServiceTests : IDisposable
         // Mock commit info for develop branch
         _httpTest.RespondWithJson(new List<object>());
 
-        // Act
+
         var result = await _service.GetAllReleases();
 
-        // Assert
+
         Assert.NotNull(result);
         Assert.True(result[0].IsOnNightlyInRelease);
     }

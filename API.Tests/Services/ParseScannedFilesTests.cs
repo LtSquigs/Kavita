@@ -1,30 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using API.Data;
 using API.Data.Metadata;
 using API.Data.Repositories;
-using API.Entities;
 using API.Entities.Enums;
-using API.Extensions;
-using API.Helpers.Builders;
 using API.Services;
 using API.Services.Tasks.Scanner;
 using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
 using API.Structs;
 using API.Tests.Helpers;
-using AutoMapper;
 using Hangfire;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -111,14 +101,14 @@ public class ParseScannedFilesTests : AbstractDbTest
     {
         // Since ProcessFile relies on _readingItemService, we can implement our own versions of _readingItemService so we have control over how the calls work
         GlobalConfiguration.Configuration.UseInMemoryStorage();
-        _scannerHelper = new ScannerHelper(_unitOfWork, testOutputHelper);
+        _scannerHelper = new ScannerHelper(UnitOfWork, testOutputHelper);
     }
 
     protected override async Task ResetDb()
     {
-        _context.Series.RemoveRange(_context.Series.ToList());
+        Context.Series.RemoveRange(Context.Series.ToList());
 
-        await _context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
     }
 
     #region MergeName
@@ -206,11 +196,11 @@ public class ParseScannedFilesTests : AbstractDbTest
     public async Task ScanLibrariesForSeries_ShouldFindFiles()
     {
         var fileSystem = new MockFileSystem();
-        fileSystem.AddDirectory("C:/Data/");
-        fileSystem.AddFile("C:/Data/Accel World v1.cbz", new MockFileData(string.Empty));
-        fileSystem.AddFile("C:/Data/Accel World v2.cbz", new MockFileData(string.Empty));
-        fileSystem.AddFile("C:/Data/Accel World v2.pdf", new MockFileData(string.Empty));
-        fileSystem.AddFile("C:/Data/Nothing.pdf", new MockFileData(string.Empty));
+        fileSystem.AddDirectory(Root + "Data/");
+        fileSystem.AddFile(Root + "Data/Accel World v1.cbz", new MockFileData(string.Empty));
+        fileSystem.AddFile(Root + "Data/Accel World v2.cbz", new MockFileData(string.Empty));
+        fileSystem.AddFile(Root + "Data/Accel World v2.pdf", new MockFileData(string.Empty));
+        fileSystem.AddFile(Root + "Data/Nothing.pdf", new MockFileData(string.Empty));
 
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fileSystem);
         var psf = new ParseScannedFiles(Substitute.For<ILogger<ParseScannedFiles>>(), ds,
@@ -218,13 +208,13 @@ public class ParseScannedFilesTests : AbstractDbTest
 
 
         var library =
-            await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
+            await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
                 LibraryIncludes.Folders | LibraryIncludes.FileTypes);
         Assert.NotNull(library);
 
         library.Type = LibraryType.Manga;
-        var parsedSeries = await psf.ScanLibrariesForSeries(library, new List<string>() {"C:/Data/"}, false,
-            await _unitOfWork.SeriesRepository.GetFolderPathMap(1));
+        var parsedSeries = await psf.ScanLibrariesForSeries(library, new List<string>() {Root + "Data/"}, false,
+            await UnitOfWork.SeriesRepository.GetFolderPathMap(1));
 
 
         // Assert.Equal(3, parsedSeries.Values.Count);
@@ -263,9 +253,9 @@ public class ParseScannedFilesTests : AbstractDbTest
             new MockReadingItemService(ds, Substitute.For<IBookService>()), Substitute.For<IEventHub>());
 
         var directoriesSeen = new HashSet<string>();
-        var library = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
+        var library = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
                 LibraryIncludes.Folders | LibraryIncludes.FileTypes);
-        var scanResults = await psf.ScanFiles("C:/Data/", true, await _unitOfWork.SeriesRepository.GetFolderPathMap(1), library);
+        var scanResults = await psf.ScanFiles("C:/Data/", true, await UnitOfWork.SeriesRepository.GetFolderPathMap(1), library);
         foreach (var scanResult in scanResults)
         {
             directoriesSeen.Add(scanResult.Folder);
@@ -282,13 +272,13 @@ public class ParseScannedFilesTests : AbstractDbTest
         var psf = new ParseScannedFiles(Substitute.For<ILogger<ParseScannedFiles>>(), ds,
             new MockReadingItemService(ds, Substitute.For<IBookService>()), Substitute.For<IEventHub>());
 
-        var library = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
+        var library = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
             LibraryIncludes.Folders | LibraryIncludes.FileTypes);
         Assert.NotNull(library);
 
         var directoriesSeen = new HashSet<string>();
         var scanResults = await psf.ScanFiles("C:/Data/", false,
-            await _unitOfWork.SeriesRepository.GetFolderPathMap(1), library);
+            await UnitOfWork.SeriesRepository.GetFolderPathMap(1), library);
 
         foreach (var scanResult in scanResults)
         {
@@ -317,10 +307,10 @@ public class ParseScannedFilesTests : AbstractDbTest
         var psf = new ParseScannedFiles(Substitute.For<ILogger<ParseScannedFiles>>(), ds,
             new MockReadingItemService(ds, Substitute.For<IBookService>()), Substitute.For<IEventHub>());
 
-        var library = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
+        var library = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
             LibraryIncludes.Folders | LibraryIncludes.FileTypes);
         Assert.NotNull(library);
-        var scanResults = await psf.ScanFiles("C:/Data", true, await _unitOfWork.SeriesRepository.GetFolderPathMap(1), library);
+        var scanResults = await psf.ScanFiles("C:/Data", true, await UnitOfWork.SeriesRepository.GetFolderPathMap(1), library);
 
         Assert.Equal(2, scanResults.Count);
     }
@@ -346,11 +336,11 @@ public class ParseScannedFilesTests : AbstractDbTest
         var psf = new ParseScannedFiles(Substitute.For<ILogger<ParseScannedFiles>>(), ds,
             new MockReadingItemService(ds, Substitute.For<IBookService>()), Substitute.For<IEventHub>());
 
-        var library = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
+        var library = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(1,
             LibraryIncludes.Folders | LibraryIncludes.FileTypes);
         Assert.NotNull(library);
         var scanResults = await psf.ScanFiles("C:/Data", false,
-            await _unitOfWork.SeriesRepository.GetFolderPathMap(1), library);
+            await UnitOfWork.SeriesRepository.GetFolderPathMap(1), library);
 
         Assert.Single(scanResults);
     }
@@ -369,8 +359,8 @@ public class ParseScannedFilesTests : AbstractDbTest
         var library = await _scannerHelper.GenerateScannerData(testcase, infos);
         var testDirectoryPath = library.Folders.First().Path;
 
-        _unitOfWork.LibraryRepository.Update(library);
-        await _unitOfWork.CommitAsync();
+        UnitOfWork.LibraryRepository.Update(library);
+        await UnitOfWork.CommitAsync();
 
         var fs = new FileSystem();
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fs);
@@ -380,7 +370,7 @@ public class ParseScannedFilesTests : AbstractDbTest
         var scanner = _scannerHelper.CreateServices(ds, fs);
         await scanner.ScanLibrary(library.Id);
 
-        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        var postLib = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
         Assert.NotNull(postLib);
         Assert.Equal(4, postLib.Series.Count);
 
@@ -393,7 +383,7 @@ public class ParseScannedFilesTests : AbstractDbTest
         var executionerAndHerWayOfLife = postLib.Series.First(x => x.Name == "The Executioner and Her Way of Life");
         Assert.Equal(2, executionerAndHerWayOfLife.Volumes.Count);
 
-        Thread.Sleep(1100); // Ensure at least one second has passed since library scan
+        await Task.Delay(1100); // Ensure at least one second has passed since library scan
 
         // Add a new chapter to a volume of the series, and scan. Validate that only, and all directories of this
         // series are marked as HasChanged
@@ -403,7 +393,7 @@ public class ParseScannedFilesTests : AbstractDbTest
             Path.Join(executionerCopyDir, "The Executioner and Her Way of Life Vol. 1 Ch. 0002.cbz"));
 
         // 4 series, of which 2 have volumes as directories
-        var folderMap = await _unitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id);
+        var folderMap = await UnitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id);
         Assert.Equal(6, folderMap.Count);
 
         var res = await psf.ScanFiles(testDirectoryPath, true, folderMap, postLib);
@@ -421,8 +411,8 @@ public class ParseScannedFilesTests : AbstractDbTest
         var library = await _scannerHelper.GenerateScannerData(testcase, infos);
         var testDirectoryPath = library.Folders.First().Path;
 
-        _unitOfWork.LibraryRepository.Update(library);
-        await _unitOfWork.CommitAsync();
+        UnitOfWork.LibraryRepository.Update(library);
+        await UnitOfWork.CommitAsync();
 
         var fs = new FileSystem();
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fs);
@@ -432,7 +422,7 @@ public class ParseScannedFilesTests : AbstractDbTest
         var scanner = _scannerHelper.CreateServices(ds, fs);
         await scanner.ScanLibrary(library.Id);
 
-        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        var postLib = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
         Assert.NotNull(postLib);
         Assert.Equal(4, postLib.Series.Count);
 
@@ -442,7 +432,7 @@ public class ParseScannedFilesTests : AbstractDbTest
         var frieren = postLib.Series.First(x => x.Name == "Frieren - Beyond Journey's End");
         Assert.Equal(2, frieren.Volumes.Count);
 
-        Thread.Sleep(1100); // Ensure at least one second has passed since library scan
+        await Task.Delay(1100); // Ensure at least one second has passed since library scan
 
         // Add a volume to a series, and scan. Ensure only this series is marked as HasChanged
         var executionerCopyDir = Path.Join(Path.Join(testDirectoryPath, "YenPress"), "The Executioner and Her Way of Life");
@@ -450,7 +440,7 @@ public class ParseScannedFilesTests : AbstractDbTest
             Path.Join(executionerCopyDir, "The Executioner and Her Way of Life Vol. 2.cbz"));
 
         var res = await psf.ScanFiles(testDirectoryPath, true,
-            await _unitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
+            await UnitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
         var changes = res.Count(sc => sc.HasChanged);
         Assert.Equal(1, changes);
     }
@@ -464,8 +454,8 @@ public class ParseScannedFilesTests : AbstractDbTest
         var library = await _scannerHelper.GenerateScannerData(testcase, infos);
         var testDirectoryPath = library.Folders.First().Path;
 
-        _unitOfWork.LibraryRepository.Update(library);
-        await _unitOfWork.CommitAsync();
+        UnitOfWork.LibraryRepository.Update(library);
+        await UnitOfWork.CommitAsync();
 
         var fs = new FileSystem();
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fs);
@@ -475,7 +465,7 @@ public class ParseScannedFilesTests : AbstractDbTest
         var scanner = _scannerHelper.CreateServices(ds, fs);
         await scanner.ScanLibrary(library.Id);
 
-        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        var postLib = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
         Assert.NotNull(postLib);
         Assert.Single(postLib.Series);
 
@@ -485,10 +475,10 @@ public class ParseScannedFilesTests : AbstractDbTest
 
         // Needs to be actual time as the write time is now, so if we set LastFolderChecked in the past
         // it'll always a scan as it was changed since the last scan.
-        Thread.Sleep(1100); // Ensure at least one second has passed since library scan
+        await Task.Delay(1100); // Ensure at least one second has passed since library scan
 
         var res = await psf.ScanFiles(testDirectoryPath, true,
-            await _unitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
+            await UnitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
         Assert.DoesNotContain(res, sc => sc.HasChanged);
     }
 
@@ -500,8 +490,8 @@ public class ParseScannedFilesTests : AbstractDbTest
         var library = await _scannerHelper.GenerateScannerData(testcase, infos);
         var testDirectoryPath = library.Folders.First().Path;
 
-        _unitOfWork.LibraryRepository.Update(library);
-        await _unitOfWork.CommitAsync();
+        UnitOfWork.LibraryRepository.Update(library);
+        await UnitOfWork.CommitAsync();
 
         var fs = new FileSystem();
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fs);
@@ -511,7 +501,7 @@ public class ParseScannedFilesTests : AbstractDbTest
         var scanner = _scannerHelper.CreateServices(ds, fs);
         await scanner.ScanLibrary(library.Id);
 
-        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        var postLib = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
         Assert.NotNull(postLib);
         Assert.Single(postLib.Series);
 
@@ -520,8 +510,8 @@ public class ParseScannedFilesTests : AbstractDbTest
         Assert.Equal(4, spiceAndWolf.Volumes.Sum(v => v.Chapters.Count));
 
         spiceAndWolf.LastFolderScanned = DateTime.Now.Subtract(TimeSpan.FromMinutes(2));
-        _context.Series.Update(spiceAndWolf);
-        await _context.SaveChangesAsync();
+        Context.Series.Update(spiceAndWolf);
+        await Context.SaveChangesAsync();
 
         // Add file at series root
         var spiceAndWolfDir = Path.Join(testDirectoryPath, "Spice and Wolf");
@@ -529,7 +519,7 @@ public class ParseScannedFilesTests : AbstractDbTest
             Path.Join(spiceAndWolfDir, "Spice and Wolf Vol. 4.cbz"));
 
         var res = await psf.ScanFiles(testDirectoryPath, true,
-            await _unitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
+            await UnitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
         var changes = res.Count(sc => sc.HasChanged);
         Assert.Equal(2, changes);
     }
@@ -542,8 +532,8 @@ public class ParseScannedFilesTests : AbstractDbTest
         var library = await _scannerHelper.GenerateScannerData(testcase, infos);
         var testDirectoryPath = library.Folders.First().Path;
 
-        _unitOfWork.LibraryRepository.Update(library);
-        await _unitOfWork.CommitAsync();
+        UnitOfWork.LibraryRepository.Update(library);
+        await UnitOfWork.CommitAsync();
 
         var fs = new FileSystem();
         var ds = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), fs);
@@ -553,7 +543,7 @@ public class ParseScannedFilesTests : AbstractDbTest
         var scanner = _scannerHelper.CreateServices(ds, fs);
         await scanner.ScanLibrary(library.Id);
 
-        var postLib = await _unitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
+        var postLib = await UnitOfWork.LibraryRepository.GetLibraryForIdAsync(library.Id, LibraryIncludes.Series);
         Assert.NotNull(postLib);
         Assert.Single(postLib.Series);
 
@@ -562,8 +552,8 @@ public class ParseScannedFilesTests : AbstractDbTest
         Assert.Equal(4, spiceAndWolf.Volumes.Sum(v => v.Chapters.Count));
 
         spiceAndWolf.LastFolderScanned = DateTime.Now.Subtract(TimeSpan.FromMinutes(2));
-        _context.Series.Update(spiceAndWolf);
-        await _context.SaveChangesAsync();
+        Context.Series.Update(spiceAndWolf);
+        await Context.SaveChangesAsync();
 
         // Add file in subfolder
         var spiceAndWolfDir = Path.Join(Path.Join(testDirectoryPath, "Spice and Wolf"), "Spice and Wolf Vol. 3");
@@ -571,7 +561,7 @@ public class ParseScannedFilesTests : AbstractDbTest
             Path.Join(spiceAndWolfDir, "Spice and Wolf Vol. 3 Ch. 0013.cbz"));
 
         var res = await psf.ScanFiles(testDirectoryPath, true,
-            await _unitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
+            await UnitOfWork.SeriesRepository.GetFolderPathMap(postLib.Id), postLib);
         var changes = res.Count(sc => sc.HasChanged);
         Assert.Equal(2, changes);
     }

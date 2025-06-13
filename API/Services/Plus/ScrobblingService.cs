@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -37,6 +38,9 @@ public enum ScrobbleProvider
     Kavita = 0,
     AniList = 1,
     Mal = 2,
+    [Obsolete]
+    GoogleBooks = 3,
+    Cbr = 4
 }
 
 public interface IScrobblingService
@@ -257,7 +261,7 @@ public class ScrobblingService : IScrobblingService
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(seriesId, SeriesIncludes.Metadata | SeriesIncludes.Library);
         if (series == null) throw new KavitaException(await _localizationService.Translate(userId, "series-doesnt-exist"));
 
-        _logger.LogInformation("Processing Scrobbling review event for {UserId} on {SeriesName}", userId, series.Name);
+        _logger.LogInformation("Processing Scrobbling review event for {AppUserId} on {SeriesName}", userId, series.Name);
         if (await CheckIfCannotScrobble(userId, seriesId, series)) return;
 
         if (IsAniListReviewValid(reviewTitle, reviewBody))
@@ -293,7 +297,7 @@ public class ScrobblingService : IScrobblingService
         };
         _unitOfWork.ScrobbleRepository.Attach(evt);
         await _unitOfWork.CommitAsync();
-        _logger.LogDebug("Added Scrobbling Review update on {SeriesName} with Userid {UserId} ", series.Name, userId);
+        _logger.LogDebug("Added Scrobbling Review update on {SeriesName} with Userid {AppUserId} ", series.Name, userId);
     }
 
     private static bool IsAniListReviewValid(string reviewTitle, string reviewBody)
@@ -313,7 +317,7 @@ public class ScrobblingService : IScrobblingService
         var user = await _unitOfWork.UserRepository.GetUserByIdAsync(userId, AppUserIncludes.UserPreferences);
         if (user == null || !user.UserPreferences.AniListScrobblingEnabled) return;
 
-        _logger.LogInformation("Processing Scrobbling rating event for {UserId} on {SeriesName}", userId, series.Name);
+        _logger.LogInformation("Processing Scrobbling rating event for {AppUserId} on {SeriesName}", userId, series.Name);
         if (await CheckIfCannotScrobble(userId, seriesId, series)) return;
 
         var existingEvt = await _unitOfWork.ScrobbleRepository.GetEvent(userId, series.Id,
@@ -342,7 +346,7 @@ public class ScrobblingService : IScrobblingService
         };
         _unitOfWork.ScrobbleRepository.Attach(evt);
         await _unitOfWork.CommitAsync();
-        _logger.LogDebug("Added Scrobbling Rating update on {SeriesName} with Userid {UserId}", series.Name, userId);
+        _logger.LogDebug("Added Scrobbling Rating update on {SeriesName} with Userid {AppUserId}", series.Name, userId);
     }
 
     public static long? GetMalId(Series series)
@@ -367,7 +371,7 @@ public class ScrobblingService : IScrobblingService
         var user = await _unitOfWork.UserRepository.GetUserByIdAsync(userId, AppUserIncludes.UserPreferences);
         if (user == null || !user.UserPreferences.AniListScrobblingEnabled) return;
 
-        _logger.LogInformation("Processing Scrobbling reading event for {UserId} on {SeriesName}", userId, series.Name);
+        _logger.LogInformation("Processing Scrobbling reading event for {AppUserId} on {SeriesName}", userId, series.Name);
         if (await CheckIfCannotScrobble(userId, seriesId, series)) return;
 
         var existingEvt = await _unitOfWork.ScrobbleRepository.GetEvent(userId, series.Id,
@@ -406,9 +410,15 @@ public class ScrobblingService : IScrobblingService
                 Format = series.Library.Type.ConvertToPlusMediaFormat(series.Format),
             };
 
+            if (evt.VolumeNumber is Parser.SpecialVolumeNumber)
+            {
+                // We don't process Specials because they will never match on AniList
+                return;
+            }
+
             _unitOfWork.ScrobbleRepository.Attach(evt);
             await _unitOfWork.CommitAsync();
-            _logger.LogDebug("Added Scrobbling Read update on {SeriesName} - Volume: {VolumeNumber} Chapter: {ChapterNumber} for User: {UserId}", series.Name, evt.VolumeNumber, evt.ChapterNumber, userId);
+            _logger.LogDebug("Added Scrobbling Read update on {SeriesName} - Volume: {VolumeNumber} Chapter: {ChapterNumber} for User: {AppUserId}", series.Name, evt.VolumeNumber, evt.ChapterNumber, userId);
         }
         catch (Exception ex)
         {
@@ -427,7 +437,7 @@ public class ScrobblingService : IScrobblingService
         if (user == null || !user.UserPreferences.AniListScrobblingEnabled) return;
 
         if (await CheckIfCannotScrobble(userId, seriesId, series)) return;
-        _logger.LogInformation("Processing Scrobbling want-to-read event for {UserId} on {SeriesName}", userId, series.Name);
+        _logger.LogInformation("Processing Scrobbling want-to-read event for {AppUserId} on {SeriesName}", userId, series.Name);
 
         // Get existing events for this series/user
         var existingEvents = (await _unitOfWork.ScrobbleRepository.GetUserEventsForSeries(userId, seriesId))
@@ -453,7 +463,7 @@ public class ScrobblingService : IScrobblingService
 
         _unitOfWork.ScrobbleRepository.Attach(evt);
         await _unitOfWork.CommitAsync();
-        _logger.LogDebug("Added Scrobbling WantToRead update on {SeriesName} with Userid {UserId} ", series.Name, userId);
+        _logger.LogDebug("Added Scrobbling WantToRead update on {SeriesName} with Userid {AppUserId} ", series.Name, userId);
     }
 
     private async Task<bool> CheckIfCannotScrobble(int userId, int seriesId, Series series)
@@ -461,7 +471,7 @@ public class ScrobblingService : IScrobblingService
         if (series.DontMatch) return true;
         if (await _unitOfWork.UserRepository.HasHoldOnSeries(userId, seriesId))
         {
-            _logger.LogInformation("Series {SeriesName} is on UserId {UserId}'s hold list. Not scrobbling", series.Name,
+            _logger.LogInformation("Series {SeriesName} is on AppUserId {AppUserId}'s hold list. Not scrobbling", series.Name,
                 userId);
             return true;
         }
@@ -617,7 +627,14 @@ public class ScrobblingService : IScrobblingService
         {
             var user = await _unitOfWork.UserRepository.GetUserByIdAsync(userId);
             if (user == null || string.IsNullOrEmpty(user.AniListAccessToken)) return;
+            if (user.HasRunScrobbleEventGeneration)
+            {
+                _logger.LogWarning("User {UserName} has already run scrobble event generation, Kavita will not generate more events", user.UserName);
+                return;
+            }
         }
+
+
 
         var libAllowsScrobbling = (await _unitOfWork.LibraryRepository.GetLibrariesAsync())
             .ToDictionary(lib => lib.Id, lib => lib.AllowScrobbling);
@@ -659,6 +676,14 @@ public class ScrobblingService : IScrobblingService
                 if (!libAllowsScrobbling[series.LibraryId]) continue;
                 if (series.PagesRead <= 0) continue; // Since we only scrobble when things are higher, we can
                 await ScrobbleReadingUpdate(uId, series.Id);
+            }
+
+            var user = await _unitOfWork.UserRepository.GetUserByIdAsync(uId);
+            if (user != null)
+            {
+                user.HasRunScrobbleEventGeneration = true;
+                user.ScrobbleEventGenerationRan = DateTime.UtcNow;
+                await _unitOfWork.CommitAsync();
             }
         }
     }
@@ -725,7 +750,7 @@ public class ScrobblingService : IScrobblingService
     /// <param name="seriesId"></param>
     public async Task ClearEventsForSeries(int userId, int seriesId)
     {
-        _logger.LogInformation("Clearing Pre-existing Scrobble events for Series {SeriesId} by User {UserId} as Series is now on hold list", seriesId, userId);
+        _logger.LogInformation("Clearing Pre-existing Scrobble events for Series {SeriesId} by User {AppUserId} as Series is now on hold list", seriesId, userId);
         var events = await _unitOfWork.ScrobbleRepository.GetUserEventsForSeries(userId, seriesId);
         foreach (var scrobble in events)
         {
@@ -949,6 +974,7 @@ public class ScrobblingService : IScrobblingService
         // Recalculate the highest volume/chapter
         foreach (var readEvt in readEvents)
         {
+            // Note: this causes skewing in the scrobble history because it makes it look like there are duplicate events
             readEvt.VolumeNumber =
                 (int) await _unitOfWork.AppUserProgressRepository.GetHighestFullyReadVolumeForSeries(readEvt.SeriesId,
                     readEvt.AppUser.Id);
@@ -1020,7 +1046,7 @@ public class ScrobblingService : IScrobblingService
                 _unitOfWork.ScrobbleRepository.Attach(new ScrobbleError()
                 {
                     Comment = "AniList token has expired and needs rotating. Scrobbling wont work until then",
-                    Details = $"User: {evt.AppUser.UserName}",
+                    Details = $"User: {evt.AppUser.UserName}, Expired: {TokenService.GetTokenExpiry(evt.AppUser.AniListAccessToken)}",
                     LibraryId = evt.LibraryId,
                     SeriesId = evt.SeriesId
                 });
@@ -1083,7 +1109,7 @@ public class ScrobblingService : IScrobblingService
             {
                 if (ex.Message.Contains("Access token is invalid"))
                 {
-                    _logger.LogCritical(ex, "Access Token for UserId: {UserId} needs to be regenerated/renewed to continue scrobbling", evt.AppUser.Id);
+                    _logger.LogCritical(ex, "Access Token for AppUserId: {AppUserId} needs to be regenerated/renewed to continue scrobbling", evt.AppUser.Id);
                     evt.IsErrored = true;
                     evt.ErrorDetails = AccessTokenErrorMessage;
                     _unitOfWork.ScrobbleRepository.Update(evt);
@@ -1117,33 +1143,22 @@ public class ScrobblingService : IScrobblingService
     private static bool CanProcessScrobbleEvent(ScrobbleEvent readEvent)
     {
         var userProviders = GetUserProviders(readEvent.AppUser);
-        if (readEvent.Series.Library.Type == LibraryType.Manga && MangaProviders.Intersect(userProviders).Any())
+        switch (readEvent.Series.Library.Type)
         {
-            return true;
+            case LibraryType.Manga when MangaProviders.Intersect(userProviders).Any():
+            case LibraryType.Comic when
+                ComicProviders.Intersect(userProviders).Any():
+            case LibraryType.Book when
+                BookProviders.Intersect(userProviders).Any():
+            case LibraryType.LightNovel when
+                LightNovelProviders.Intersect(userProviders).Any():
+                return true;
+            default:
+                return false;
         }
-
-        if (readEvent.Series.Library.Type == LibraryType.Comic &&
-            ComicProviders.Intersect(userProviders).Any())
-        {
-            return true;
-        }
-
-        if (readEvent.Series.Library.Type == LibraryType.Book &&
-            BookProviders.Intersect(userProviders).Any())
-        {
-            return true;
-        }
-
-        if (readEvent.Series.Library.Type == LibraryType.LightNovel &&
-            LightNovelProviders.Intersect(userProviders).Any())
-        {
-            return true;
-        }
-
-        return false;
     }
 
-    private static IList<ScrobbleProvider> GetUserProviders(AppUser appUser)
+    private static List<ScrobbleProvider> GetUserProviders(AppUser appUser)
     {
         var providers = new List<ScrobbleProvider>();
         if (!string.IsNullOrEmpty(appUser.AniListAccessToken)) providers.Add(ScrobbleProvider.AniList);
@@ -1167,18 +1182,18 @@ public class ScrobblingService : IScrobblingService
             var value = tokens[index];
             if (typeof(T) == typeof(int?))
             {
-                if (int.TryParse(value, out var intValue))
+                if (int.TryParse(value, CultureInfo.InvariantCulture, out var intValue))
                     return (T)(object)intValue;
             }
             else if (typeof(T) == typeof(int))
             {
-                if (int.TryParse(value, out var intValue))
+                if (int.TryParse(value, CultureInfo.InvariantCulture, out var intValue))
                     return (T)(object)intValue;
                 return default;
             }
             else if (typeof(T) == typeof(long?))
             {
-                if (long.TryParse(value, out var longValue))
+                if (long.TryParse(value, CultureInfo.InvariantCulture, out var longValue))
                     return (T)(object)longValue;
             }
             else if (typeof(T) == typeof(string))
@@ -1187,7 +1202,7 @@ public class ScrobblingService : IScrobblingService
             }
         }
 
-        return default(T?);
+        return default;
     }
 
     /// <summary>
@@ -1220,8 +1235,7 @@ public class ScrobblingService : IScrobblingService
 
     public static string CreateUrl(string url, long? id)
     {
-        if (id is null or 0) return string.Empty;
-        return $"{url}{id}/";
+        return id is null or 0 ? string.Empty : $"{url}{id}/";
     }
 
 

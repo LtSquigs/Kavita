@@ -15,6 +15,7 @@ using API.DTOs.KavitaPlus.Manage;
 using API.DTOs.KavitaPlus.Metadata;
 using API.DTOs.MediaErrors;
 using API.DTOs.Metadata;
+using API.DTOs.Person;
 using API.DTOs.Progress;
 using API.DTOs.Reader;
 using API.DTOs.ReadingLists;
@@ -29,6 +30,8 @@ using API.DTOs.Theme;
 using API.Entities;
 using API.Entities.Enums;
 using API.Entities.Metadata;
+using API.Entities.MetadataMatching;
+using API.Entities.Person;
 using API.Entities.Scrobble;
 using API.Extensions.QueryExtensions.Filtering;
 using API.Helpers.Converters;
@@ -66,7 +69,8 @@ public class AutoMapperProfiles : Profile
         CreateMap<AppUserCollection, AppUserCollectionDto>()
             .ForMember(dest => dest.Owner, opt => opt.MapFrom(src => src.AppUser.UserName))
             .ForMember(dest => dest.ItemCount, opt => opt.MapFrom(src => src.Items.Count));
-        CreateMap<Person, PersonDto>();
+        CreateMap<Person, PersonDto>()
+            .ForMember(dest => dest.Aliases, opt => opt.MapFrom(src => src.Aliases.Select(s => s.Alias)));
         CreateMap<Genre, GenreTagDto>();
         CreateMap<Tag, TagDto>();
         CreateMap<AgeRating, AgeRatingDto>();
@@ -86,6 +90,16 @@ public class AutoMapperProfiles : Profile
             opt =>
                 opt.MapFrom(src => src.Series.Name));
         CreateMap<AppUserRating, UserReviewDto>()
+            .ForMember(dest => dest.LibraryId,
+                opt =>
+                    opt.MapFrom(src => src.Series.LibraryId))
+            .ForMember(dest => dest.Body,
+                opt =>
+                    opt.MapFrom(src => src.Review))
+            .ForMember(dest => dest.Username,
+                opt =>
+                    opt.MapFrom(src => src.AppUser.UserName));
+        CreateMap<AppUserChapterRating, UserReviewDto>()
             .ForMember(dest => dest.LibraryId,
                 opt =>
                     opt.MapFrom(src => src.Series.LibraryId))
@@ -261,13 +275,12 @@ public class AutoMapperProfiles : Profile
         CreateMap<AppUserPreferences, UserPreferencesDto>()
             .ForMember(dest => dest.Theme,
                 opt =>
-                    opt.MapFrom(src => src.Theme))
+                    opt.MapFrom(src => src.Theme));
+
+        CreateMap<AppUserReadingProfile, UserReadingProfileDto>()
             .ForMember(dest => dest.BookReaderThemeName,
                 opt =>
-                    opt.MapFrom(src => src.BookThemeName))
-            .ForMember(dest => dest.BookReaderLayoutMode,
-                opt =>
-                    opt.MapFrom(src => src.BookReaderLayoutMode));
+                    opt.MapFrom(src => src.BookThemeName));
 
 
         CreateMap<AppUserBookmark, BookmarkDto>();
@@ -336,7 +349,7 @@ public class AutoMapperProfiles : Profile
         CreateMap<UserReviewDto, ExternalReview>()
             .ForMember(dest => dest.BodyJustText,
                 opt =>
-                    opt.MapFrom(src => ReviewService.GetCharacters(src.Body)));
+                    opt.MapFrom(src => ReviewHelper.GetCharacters(src.Body)));
 
         CreateMap<ExternalRecommendation, ExternalSeriesDto>();
         CreateMap<Series, ManageMatchSeriesDto>()

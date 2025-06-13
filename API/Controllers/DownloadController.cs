@@ -172,6 +172,7 @@ public class DownloadController : BaseApiController
             await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
                 MessageFactory.DownloadProgressEvent(username,
                     filename, $"Downloading {filename}", 0F, "started"));
+
             if (files.Count == 1 && files.First().Format != MangaFormat.Image)
             {
                 await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
@@ -181,15 +182,17 @@ public class DownloadController : BaseApiController
             }
 
             var filePath = _archiveService.CreateZipFromFoldersForDownload(files.ToList(), tempFolder, ProgressCallback);
+        
             await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
                 MessageFactory.DownloadProgressEvent(username,
                     filename, "Download Complete", 1F, "ended"));
+
             return PhysicalFile(filePath, DefaultContentType, Uri.EscapeDataString(downloadName), true);
 
             async Task ProgressCallback(Tuple<string, float> progressInfo)
             {
                 await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
-                    MessageFactory.DownloadProgressEvent(username, filename, $"Extracting {Path.GetFileNameWithoutExtension(progressInfo.Item1)}",
+                    MessageFactory.DownloadProgressEvent(username, filename, $"Processing {Path.GetFileNameWithoutExtension(progressInfo.Item1)}",
                         Math.Clamp(progressInfo.Item2, 0F, 1F)));
             }
         }
@@ -207,8 +210,10 @@ public class DownloadController : BaseApiController
     public async Task<ActionResult> DownloadSeries(int seriesId)
     {
         if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(User.GetUserId(), "permission-denied"));
+
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(seriesId);
         if (series == null) return BadRequest("Invalid Series");
+
         var files = await _unitOfWork.SeriesRepository.GetFilesForSeries(seriesId);
         if (files.Any(f => f.FileMetadata.HasPageRange())) {
             files = files.GroupBy(f => f.FileMetadata.Path).Select(f => {

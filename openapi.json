@@ -1,13 +1,13 @@
 {
-  "openapi": "3.0.1",
+  "openapi": "3.0.4",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.5.11",
+    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.6.12",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
     },
-    "version": "3.1.0"
+    "version": "0.8.6.12"
   },
   "servers": [
     {
@@ -315,7 +315,7 @@
         "tags": [
           "Account"
         ],
-        "summary": "Initiates the flow to update a user's email address.\r\n            \r\nIf email is not setup, then the email address is not changed in this API. A confirmation link is sent/dumped which will\r\nvalidate the email. It must be confirmed for the email to update.",
+        "summary": "Initiates the flow to update a user's email address.\n            \nIf email is not setup, then the email address is not changed in this API. A confirmation link is sent/dumped which will\nvalidate the email. It must be confirmed for the email to update.",
         "requestBody": {
           "description": "",
           "content": {
@@ -338,7 +338,24 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteUserResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteUserResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteUserResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -412,7 +429,7 @@
         "tags": [
           "Account"
         ],
-        "summary": "Requests the Invite Url for the UserId. Will return error if user is already validated.",
+        "summary": "Requests the Invite Url for the AppUserId. Will return error if user is already validated.",
         "parameters": [
           {
             "name": "userId",
@@ -886,55 +903,6 @@
         }
       }
     },
-    "/api/Admin/update-chapter-progress": {
-      "post": {
-        "tags": [
-          "Admin"
-        ],
-        "summary": "Set the progress information for a particular user",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUserProgressDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUserProgressDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUserProgressDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Book/{chapterId}/book-info": {
       "get": {
         "tags": [
@@ -1016,7 +984,7 @@
         "tags": [
           "Book"
         ],
-        "summary": "This will return a list of mappings from ID -> page num. ID will be the xhtml key and page num will be the reading order\r\nthis is used to rewrite anchors in the book text so that we always load properly in our reader.",
+        "summary": "This will return a list of mappings from ID -> page num. ID will be the xhtml key and page num will be the reading order\nthis is used to rewrite anchors in the book text so that we always load properly in our reader.",
         "description": "This is essentially building the table of contents",
         "parameters": [
           {
@@ -1068,7 +1036,7 @@
         "tags": [
           "Book"
         ],
-        "summary": "This returns a single page within the epub book. All html will be rewritten to be scoped within our reader,\r\nall css is scoped, etc.",
+        "summary": "This returns a single page within the epub book. All html will be rewritten to be scoped within our reader,\nall css is scoped, etc.",
         "parameters": [
           {
             "name": "chapterId",
@@ -1284,6 +1252,47 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Chapter/chapter-detail-plus": {
+      "get": {
+        "tags": [
+          "Chapter"
+        ],
+        "summary": "Returns Ratings and Reviews for an individual Chapter",
+        "parameters": [
+          {
+            "name": "chapterId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterDetailPlusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterDetailPlusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterDetailPlusDto"
+                }
+              }
+            }
           }
         }
       }
@@ -1513,7 +1522,7 @@
         "tags": [
           "Collection"
         ],
-        "summary": "Updates an existing tag with a new title, promotion status, and summary.\r\n<remarks>UI does not contain controls to update title</remarks>",
+        "summary": "Updates an existing tag with a new title, promotion status, and summary.\n<remarks>UI does not contain controls to update title</remarks>",
         "requestBody": {
           "description": "",
           "content": {
@@ -1678,7 +1687,7 @@
         "tags": [
           "Collection"
         ],
-        "summary": "For the authenticated user, if they have an active Kavita+ subscription and a MAL username on record,\r\nfetch their Mal interest stacks (including restacks)",
+        "summary": "For the authenticated user, if they have an active Kavita+ subscription and a MAL username on record,\nfetch their Mal interest stacks (including restacks)",
         "responses": {
           "200": {
             "description": "OK",
@@ -2558,6 +2567,38 @@
         }
       }
     },
+    "/api/Filter/rename": {
+      "post": {
+        "tags": [
+          "Filter"
+        ],
+        "summary": "Rename a Smart Filter given the filterId and new name",
+        "parameters": [
+          {
+            "name": "filterId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Health": {
       "get": {
         "tags": [
@@ -3379,59 +3420,6 @@
         }
       }
     },
-    "/api/Library/analyze": {
-      "post": {
-        "tags": [
-          "Library"
-        ],
-        "parameters": [
-          {
-            "name": "libraryId",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Library/analyze-multiple": {
-      "post": {
-        "tags": [
-          "Library"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BulkActionDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BulkActionDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/BulkActionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/Library/copy-settings-from": {
       "post": {
         "tags": [
@@ -4038,7 +4026,7 @@
                 4
               ],
               "type": "integer",
-              "description": "For complex queries, Library has certain restrictions where the library should not be included in results.\r\nThis enum dictates which field to use for the lookup.",
+              "description": "For complex queries, Library has certain restrictions where the library should not be included in results.\nThis enum dictates which field to use for the lookup.",
               "format": "int32",
               "default": 1
             }
@@ -5481,6 +5469,55 @@
         }
       }
     },
+    "/api/Person/search": {
+      "get": {
+        "tags": [
+          "Person"
+        ],
+        "summary": "Find a person by name or alias against a query string",
+        "parameters": [
+          {
+            "name": "queryString",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Person/roles": {
       "get": {
         "tags": [
@@ -5587,6 +5624,7 @@
         "tags": [
           "Person"
         ],
+        "summary": "Returns a list of authors and artists for browsing",
         "parameters": [
           {
             "name": "PageNumber",
@@ -5855,6 +5893,105 @@
         }
       }
     },
+    "/api/Person/merge": {
+      "post": {
+        "tags": [
+          "Person"
+        ],
+        "summary": "Merges Persons into one, this action is irreversible",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonMergeDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonMergeDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonMergeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Person/valid-alias": {
+      "get": {
+        "tags": [
+          "Person"
+        ],
+        "summary": "Ensure the alias is valid to be added. For example, the alias cannot be on another person or be the same as the current person name/alias.",
+        "parameters": [
+          {
+            "name": "personId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "alias",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Plugin/authenticate": {
       "post": {
         "tags": [
@@ -5948,15 +6085,124 @@
         }
       }
     },
-    "/api/Rating/overall": {
+    "/api/Rating/series": {
+      "post": {
+        "tags": [
+          "Rating"
+        ],
+        "summary": "Update the users' rating of the given series",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRatingDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRatingDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRatingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Rating/chapter": {
+      "post": {
+        "tags": [
+          "Rating"
+        ],
+        "summary": "Update the users' rating of the given chapter",
+        "requestBody": {
+          "description": "chapterId must be set",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRatingDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRatingDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRatingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Rating/overall-series": {
       "get": {
         "tags": [
           "Rating"
         ],
+        "summary": "Overall rating from all Kavita users for a given Series",
         "parameters": [
           {
             "name": "seriesId",
             "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Rating/overall-chapter": {
+      "get": {
+        "tags": [
+          "Rating"
+        ],
+        "summary": "Overall rating from all Kavita users for a given Chapter",
+        "parameters": [
+          {
+            "name": "chapterId",
+            "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -6166,7 +6412,7 @@
           "Reader"
         ],
         "summary": "Returns the file dimensions for all pages in a chapter. If the underlying chapter is PDF, use extractPDF to unpack as images.",
-        "description": "This has a side effect of caching the images.\r\n            This will only be populated on archive filetypes and not in bookmark mode",
+        "description": "This has a side effect of caching the images.\n            This will only be populated on archive filetypes and not in bookmark mode",
         "parameters": [
           {
             "name": "chapterId",
@@ -6673,7 +6919,7 @@
         "tags": [
           "Reader"
         ],
-        "summary": "Continue point is the chapter which you should start reading again from. If there is no progress on a series, then the first chapter will be returned (non-special unless only specials).\r\nOtherwise, loop through the chapters and volumes in order to find the next chapter which has progress.",
+        "summary": "Continue point is the chapter which you should start reading again from. If there is no progress on a series, then the first chapter will be returned (non-special unless only specials).\nOtherwise, loop through the chapters and volumes in order to find the next chapter which has progress.",
         "parameters": [
           {
             "name": "seriesId",
@@ -7453,26 +7699,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ReadingListDto"
-                  }
+                  "$ref": "#/components/schemas/ReadingListDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ReadingListDto"
-                  }
+                  "$ref": "#/components/schemas/ReadingListDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ReadingListDto"
-                  }
+                  "$ref": "#/components/schemas/ReadingListDto"
                 }
               }
             }
@@ -7767,7 +8004,7 @@
         "tags": [
           "ReadingList"
         ],
-        "summary": "Deletes a list item from the list. Will reorder all item positions afterwards",
+        "summary": "Deletes a list item from the list. Item orders will update as a result.",
         "requestBody": {
           "description": "",
           "content": {
@@ -8063,12 +8300,87 @@
         }
       }
     },
-    "/api/ReadingList/characters": {
+    "/api/ReadingList/people": {
       "get": {
         "tags": [
           "ReadingList"
         ],
-        "summary": "Returns a list of characters associated with the reading list",
+        "summary": "Returns a list of a given role associated with the reading list",
+        "parameters": [
+          {
+            "name": "readingListId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "PersonRole",
+            "schema": {
+              "enum": [
+                1,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ReadingList/all-people": {
+      "get": {
+        "tags": [
+          "ReadingList"
+        ],
+        "summary": "Returns all people in given roles for a reading list",
         "parameters": [
           {
             "name": "readingListId",
@@ -8314,6 +8626,634 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/DeleteReadingListsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ReadingList/info": {
+      "get": {
+        "tags": [
+          "ReadingList"
+        ],
+        "summary": "Returns random information about a Reading List",
+        "parameters": [
+          {
+            "name": "readingListId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingListInfoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingListInfoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingListInfoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile/all": {
+      "get": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Gets all non-implicit reading profiles for a user",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserReadingProfileDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserReadingProfileDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserReadingProfileDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile/{seriesId}": {
+      "get": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Returns the ReadingProfile that should be applied to the given series, walks up the tree.\nSeries -> Library -> Default",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skipImplicit",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile/library": {
+      "get": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Returns the (potential) Reading Profile bound to the library",
+        "parameters": [
+          {
+            "name": "libraryId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile/create": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Creates a new reading profile for the current user",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile/promote": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Promotes the implicit profile to a user profile. Removes the series from other profiles",
+        "parameters": [
+          {
+            "name": "profileId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile/series": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Update the implicit reading profile for a series, creates one if none exists",
+        "description": "Any modification to the reader settings during reading will create an implicit profile. Use \"update-parent\" to save to the bound series profile.",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile/update-parent": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Updates the non-implicit reading profile for the given series, and removes implicit profiles",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reading-profile": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Updates the given reading profile, must belong to the current user",
+        "description": "This does not update connected series and libraries.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserReadingProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReadingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Deletes the given profile, requires the profile to belong to the logged-in user",
+        "parameters": [
+          {
+            "name": "profileId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/reading-profile/series/{seriesId}": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Sets the reading profile for a given series, removes the old one",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "profileId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Clears the reading profile for the given series for the currently logged-in user",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/reading-profile/library/{libraryId}": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Sets the reading profile for a given library, removes the old one",
+        "parameters": [
+          {
+            "name": "libraryId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "profileId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Clears the reading profile for the given library for the currently logged-in user",
+        "parameters": [
+          {
+            "name": "libraryId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/reading-profile/bulk": {
+      "post": {
+        "tags": [
+          "ReadingProfile"
+        ],
+        "summary": "Assigns the reading profile to all passes series, and deletes their implicit profiles",
+        "parameters": [
+          {
+            "name": "profileId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
               }
             }
           }
@@ -8669,12 +9609,12 @@
         }
       }
     },
-    "/api/Review": {
+    "/api/Review/series": {
       "post": {
         "tags": [
           "Review"
         ],
-        "summary": "Updates the review for a given series",
+        "summary": "Updates the user's review for a given series",
         "requestBody": {
           "description": "",
           "content": {
@@ -8740,6 +9680,77 @@
         }
       }
     },
+    "/api/Review/chapter": {
+      "post": {
+        "tags": [
+          "Review"
+        ],
+        "summary": "Update the user's review for a given chapter",
+        "requestBody": {
+          "description": "chapterId must be set",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserReviewDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserReviewDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReviewDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReviewDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserReviewDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Review"
+        ],
+        "summary": "Deletes the user's review for the given chapter",
+        "parameters": [
+          {
+            "name": "chapterId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Scrobbling/anilist-token": {
       "get": {
         "tags": [
@@ -8775,6 +9786,7 @@
         "tags": [
           "Scrobbling"
         ],
+        "summary": "Get the current user's MAL token and username",
         "responses": {
           "200": {
             "description": "OK",
@@ -8927,7 +9939,9 @@
               "enum": [
                 0,
                 1,
-                2
+                2,
+                3,
+                4
               ],
               "type": "integer",
               "description": "Misleading name but is the source of data (like a review coming from AniList)",
@@ -9259,12 +10273,42 @@
         }
       }
     },
+    "/api/Scrobbling/has-ran-scrobble-gen": {
+      "get": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Has the logged in user ran scrobble generation",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Search/series-for-mangafile": {
       "get": {
         "tags": [
           "Search"
         ],
-        "summary": "Returns the series for the MangaFile id. If the user does not have access (shouldn't happen by the UI),\r\nthen null is returned",
+        "summary": "Returns the series for the MangaFile id. If the user does not have access (shouldn't happen by the UI),\nthen null is returned",
         "parameters": [
           {
             "name": "mangaFileId",
@@ -9305,7 +10349,7 @@
         "tags": [
           "Search"
         ],
-        "summary": "Returns the series for the Chapter id. If the user does not have access (shouldn't happen by the UI),\r\nthen null is returned",
+        "summary": "Returns the series for the Chapter id. If the user does not have access (shouldn't happen by the UI),\nthen null is returned",
         "parameters": [
           {
             "name": "chapterId",
@@ -9838,39 +10882,6 @@
         "deprecated": true
       }
     },
-    "/api/Series/update-rating": {
-      "post": {
-        "tags": [
-          "Series"
-        ],
-        "summary": "Update the user rating for the given series",
-        "requestBody": {
-          "description": "",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSeriesRatingDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSeriesRatingDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSeriesRatingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/Series/update": {
       "post": {
         "tags": [
@@ -10137,7 +11148,7 @@
           {
             "name": "libraryId",
             "in": "query",
-            "description": "",
+            "description": "This is not in use",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -10147,7 +11158,7 @@
           {
             "name": "context",
             "in": "query",
-            "description": "For complex queries, Library has certain restrictions where the library should not be included in results.\r\nThis enum dictates which field to use for the lookup.",
+            "description": "For complex queries, Library has certain restrictions where the library should not be included in results.\nThis enum dictates which field to use for the lookup.",
             "schema": {
               "enum": [
                 1,
@@ -10156,7 +11167,7 @@
                 4
               ],
               "type": "integer",
-              "description": "For complex queries, Library has certain restrictions where the library should not be included in results.\r\nThis enum dictates which field to use for the lookup.",
+              "description": "For complex queries, Library has certain restrictions where the library should not be included in results.\nThis enum dictates which field to use for the lookup.",
               "format": "int32",
               "default": 1
             }
@@ -10639,7 +11650,7 @@
         "tags": [
           "Series"
         ],
-        "summary": "Fetches Series for a set of Ids. This will check User for permission access and filter out any Ids that don't exist or\r\nthe user does not have access to.",
+        "summary": "Fetches Series for a set of Ids. This will check User for permission access and filter out any Ids that don't exist or\nthe user does not have access to.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -10986,7 +11997,7 @@
         "tags": [
           "Series"
         ],
-        "summary": "Based on the delta times between when chapters are added, for series that are not Completed/Cancelled/Hiatus, forecast the next\r\ndate when it will be available.",
+        "summary": "Based on the delta times between when chapters are added, for series that are not Completed/Cancelled/Hiatus, forecast the next\ndate when it will be available.",
         "parameters": [
           {
             "name": "seriesId",
@@ -11100,7 +12111,6 @@
           {
             "name": "aniListId",
             "in": "query",
-            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -11112,6 +12122,14 @@
             "schema": {
               "type": "integer",
               "format": "int64"
+            }
+          },
+          {
+            "name": "cbrId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -11326,6 +12344,17 @@
           "Server"
         ],
         "summary": "Returns how many versions out of date this install is",
+        "parameters": [
+          {
+            "name": "stableOnly",
+            "in": "query",
+            "description": "Only count Stable releases",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -11526,6 +12555,7 @@
         "tags": [
           "Settings"
         ],
+        "summary": "Returns the base url for this instance (if set)",
         "responses": {
           "200": {
             "description": "OK",
@@ -11583,7 +12613,9 @@
         "tags": [
           "Settings"
         ],
+        "summary": "Update Server settings",
         "requestBody": {
+          "description": "",
           "content": {
             "application/json": {
               "schema": {
@@ -11992,7 +13024,7 @@
         "tags": [
           "Settings"
         ],
-        "summary": "Update the metadata settings for Kavita+ users",
+        "summary": "Update the metadata settings for Kavita+ Metadata feature",
         "requestBody": {
           "description": "",
           "content": {
@@ -13231,6 +14263,54 @@
         }
       }
     },
+    "/api/Stream/smart-filter-side-nav-stream": {
+      "delete": {
+        "tags": [
+          "Stream"
+        ],
+        "summary": "Removes a Smart Filter from a user's SideNav Streams",
+        "parameters": [
+          {
+            "name": "sideNavStreamId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Stream/smart-filter-dashboard-stream": {
+      "delete": {
+        "tags": [
+          "Stream"
+        ],
+        "summary": "Removes a Smart Filter from a user's Dashboard Streams",
+        "parameters": [
+          {
+            "name": "dashboardStreamId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Tachiyomi/latest-chapter": {
       "get": {
         "tags": [
@@ -13623,7 +14703,7 @@
         "tags": [
           "Upload"
         ],
-        "summary": "This stores a file (image) in temp directory for use in a cover image replacement flow.\r\nThis is automatically cleaned up.",
+        "summary": "This stores a file (image) in temp directory for use in a cover image replacement flow.\nThis is automatically cleaned up.",
         "requestBody": {
           "description": "Escaped url to download from",
           "content": {
@@ -14287,10 +15367,12 @@
         "tags": [
           "Volume"
         ],
+        "summary": "Returns the appropriate Volume",
         "parameters": [
           {
             "name": "volumeId",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -14334,6 +15416,66 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Volume/multiple": {
+      "post": {
+        "tags": [
+          "Volume"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -14860,8 +16002,22 @@
             },
             "nullable": true
           },
+          "chapterRatings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppUserChapterRating"
+            },
+            "nullable": true
+          },
           "userPreferences": {
             "$ref": "#/components/schemas/AppUserPreferences"
+          },
+          "readingProfiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppUserReadingProfile"
+            },
+            "nullable": true
           },
           "bookmarks": {
             "type": "array",
@@ -14963,6 +16119,15 @@
             "description": "The Client ID for the user's MAL account. User should create a client on MAL for this.",
             "nullable": true
           },
+          "hasRunScrobbleEventGeneration": {
+            "type": "boolean",
+            "description": "Has the user ran Scrobble Event Generation"
+          },
+          "scrobbleEventGenerationRan": {
+            "type": "string",
+            "description": "The timestamp of when Scrobble Event Generation ran (Utc)",
+            "format": "date-time"
+          },
           "scrobbleHolds": {
             "type": "array",
             "items": {
@@ -15061,6 +16226,52 @@
         },
         "additionalProperties": false,
         "description": "Represents a saved page in a Chapter entity for a given user."
+      },
+      "AppUserChapterRating": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rating": {
+            "type": "number",
+            "description": "A number between 0-5.0 that represents how good a series is.",
+            "format": "float"
+          },
+          "hasBeenRated": {
+            "type": "boolean",
+            "description": "If the rating has been explicitly set. Otherwise, the 0.0 rating should be ignored as it's not rated"
+          },
+          "review": {
+            "type": "string",
+            "description": "A short summary the user can write when giving their review.",
+            "nullable": true
+          },
+          "seriesId": {
+            "type": "integer",
+            "description": "An optional tagline for the review",
+            "format": "int32"
+          },
+          "series": {
+            "$ref": "#/components/schemas/Series"
+          },
+          "chapterId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chapter": {
+            "$ref": "#/components/schemas/Chapter"
+          },
+          "appUserId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "appUser": {
+            "$ref": "#/components/schemas/AppUser"
+          }
+        },
+        "additionalProperties": false
       },
       "AppUserCollection": {
         "required": [
@@ -15161,7 +16372,9 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Who created/manages the list. Non-Kavita lists are not editable by the user, except to promote",
@@ -15269,7 +16482,9 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Who created/manages the list. Non-Kavita lists are not editable by the user, except to promote",
@@ -15426,7 +16641,7 @@
               2
             ],
             "type": "integer",
-            "description": "Manga Reader Option: How the manga reader should perform paging or reading of the file\r\n<example>\r\nWebtoon uses scrolling to page, MANGA_LR uses paging by clicking left/right side of reader, MANGA_UD uses paging\r\nby clicking top/bottom sides of reader.\r\n</example>",
+            "description": "Manga Reader Option: How the manga reader should perform paging or reading of the file\n<example>\nWebtoon uses scrolling to page, MANGA_LR uses paging by clicking left/right side of reader, MANGA_UD uses paging\nby clicking top/bottom sides of reader.\n</example>",
             "format": "int32"
           },
           "autoCloseMenu": {
@@ -15459,6 +16674,10 @@
           "swipeToPaginate": {
             "type": "boolean",
             "description": "Manga Reader Option: Should swiping trigger pagination"
+          },
+          "allowAutomaticWebtoonReaderDetection": {
+            "type": "boolean",
+            "description": "Manga Reader Option: Allow Automatic Webtoon detection"
           },
           "bookReaderMargin": {
             "type": "integer",
@@ -15514,7 +16733,7 @@
               2
             ],
             "type": "integer",
-            "description": "Book Reader Option: The way a page from a book is rendered. Default is as book dictates, 1 column is fit to height,\r\n2 column is fit to height, 2 columns",
+            "description": "Book Reader Option: The way a page from a book is rendered. Default is as book dictates, 1 column is fit to height,\n2 column is fit to height, 2 columns",
             "format": "int32"
           },
           "bookReaderImmersiveMode": {
@@ -15640,7 +16859,7 @@
           },
           "bookScrollId": {
             "type": "string",
-            "description": "For Book Reader, represents the nearest passed anchor on the screen that can be used to resume scroll point\r\non next load",
+            "description": "For Book Reader, represents the nearest passed anchor on the screen that can be used to resume scroll point\non next load",
             "nullable": true
           },
           "created": {
@@ -15713,6 +16932,228 @@
           },
           "appUser": {
             "$ref": "#/components/schemas/AppUser"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppUserReadingProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "normalizedName": {
+            "type": "string",
+            "nullable": true
+          },
+          "appUserId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "appUser": {
+            "$ref": "#/components/schemas/AppUser"
+          },
+          "kind": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "libraryIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "seriesIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "readingDirection": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "description": "Manga Reader Option: What direction should the next/prev page buttons go",
+            "format": "int32"
+          },
+          "scalingOption": {
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "type": "integer",
+            "description": "Manga Reader Option: How should the image be scaled to screen",
+            "format": "int32"
+          },
+          "pageSplitOption": {
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "type": "integer",
+            "description": "Manga Reader Option: Which side of a split image should we show first",
+            "format": "int32"
+          },
+          "readerMode": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Manga Reader Option: How the manga reader should perform paging or reading of the file\n<example>\nWebtoon uses scrolling to page, MANGA_LR uses paging by clicking left/right side of reader, MANGA_UD uses paging\nby clicking top/bottom sides of reader.\n</example>",
+            "format": "int32"
+          },
+          "autoCloseMenu": {
+            "type": "boolean",
+            "description": "Manga Reader Option: Allow the menu to close after 6 seconds without interaction"
+          },
+          "showScreenHints": {
+            "type": "boolean",
+            "description": "Manga Reader Option: Show screen hints to the user on some actions, ie) pagination direction change"
+          },
+          "emulateBook": {
+            "type": "boolean",
+            "description": "Manga Reader Option: Emulate a book by applying a shadow effect on the pages"
+          },
+          "layoutMode": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "type": "integer",
+            "description": "Manga Reader Option: How many pages to display in the reader at once",
+            "format": "int32"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "description": "Manga Reader Option: Background color of the reader",
+            "nullable": true
+          },
+          "swipeToPaginate": {
+            "type": "boolean",
+            "description": "Manga Reader Option: Should swiping trigger pagination"
+          },
+          "allowAutomaticWebtoonReaderDetection": {
+            "type": "boolean",
+            "description": "Manga Reader Option: Allow Automatic Webtoon detection"
+          },
+          "widthOverride": {
+            "type": "integer",
+            "description": "Manga Reader Option: Optional fixed width override",
+            "format": "int32",
+            "nullable": true
+          },
+          "bookReaderMargin": {
+            "type": "integer",
+            "description": "Book Reader Option: Override extra Margin",
+            "format": "int32"
+          },
+          "bookReaderLineSpacing": {
+            "type": "integer",
+            "description": "Book Reader Option: Override line-height",
+            "format": "int32"
+          },
+          "bookReaderFontSize": {
+            "type": "integer",
+            "description": "Book Reader Option: Override font size",
+            "format": "int32"
+          },
+          "bookReaderFontFamily": {
+            "type": "string",
+            "description": "Book Reader Option: Maps to the default Kavita font-family (inherit) or an override",
+            "nullable": true
+          },
+          "bookReaderTapToPaginate": {
+            "type": "boolean",
+            "description": "Book Reader Option: Allows tapping on side of screens to paginate"
+          },
+          "bookReaderReadingDirection": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "description": "Book Reader Option: What direction should the next/prev page buttons go",
+            "format": "int32"
+          },
+          "bookReaderWritingStyle": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "description": "Book Reader Option: Defines the writing styles vertical/horizontal",
+            "format": "int32"
+          },
+          "bookThemeName": {
+            "type": "string",
+            "description": "Book Reader Option: The color theme to decorate the book contents",
+            "nullable": true
+          },
+          "bookReaderLayoutMode": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "Book Reader Option: The way a page from a book is rendered. Default is as book dictates, 1 column is fit to height,\n2 column is fit to height, 2 columns",
+            "format": "int32"
+          },
+          "bookReaderImmersiveMode": {
+            "type": "boolean",
+            "description": "Book Reader Option: A flag that hides the menu-ing system behind a click on the screen. This should be used with tap to paginate, but the app doesn't enforce this."
+          },
+          "pdfTheme": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "description": "PDF Reader: Theme of the Reader",
+            "format": "int32"
+          },
+          "pdfScrollMode": {
+            "enum": [
+              0,
+              1,
+              3
+            ],
+            "type": "integer",
+            "description": "PDF Reader: Scroll mode of the reader",
+            "format": "int32"
+          },
+          "pdfSpreadMode": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "description": "PDF Reader: Spread Mode of the reader",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -16183,6 +17624,13 @@
             "type": "string",
             "nullable": true
           },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
           "description": {
             "type": "string",
             "nullable": true
@@ -16199,7 +17647,7 @@
           },
           "malId": {
             "type": "integer",
-            "description": "https://myanimelist.net/people/{MalId}/\r\nhttps://myanimelist.net/character/{MalId}/CharacterName",
+            "description": "https://myanimelist.net/people/{MalId}/\nhttps://myanimelist.net/character/{MalId}/CharacterName",
             "format": "int64"
           },
           "hardcoverId": {
@@ -16473,6 +17921,11 @@
             "type": "string",
             "nullable": true
           },
+          "averageExternalRating": {
+            "type": "number",
+            "description": "(Kavita+) Average rating from Kavita+ metadata",
+            "format": "float"
+          },
           "ageRatingLocked": {
             "type": "boolean"
           },
@@ -16559,6 +18012,13 @@
             },
             "nullable": true
           },
+          "ratings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppUserChapterRating"
+            },
+            "nullable": true
+          },
           "userProgress": {
             "type": "array",
             "items": {
@@ -16572,6 +18032,47 @@
           "volumeId": {
             "type": "integer",
             "format": "int32"
+          },
+          "externalReviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalReview"
+            },
+            "nullable": true
+          },
+          "externalRatings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalRating"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChapterDetailPlusDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "format": "float"
+          },
+          "hasBeenRated": {
+            "type": "boolean"
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserReviewDto"
+            },
+            "nullable": true
+          },
+          "ratings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RatingDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -16585,18 +18086,15 @@
           },
           "range": {
             "type": "string",
-            "description": "Range of chapters. Chapter 2-4 -> \"2-4\". Chapter 2 -> \"2\". If special, will be special name.",
             "nullable": true
           },
           "number": {
             "type": "string",
-            "description": "Smallest number of the Range.",
             "nullable": true,
             "deprecated": true
           },
           "minNumber": {
             "type": "number",
-            "description": "This may be 0 under the circumstance that the Issue is \"Alpha\" or other non-standard numbers.",
             "format": "float"
           },
           "maxNumber": {
@@ -16605,21 +18103,17 @@
           },
           "sortOrder": {
             "type": "number",
-            "description": "The sorting order of the Chapter. Inherits from MinNumber, but can be overridden.",
             "format": "float"
           },
           "pages": {
             "type": "integer",
-            "description": "Total number of pages in all MangaFiles",
             "format": "int32"
           },
           "isSpecial": {
-            "type": "boolean",
-            "description": "If this Chapter contains files that could only be identified as Series or has Special Identifier from filename"
+            "type": "boolean"
           },
           "title": {
             "type": "string",
-            "description": "Used for books/specials to display custom title. For non-specials/books, will be set to API.DTOs.ChapterDto.Range",
             "nullable": true
           },
           "files": {
@@ -16646,17 +18140,14 @@
             "format": "date-time"
           },
           "coverImageLocked": {
-            "type": "boolean",
-            "description": "If the Cover Image is locked for this entity"
+            "type": "boolean"
           },
           "volumeId": {
             "type": "integer",
-            "description": "Volume Id this Chapter belongs to",
             "format": "int32"
           },
           "createdUtc": {
             "type": "string",
-            "description": "When chapter was created",
             "format": "date-time"
           },
           "lastModifiedUtc": {
@@ -16665,22 +18156,18 @@
           },
           "created": {
             "type": "string",
-            "description": "When chapter was created in local server time",
             "format": "date-time"
           },
           "releaseDate": {
             "type": "string",
-            "description": "When the chapter was released.",
             "format": "date-time"
           },
           "titleName": {
             "type": "string",
-            "description": "Title of the Chapter/Issue",
             "nullable": true
           },
           "summary": {
             "type": "string",
-            "description": "Summary of the Chapter",
             "nullable": true
           },
           "ageRating": {
@@ -16703,12 +18190,11 @@
               -1
             ],
             "type": "integer",
-            "description": "Age Rating for the issue/chapter",
+            "description": "Represents Age Rating for content.",
             "format": "int32"
           },
           "wordCount": {
             "type": "integer",
-            "description": "Total words in a Chapter (books only)",
             "format": "int64"
           },
           "volumeTitle": {
@@ -16730,12 +18216,10 @@
           },
           "webLinks": {
             "type": "string",
-            "description": "Comma-separated link of urls to external services that have some relation to the Chapter",
             "nullable": true
           },
           "isbn": {
             "type": "string",
-            "description": "ISBN-13 (usually) of the Chapter",
             "nullable": true
           },
           "writers": {
@@ -16857,17 +18341,14 @@
           },
           "language": {
             "type": "string",
-            "description": "Language for the Chapter/Issue",
             "nullable": true
           },
           "count": {
             "type": "integer",
-            "description": "Number in the TotalCount of issues",
             "format": "int32"
           },
           "totalCount": {
             "type": "integer",
-            "description": "Total number of issues for the series",
             "format": "int32"
           },
           "languageLocked": {
@@ -16877,12 +18358,10 @@
             "type": "boolean"
           },
           "ageRatingLocked": {
-            "type": "boolean",
-            "description": "Locked by user so metadata updates from scan loop will not override AgeRating"
+            "type": "boolean"
           },
           "publicationStatusLocked": {
-            "type": "boolean",
-            "description": "Locked by user so metadata updates from scan loop will not override PublicationStatus"
+            "type": "boolean"
           },
           "genresLocked": {
             "type": "boolean"
@@ -16946,7 +18425,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "A Chapter is the lowest grouping of a reading medium. A Chapter contains a set of MangaFiles which represents the underlying\r\nfile (abstracted from type)."
+        "description": "A Chapter is the lowest grouping of a reading medium. A Chapter contains a set of MangaFiles which represents the underlying\nfile (abstracted from type)."
       },
       "ChapterInfoDto": {
         "type": "object",
@@ -17273,6 +18752,15 @@
           },
           "person": {
             "$ref": "#/components/schemas/Person"
+          },
+          "kavitaPlusConnection": {
+            "type": "boolean",
+            "description": "The source of this connection. If not Kavita, this implies Metadata Download linked this and it can be removed between matches"
+          },
+          "orderWeight": {
+            "type": "integer",
+            "description": "A weight that allows lower numbers to sort first",
+            "format": "int32"
           },
           "role": {
             "enum": [
@@ -17997,6 +19485,80 @@
         "additionalProperties": false,
         "description": "Represents if Test Email Service URL was successful or not and if any error occured"
       },
+      "ExternalChapterDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "issueNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "criticRating": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "userRating": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "writers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "releaseDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "publisher": {
+            "type": "string",
+            "nullable": true
+          },
+          "coverImageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "issueUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "criticReviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserReviewDto"
+            },
+            "nullable": true
+          },
+          "userReviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserReviewDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Information about an individual issue/chapter/book from Kavita+"
+      },
       "ExternalRating": {
         "type": "object",
         "properties": {
@@ -18016,10 +19578,21 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
+            "format": "int32"
+          },
+          "authority": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "description": "Where this rating comes from: Critic or User",
             "format": "int32"
           },
           "providerUrl": {
@@ -18029,6 +19602,12 @@
           "seriesId": {
             "type": "integer",
             "format": "int32"
+          },
+          "chapterId": {
+            "type": "integer",
+            "description": "This can be null when for a series-rating",
+            "format": "int32",
+            "nullable": true
           },
           "externalSeriesMetadatas": {
             "type": "array",
@@ -18082,7 +19661,9 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
@@ -18138,10 +19719,20 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
+            "format": "int32"
+          },
+          "authority": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
             "format": "int32"
           },
           "siteUrl": {
@@ -18171,6 +19762,11 @@
             "type": "integer",
             "format": "int32"
           },
+          "chapterId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "externalSeriesMetadatas": {
             "type": "array",
             "items": {
@@ -18197,6 +19793,11 @@
           "malId": {
             "type": "integer",
             "format": "int64",
+            "nullable": true
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "synonyms": {
@@ -18255,7 +19856,9 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
@@ -18295,6 +19898,18 @@
             "items": {
               "$ref": "#/components/schemas/SeriesCharacter"
             },
+            "nullable": true
+          },
+          "publisher": {
+            "type": "string",
+            "nullable": true
+          },
+          "chapterDtos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalChapterDto"
+            },
+            "description": "Only from CBR for API.Services.Plus.ScrobbleProvider.Cbr. Full metadata about issues",
             "nullable": true
           }
         },
@@ -18339,7 +19954,9 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
@@ -18397,6 +20014,10 @@
             "format": "int32"
           },
           "aniListId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cbrId": {
             "type": "integer",
             "format": "int32"
           },
@@ -18678,7 +20299,7 @@
           },
           "rating": {
             "type": "integer",
-            "description": "Will return back everything with the rating and above\r\nAPI.Entities.AppUserRating.Rating",
+            "description": "Will return back everything with the rating and above\nAPI.Entities.AppUserRating.Rating",
             "format": "int32"
           },
           "sortOptions": {
@@ -19051,7 +20672,7 @@
             "items": {
               "type": "string"
             },
-            "description": "List of Roles to assign to user. If admin not present, Pleb will be applied.\r\nIf admin present, all libraries will be granted access and will ignore those from DTO.",
+            "description": "List of Roles to assign to user. If admin not present, Pleb will be applied.\nIf admin present, all libraries will be granted access and will ignore those from DTO.",
             "nullable": true
           },
           "libraries": {
@@ -20042,6 +21663,26 @@
             "type": "boolean",
             "description": "Allow setting the cover image"
           },
+          "enableChapterSummary": {
+            "type": "boolean",
+            "description": "Allow Summary to be set within Chapter/Issue"
+          },
+          "enableChapterReleaseDate": {
+            "type": "boolean",
+            "description": "Allow Release Date to be set within Chapter/Issue"
+          },
+          "enableChapterTitle": {
+            "type": "boolean",
+            "description": "Allow Title to be set within Chapter/Issue"
+          },
+          "enableChapterPublisher": {
+            "type": "boolean",
+            "description": "Allow Publisher to be set within Chapter/Issue"
+          },
+          "enableChapterCoverImage": {
+            "type": "boolean",
+            "description": "Allow setting the cover image for the Chapter/Issue"
+          },
           "enableGenres": {
             "type": "boolean"
           },
@@ -20100,7 +21741,12 @@
                 6,
                 7,
                 8,
-                9
+                9,
+                10,
+                11,
+                12,
+                13,
+                14
               ],
               "type": "integer",
               "description": "Represents which field that can be written to as an override when already locked",
@@ -20230,6 +21876,13 @@
             "type": "string",
             "nullable": true
           },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonAlias"
+            },
+            "nullable": true
+          },
           "coverImage": {
             "type": "string",
             "nullable": true
@@ -20261,7 +21914,7 @@
           },
           "malId": {
             "type": "integer",
-            "description": "https://myanimelist.net/people/{MalId}/\r\nhttps://myanimelist.net/character/{MalId}/CharacterName",
+            "description": "https://myanimelist.net/people/{MalId}/\nhttps://myanimelist.net/character/{MalId}/CharacterName",
             "format": "int64"
           },
           "hardcoverId": {
@@ -20283,6 +21936,35 @@
               "$ref": "#/components/schemas/SeriesMetadataPeople"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonAlias": {
+        "required": [
+          "alias",
+          "normalizedAlias"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "alias": {
+            "type": "string",
+            "nullable": true
+          },
+          "normalizedAlias": {
+            "type": "string",
+            "nullable": true
+          },
+          "personId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "person": {
+            "$ref": "#/components/schemas/Person"
           }
         },
         "additionalProperties": false
@@ -20316,6 +21998,13 @@
             "type": "string",
             "nullable": true
           },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
           "description": {
             "type": "string",
             "nullable": true
@@ -20332,13 +22021,33 @@
           },
           "malId": {
             "type": "integer",
-            "description": "https://myanimelist.net/people/{MalId}/\r\nhttps://myanimelist.net/character/{MalId}/CharacterName",
+            "description": "https://myanimelist.net/people/{MalId}/\nhttps://myanimelist.net/character/{MalId}/CharacterName",
             "format": "int64"
           },
           "hardcoverId": {
             "type": "string",
             "description": "https://hardcover.app/authors/{HardcoverId}",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonMergeDto": {
+        "required": [
+          "destId",
+          "srcId"
+        ],
+        "type": "object",
+        "properties": {
+          "destId": {
+            "type": "integer",
+            "description": "The id of the person being merged into",
+            "format": "int32"
+          },
+          "srcId": {
+            "type": "integer",
+            "description": "The id of the person being merged. This person will be removed, and become an alias of API.DTOs.PersonMergeDto.DestId",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -20402,7 +22111,7 @@
           },
           "bookScrollId": {
             "type": "string",
-            "description": "For EPUB reader, this can be an optional string of the id of a part marker, to help resume reading position\r\non pages that combine multiple \"chapters\".",
+            "description": "For EPUB reader, this can be an optional string of the id of a part marker, to help resume reading position\non pages that combine multiple \"chapters\".",
             "nullable": true
           },
           "lastModifiedUtc": {
@@ -20482,10 +22191,20 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
+            "format": "int32"
+          },
+          "authority": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
             "format": "int32"
           },
           "providerUrl": {
@@ -20681,6 +22400,9 @@
         "description": "This is a collection of API.Entities.ReadingListItem which represent individual chapters and an order."
       },
       "ReadingListDto": {
+        "required": [
+          "ageRating"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -20739,6 +22461,61 @@
             "type": "integer",
             "description": "Maximum Month the Reading List starts",
             "format": "int32"
+          },
+          "ageRating": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              -1
+            ],
+            "type": "integer",
+            "description": "The highest age rating from all Series within the reading list",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReadingListInfoDto": {
+        "type": "object",
+        "properties": {
+          "pages": {
+            "type": "integer",
+            "description": "Total Pages across all Reading List Items",
+            "format": "int32"
+          },
+          "wordCount": {
+            "type": "integer",
+            "description": "Total Word count across all Reading List Items",
+            "format": "int64"
+          },
+          "isAllEpub": {
+            "type": "boolean",
+            "description": "Are ALL Reading List Items epub"
+          },
+          "minHoursToRead": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxHoursToRead": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "avgHoursToRead": {
+            "type": "number",
+            "format": "float"
           }
         },
         "additionalProperties": false
@@ -20872,7 +22649,8 @@
           "releaseDate": {
             "type": "string",
             "description": "Release Date from Chapter",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           },
           "readingListId": {
             "type": "integer",
@@ -20882,7 +22660,8 @@
           "lastReadingProgressUtc": {
             "type": "string",
             "description": "The last time a reading list item (underlying chapter) was read by current authenticated user",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           },
           "fileSize": {
             "type": "integer",
@@ -21298,7 +23077,8 @@
               2,
               3,
               4,
-              5
+              5,
+              6
             ],
             "type": "integer",
             "description": "Which field to sort on",
@@ -21853,7 +23633,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "This is a special DTO for a UI page in Kavita. This performs sorting and grouping and returns exactly what UI requires for layout.\r\nThis is subject to change, do not rely on this Data model."
+        "description": "This is a special DTO for a UI page in Kavita. This performs sorting and grouping and returns exactly what UI requires for layout.\nThis is subject to change, do not rely on this Data model."
       },
       "SeriesDetailPlusDto": {
         "type": "object",
@@ -21924,7 +23704,6 @@
           },
           "lastChapterAdded": {
             "type": "string",
-            "description": "DateTime representing last time a chapter was added to the Series",
             "format": "date-time"
           },
           "userRating": {
@@ -21952,9 +23731,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "nameLocked": {
-            "type": "boolean"
-          },
           "sortNameLocked": {
             "type": "boolean"
           },
@@ -21963,7 +23739,6 @@
           },
           "wordCount": {
             "type": "integer",
-            "description": "Total number of words for the series. Only applies to epubs.",
             "format": "int64"
           },
           "libraryId": {
@@ -21988,26 +23763,21 @@
           },
           "folderPath": {
             "type": "string",
-            "description": "The highest level folder for this Series",
             "nullable": true
           },
           "lowestFolderPath": {
             "type": "string",
-            "description": "Lowest path (that is under library root) that contains all files for the series.",
             "nullable": true
           },
           "lastFolderScanned": {
             "type": "string",
-            "description": "The last time the folder for this series was scanned",
             "format": "date-time"
           },
           "dontMatch": {
-            "type": "boolean",
-            "description": "Do not match the series with any external Metadata service. This will automatically opt it out of scrobbling."
+            "type": "boolean"
           },
           "isBlacklisted": {
-            "type": "boolean",
-            "description": "If the series was unable to match, it will be blacklisted until a manual metadata match overrides it"
+            "type": "boolean"
           },
           "coverImage": {
             "type": "string",
@@ -22558,7 +24328,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "A relation flows between one series and another.\r\nSeries ---kind---> target"
+        "description": "A relation flows between one series and another.\nSeries ---kind---> target"
       },
       "SeriesRelationship": {
         "type": "object",
@@ -22600,7 +24370,9 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "Misleading name but is the source of data (like a review coming from AniList)",
@@ -23021,7 +24793,7 @@
           },
           "fileName": {
             "type": "string",
-            "description": "File path to the content. Stored under API.Services.DirectoryService.SiteThemeDirectory.\r\nMust be a .css file",
+            "description": "File path to the content. Stored under API.Services.DirectoryService.SiteThemeDirectory.\nMust be a .css file",
             "nullable": true
           },
           "isDefault": {
@@ -23108,7 +24880,7 @@
           },
           "fileName": {
             "type": "string",
-            "description": "File path to the content. Stored under API.Services.DirectoryService.SiteThemeDirectory.\r\nMust be a .css file",
+            "description": "File path to the content. Stored under API.Services.DirectoryService.SiteThemeDirectory.\nMust be a .css file",
             "nullable": true
           },
           "isDefault": {
@@ -23254,18 +25026,15 @@
           },
           "range": {
             "type": "string",
-            "description": "Range of chapters. Chapter 2-4 -> \"2-4\". Chapter 2 -> \"2\". If special, will be special name.",
             "nullable": true
           },
           "number": {
             "type": "string",
-            "description": "Smallest number of the Range.",
             "nullable": true,
             "deprecated": true
           },
           "minNumber": {
             "type": "number",
-            "description": "This may be 0 under the circumstance that the Issue is \"Alpha\" or other non-standard numbers.",
             "format": "float"
           },
           "maxNumber": {
@@ -23274,21 +25043,17 @@
           },
           "sortOrder": {
             "type": "number",
-            "description": "The sorting order of the Chapter. Inherits from MinNumber, but can be overridden.",
             "format": "float"
           },
           "pages": {
             "type": "integer",
-            "description": "Total number of pages in all MangaFiles",
             "format": "int32"
           },
           "isSpecial": {
-            "type": "boolean",
-            "description": "If this Chapter contains files that could only be identified as Series or has Special Identifier from filename"
+            "type": "boolean"
           },
           "title": {
             "type": "string",
-            "description": "Used for books/specials to display custom title. For non-specials/books, will be set to API.DTOs.ChapterDto.Range",
             "nullable": true
           },
           "files": {
@@ -23315,17 +25080,14 @@
             "format": "date-time"
           },
           "coverImageLocked": {
-            "type": "boolean",
-            "description": "If the Cover Image is locked for this entity"
+            "type": "boolean"
           },
           "volumeId": {
             "type": "integer",
-            "description": "Volume Id this Chapter belongs to",
             "format": "int32"
           },
           "createdUtc": {
             "type": "string",
-            "description": "When chapter was created",
             "format": "date-time"
           },
           "lastModifiedUtc": {
@@ -23334,22 +25096,18 @@
           },
           "created": {
             "type": "string",
-            "description": "When chapter was created in local server time",
             "format": "date-time"
           },
           "releaseDate": {
             "type": "string",
-            "description": "When the chapter was released.",
             "format": "date-time"
           },
           "titleName": {
             "type": "string",
-            "description": "Title of the Chapter/Issue",
             "nullable": true
           },
           "summary": {
             "type": "string",
-            "description": "Summary of the Chapter",
             "nullable": true
           },
           "ageRating": {
@@ -23372,12 +25130,11 @@
               -1
             ],
             "type": "integer",
-            "description": "Age Rating for the issue/chapter",
+            "description": "Represents Age Rating for content.",
             "format": "int32"
           },
           "wordCount": {
             "type": "integer",
-            "description": "Total words in a Chapter (books only)",
             "format": "int64"
           },
           "minHoursToRead": {
@@ -23394,12 +25151,10 @@
           },
           "webLinks": {
             "type": "string",
-            "description": "Comma-separated link of urls to external services that have some relation to the Chapter",
             "nullable": true
           },
           "isbn": {
             "type": "string",
-            "description": "ISBN-13 (usually) of the Chapter",
             "nullable": true
           },
           "writers": {
@@ -23521,17 +25276,14 @@
           },
           "language": {
             "type": "string",
-            "description": "Language for the Chapter/Issue",
             "nullable": true
           },
           "count": {
             "type": "integer",
-            "description": "Number in the TotalCount of issues",
             "format": "int32"
           },
           "totalCount": {
             "type": "integer",
-            "description": "Total number of issues for the series",
             "format": "int32"
           },
           "languageLocked": {
@@ -23541,12 +25293,10 @@
             "type": "boolean"
           },
           "ageRatingLocked": {
-            "type": "boolean",
-            "description": "Locked by user so metadata updates from scan loop will not override AgeRating"
+            "type": "boolean"
           },
           "publicationStatusLocked": {
-            "type": "boolean",
-            "description": "Locked by user so metadata updates from scan loop will not override PublicationStatus"
+            "type": "boolean"
           },
           "genresLocked": {
             "type": "boolean"
@@ -24221,7 +25971,7 @@
           },
           "updateVersion": {
             "type": "string",
-            "description": "Semver of the release version\r\n<example>0.4.3</example>",
+            "description": "Semver of the release version\n<example>0.4.3</example>",
             "nullable": true
           },
           "updateBody": {
@@ -24355,6 +26105,13 @@
             "minLength": 1,
             "type": "string"
           },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
           "description": {
             "type": "string",
             "nullable": true
@@ -24376,6 +26133,25 @@
           "asin": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateRatingDto": {
+        "type": "object",
+        "properties": {
+          "seriesId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chapterId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "userRating": {
+            "type": "number",
+            "format": "float"
           }
         },
         "additionalProperties": false
@@ -24716,20 +26492,6 @@
         },
         "additionalProperties": false
       },
-      "UpdateSeriesRatingDto": {
-        "type": "object",
-        "properties": {
-          "seriesId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "userRating": {
-            "type": "number",
-            "format": "float"
-          }
-        },
-        "additionalProperties": false
-      },
       "UpdateStreamPositionDto": {
         "type": "object",
         "properties": {
@@ -24768,6 +26530,7 @@
             "items": {
               "type": "string"
             },
+            "description": "List of Roles to assign to user. If admin not present, Pleb will be applied.\nIf admin present, all libraries will be granted access and will ignore those from DTO.",
             "nullable": true
           },
           "libraries": {
@@ -24784,26 +26547,7 @@
           },
           "email": {
             "type": "string",
-            "description": "Email of the user",
             "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateUserProgressDto": {
-        "type": "object",
-        "properties": {
-          "pageNum": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "lastModifiedUtc": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "createdUtc": {
-            "type": "string",
-            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -24814,6 +26558,11 @@
           "seriesId": {
             "type": "integer",
             "format": "int32"
+          },
+          "chapterId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "body": {
             "type": "string",
@@ -24927,174 +26676,18 @@
       },
       "UserPreferencesDto": {
         "required": [
-          "autoCloseMenu",
-          "backgroundColor",
           "blurUnreadSummaries",
-          "bookReaderFontFamily",
-          "bookReaderFontSize",
-          "bookReaderImmersiveMode",
-          "bookReaderLayoutMode",
-          "bookReaderLineSpacing",
-          "bookReaderMargin",
-          "bookReaderReadingDirection",
-          "bookReaderTapToPaginate",
-          "bookReaderThemeName",
-          "bookReaderWritingStyle",
           "collapseSeriesRelationships",
-          "emulateBook",
-          "globalPageLayoutMode",
-          "layoutMode",
           "locale",
           "noTransitions",
-          "pageSplitOption",
-          "pdfLayoutMode",
-          "pdfScrollMode",
-          "pdfSpreadMode",
-          "pdfTheme",
           "promptForDownloadSize",
-          "readerMode",
-          "readingDirection",
-          "scalingOption",
           "shareReviews",
-          "showScreenHints",
-          "swipeToPaginate",
           "theme"
         ],
         "type": "object",
         "properties": {
-          "readingDirection": {
-            "enum": [
-              0,
-              1
-            ],
-            "type": "integer",
-            "description": "Manga Reader Option: What direction should the next/prev page buttons go",
-            "format": "int32"
-          },
-          "scalingOption": {
-            "enum": [
-              0,
-              1,
-              2,
-              3
-            ],
-            "type": "integer",
-            "description": "Manga Reader Option: How should the image be scaled to screen",
-            "format": "int32"
-          },
-          "pageSplitOption": {
-            "enum": [
-              0,
-              1,
-              2,
-              3
-            ],
-            "type": "integer",
-            "description": "Manga Reader Option: Which side of a split image should we show first",
-            "format": "int32"
-          },
-          "readerMode": {
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "type": "integer",
-            "description": "Manga Reader Option: How the manga reader should perform paging or reading of the file\r\n<example>\r\nWebtoon uses scrolling to page, LeftRight uses paging by clicking left/right side of reader, UpDown uses paging\r\nby clicking top/bottom sides of reader.\r\n</example>",
-            "format": "int32"
-          },
-          "layoutMode": {
-            "enum": [
-              1,
-              2,
-              3
-            ],
-            "type": "integer",
-            "description": "Manga Reader Option: How many pages to display in the reader at once",
-            "format": "int32"
-          },
-          "emulateBook": {
-            "type": "boolean",
-            "description": "Manga Reader Option: Emulate a book by applying a shadow effect on the pages"
-          },
-          "backgroundColor": {
-            "minLength": 1,
-            "type": "string",
-            "description": "Manga Reader Option: Background color of the reader"
-          },
-          "swipeToPaginate": {
-            "type": "boolean",
-            "description": "Manga Reader Option: Should swiping trigger pagination"
-          },
-          "autoCloseMenu": {
-            "type": "boolean",
-            "description": "Manga Reader Option: Allow the menu to close after 6 seconds without interaction"
-          },
-          "showScreenHints": {
-            "type": "boolean",
-            "description": "Manga Reader Option: Show screen hints to the user on some actions, ie) pagination direction change"
-          },
-          "bookReaderMargin": {
-            "type": "integer",
-            "description": "Book Reader Option: Override extra Margin",
-            "format": "int32"
-          },
-          "bookReaderLineSpacing": {
-            "type": "integer",
-            "description": "Book Reader Option: Override line-height",
-            "format": "int32"
-          },
-          "bookReaderFontSize": {
-            "type": "integer",
-            "description": "Book Reader Option: Override font size",
-            "format": "int32"
-          },
-          "bookReaderFontFamily": {
-            "minLength": 1,
-            "type": "string",
-            "description": "Book Reader Option: Maps to the default Kavita font-family (inherit) or an override"
-          },
-          "bookReaderTapToPaginate": {
-            "type": "boolean",
-            "description": "Book Reader Option: Allows tapping on side of screens to paginate"
-          },
-          "bookReaderReadingDirection": {
-            "enum": [
-              0,
-              1
-            ],
-            "type": "integer",
-            "description": "Book Reader Option: What direction should the next/prev page buttons go",
-            "format": "int32"
-          },
-          "bookReaderWritingStyle": {
-            "enum": [
-              0,
-              1
-            ],
-            "type": "integer",
-            "description": "Book Reader Option: What writing style should be used, horizontal or vertical.",
-            "format": "int32"
-          },
           "theme": {
             "$ref": "#/components/schemas/SiteThemeDto"
-          },
-          "bookReaderThemeName": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "bookReaderLayoutMode": {
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "type": "integer",
-            "format": "int32"
-          },
-          "bookReaderImmersiveMode": {
-            "type": "boolean",
-            "description": "Book Reader Option: A flag that hides the menu-ing system behind a click on the screen. This should be used with tap to paginate, but the app doesn't enforce this."
           },
           "globalPageLayoutMode": {
             "enum": [
@@ -25102,79 +26695,32 @@
               1
             ],
             "type": "integer",
-            "description": "Global Site Option: If the UI should layout items as Cards or List items",
             "format": "int32"
           },
           "blurUnreadSummaries": {
-            "type": "boolean",
-            "description": "UI Site Global Setting: If unread summaries should be blurred until expanded or unless user has read it already"
+            "type": "boolean"
           },
           "promptForDownloadSize": {
-            "type": "boolean",
-            "description": "UI Site Global Setting: Should Kavita prompt user to confirm downloads that are greater than 100 MB."
+            "type": "boolean"
           },
           "noTransitions": {
-            "type": "boolean",
-            "description": "UI Site Global Setting: Should Kavita disable CSS transitions"
+            "type": "boolean"
           },
           "collapseSeriesRelationships": {
-            "type": "boolean",
-            "description": "When showing series, only parent series or series with no relationships will be returned"
+            "type": "boolean"
           },
           "shareReviews": {
-            "type": "boolean",
-            "description": "UI Site Global Setting: Should series reviews be shared with all users in the server"
+            "type": "boolean"
           },
           "locale": {
             "minLength": 1,
-            "type": "string",
-            "description": "UI Site Global Setting: The language locale that should be used for the user"
-          },
-          "pdfTheme": {
-            "enum": [
-              0,
-              1
-            ],
-            "type": "integer",
-            "description": "PDF Reader: Theme of the Reader",
-            "format": "int32"
-          },
-          "pdfScrollMode": {
-            "enum": [
-              0,
-              1,
-              3
-            ],
-            "type": "integer",
-            "description": "PDF Reader: Scroll mode of the reader",
-            "format": "int32"
-          },
-          "pdfLayoutMode": {
-            "enum": [
-              0,
-              2
-            ],
-            "type": "integer",
-            "description": "PDF Reader: Layout Mode of the reader",
-            "format": "int32"
-          },
-          "pdfSpreadMode": {
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "type": "integer",
-            "description": "PDF Reader: Spread Mode of the reader",
-            "format": "int32"
+            "type": "string"
           },
           "aniListScrobblingEnabled": {
-            "type": "boolean",
-            "description": "Kavita+: Should this account have Scrobbling enabled for AniList"
+            "type": "boolean"
           },
           "wantToReadSync": {
-            "type": "boolean",
-            "description": "Kavita+: Should this account have Want to Read Sync enabled"
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -25219,6 +26765,208 @@
         },
         "additionalProperties": false
       },
+      "UserReadingProfileDto": {
+        "required": [
+          "allowAutomaticWebtoonReaderDetection",
+          "autoCloseMenu",
+          "backgroundColor",
+          "bookReaderFontFamily",
+          "bookReaderFontSize",
+          "bookReaderImmersiveMode",
+          "bookReaderLayoutMode",
+          "bookReaderLineSpacing",
+          "bookReaderMargin",
+          "bookReaderReadingDirection",
+          "bookReaderTapToPaginate",
+          "bookReaderThemeName",
+          "bookReaderWritingStyle",
+          "emulateBook",
+          "layoutMode",
+          "pageSplitOption",
+          "pdfScrollMode",
+          "pdfSpreadMode",
+          "pdfTheme",
+          "readerMode",
+          "readingDirection",
+          "scalingOption",
+          "showScreenHints",
+          "swipeToPaginate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "readingDirection": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "scalingOption": {
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSplitOption": {
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "readerMode": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "autoCloseMenu": {
+            "type": "boolean"
+          },
+          "showScreenHints": {
+            "type": "boolean"
+          },
+          "emulateBook": {
+            "type": "boolean"
+          },
+          "layoutMode": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "backgroundColor": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "swipeToPaginate": {
+            "type": "boolean"
+          },
+          "allowAutomaticWebtoonReaderDetection": {
+            "type": "boolean"
+          },
+          "widthOverride": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "bookReaderMargin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bookReaderLineSpacing": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bookReaderFontSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bookReaderFontFamily": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "bookReaderTapToPaginate": {
+            "type": "boolean"
+          },
+          "bookReaderReadingDirection": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "bookReaderWritingStyle": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "description": "Represents the writing styles for the book-reader",
+            "format": "int32"
+          },
+          "bookReaderThemeName": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "bookReaderLayoutMode": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "bookReaderImmersiveMode": {
+            "type": "boolean"
+          },
+          "pdfTheme": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "pdfScrollMode": {
+            "enum": [
+              0,
+              1,
+              3
+            ],
+            "type": "integer",
+            "description": "Enum values match PdfViewer's enums",
+            "format": "int32"
+          },
+          "pdfSpreadMode": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "UserReviewDto": {
         "type": "object",
         "properties": {
@@ -25241,6 +26989,11 @@
             "type": "integer",
             "description": "The series this is for",
             "format": "int32"
+          },
+          "chapterId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "libraryId": {
             "type": "integer",
@@ -25282,10 +27035,21 @@
             "enum": [
               0,
               1,
-              2
+              2,
+              3,
+              4
             ],
             "type": "integer",
             "description": "If this review is External, which Provider did it come from",
+            "format": "int32"
+          },
+          "authority": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "description": "Source of the Rating",
             "format": "int32"
           }
         },
@@ -25587,7 +27351,7 @@
     },
     {
       "name": "Tachiyomi",
-      "description": "All APIs are for Tachiyomi extension and app. They have hacks for our implementation and should not be used for any\r\nother purposes."
+      "description": "All APIs are for Tachiyomi extension and app. They have hacks for our implementation and should not be used for any\nother purposes."
     },
     {
       "name": "Upload",

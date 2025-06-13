@@ -1,4 +1,4 @@
-import {AsyncPipe, DatePipe, DOCUMENT, NgStyle} from '@angular/common';
+import {AsyncPipe, DatePipe, DOCUMENT} from '@angular/common';
 import {
   AfterContentChecked,
   ChangeDetectionStrategy,
@@ -7,7 +7,6 @@ import {
   DestroyRef,
   ElementRef,
   EventEmitter,
-  HostListener,
   inject,
   Inject,
   OnInit,
@@ -22,7 +21,7 @@ import {BulkSelectionService} from 'src/app/cards/bulk-selection.service';
 import {EditCollectionTagsComponent} from 'src/app/cards/_modals/edit-collection-tags/edit-collection-tags.component';
 import {FilterSettings} from 'src/app/metadata-filter/filter-settings';
 import {FilterUtilitiesService} from 'src/app/shared/_services/filter-utilities.service';
-import {Breakpoint, KEY_CODES, UtilityService} from 'src/app/shared/_services/utility.service';
+import {Breakpoint, UtilityService} from 'src/app/shared/_services/utility.service';
 import {UserCollection} from 'src/app/_models/collection-tag';
 import {SeriesAddedToCollectionEvent} from 'src/app/_models/events/series-added-to-collection-event';
 import {JumpKey} from 'src/app/_models/jumpbar/jump-key';
@@ -55,27 +54,23 @@ import {SeriesFilterV2} from "../../../_models/metadata/v2/series-filter-v2";
 import {AccountService} from "../../../_services/account.service";
 import {User} from "../../../_models/user";
 import {ScrobbleProvider} from "../../../_services/scrobbling.service";
-import {SafeHtmlPipe} from "../../../_pipes/safe-html.pipe";
-import {TranslocoDatePipe} from "@jsverse/transloco-locale";
 import {DefaultDatePipe} from "../../../_pipes/default-date.pipe";
 import {ProviderImagePipe} from "../../../_pipes/provider-image.pipe";
-import {ProviderNamePipe} from "../../../_pipes/provider-name.pipe";
-import {PromotedIconComponent} from "../../../shared/_components/promoted-icon/promoted-icon.component";
 import {
   SmartCollectionDrawerComponent
 } from "../../../_single-module/smart-collection-drawer/smart-collection-drawer.component";
 import {DefaultModalOptions} from "../../../_models/default-modal-options";
+import {ScrobbleProviderNamePipe} from "../../../_pipes/scrobble-provider-name.pipe";
+import {PromotedIconComponent} from "../../../shared/_components/promoted-icon/promoted-icon.component";
 
 @Component({
   selector: 'app-collection-detail',
   templateUrl: './collection-detail.component.html',
   styleUrls: ['./collection-detail.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [SideNavCompanionBarComponent, CardActionablesComponent, NgStyle, ImageComponent, ReadMoreComponent,
+  imports: [SideNavCompanionBarComponent, CardActionablesComponent, ImageComponent, ReadMoreComponent,
     BulkOperationsComponent, CardDetailLayoutComponent, SeriesCardComponent, TranslocoDirective, NgbTooltip,
-    SafeHtmlPipe, TranslocoDatePipe, DatePipe, DefaultDatePipe, ProviderImagePipe, ProviderNamePipe, AsyncPipe,
-    PromotedIconComponent]
+    DatePipe, DefaultDatePipe, ProviderImagePipe, AsyncPipe, ScrobbleProviderNamePipe, PromotedIconComponent]
 })
 export class CollectionDetailComponent implements OnInit, AfterContentChecked {
 
@@ -212,7 +207,8 @@ export class CollectionDetailComponent implements OnInit, AfterContentChecked {
     this.accountService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(user => {
       if (!user) return;
       this.user = user;
-      this.collectionTagActions = this.actionFactoryService.getCollectionTagActions(this.handleCollectionActionCallback.bind(this))
+      this.collectionTagActions = this.actionFactoryService.getCollectionTagActions(
+        this.handleCollectionActionCallback.bind(this), this.shouldRenderCollection.bind(this))
         .filter(action => this.collectionService.actionListFilter(action, user));
       this.cdRef.markForCheck();
     });
@@ -228,6 +224,17 @@ export class CollectionDetailComponent implements OnInit, AfterContentChecked {
         this.loadPage();
       }
     });
+  }
+
+  shouldRenderCollection(action: ActionItem<UserCollection>, entity: UserCollection, user: User) {
+    switch (action.action) {
+      case Action.Promote:
+        return !entity.promoted;
+      case Action.UnPromote:
+        return entity.promoted;
+      default:
+        return true;
+    }
   }
 
   ngAfterContentChecked(): void {
@@ -310,12 +317,6 @@ export class CollectionDetailComponent implements OnInit, AfterContentChecked {
     }
   }
 
-  performAction(action: ActionItem<any>) {
-    if (typeof action.callback === 'function') {
-      action.callback(action, this.collectionTag);
-    }
-  }
-
   openEditCollectionTagModal(collectionTag: UserCollection) {
     const modalRef = this.modalService.open(EditCollectionTagsComponent, DefaultModalOptions);
     modalRef.componentInstance.tag = this.collectionTag;
@@ -326,7 +327,6 @@ export class CollectionDetailComponent implements OnInit, AfterContentChecked {
   }
 
   openSyncDetailDrawer() {
-
     const ref = this.offcanvasService.open(SmartCollectionDrawerComponent, {position: 'end', panelClass: ''});
     ref.componentInstance.collection = this.collectionTag;
     ref.componentInstance.series = this.series;

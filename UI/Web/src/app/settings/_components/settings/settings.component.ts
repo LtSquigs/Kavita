@@ -52,10 +52,12 @@ import {ScrobblingHoldsComponent} from "../../../user-settings/user-holds/scrobb
 import {
   ManageMetadataSettingsComponent
 } from "../../../admin/manage-metadata-settings/manage-metadata-settings.component";
+import {
+  ManageReadingProfilesComponent
+} from "../../../user-settings/manage-reading-profiles/manage-reading-profiles.component";
 
 @Component({
-  selector: 'app-settings',
-  standalone: true,
+    selector: 'app-settings',
   imports: [
     ChangeAgeRestrictionComponent,
     ChangeEmailComponent,
@@ -88,11 +90,12 @@ import {
     ManageUserTokensComponent,
     EmailHistoryComponent,
     ScrobblingHoldsComponent,
-    ManageMetadataSettingsComponent
+    ManageMetadataSettingsComponent,
+    ManageReadingProfilesComponent
   ],
-  templateUrl: './settings.component.html',
-  styleUrl: './settings.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './settings.component.html',
+    styleUrl: './settings.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SettingsComponent {
 

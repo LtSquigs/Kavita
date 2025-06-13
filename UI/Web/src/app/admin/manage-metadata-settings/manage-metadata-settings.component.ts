@@ -18,12 +18,10 @@ import {PersonRole} from "../../_models/metadata/person";
 import {PersonRolePipe} from "../../_pipes/person-role.pipe";
 import {allMetadataSettingField, MetadataSettingField} from "../_models/metadata-setting-field";
 import {MetadataSettingFiledPipe} from "../../_pipes/metadata-setting-filed.pipe";
-import {EnterBlurDirective} from "../../_directives/enter-blur.directive";
 
 
 @Component({
   selector: 'app-manage-metadata-settings',
-  standalone: true,
   imports: [
     TranslocoDirective,
     ReactiveFormsModule,
@@ -34,7 +32,7 @@ import {EnterBlurDirective} from "../../_directives/enter-blur.directive";
     AgeRatingPipe,
     PersonRolePipe,
     MetadataSettingFiledPipe,
-    EnterBlurDirective,
+
   ],
   templateUrl: './manage-metadata-settings.component.html',
   styleUrl: './manage-metadata-settings.component.scss',
@@ -80,6 +78,13 @@ export class ManageMetadataSettingsComponent implements OnInit {
       this.settingsForm.addControl('enablePeople', new FormControl(settings.enablePeople, []));
       this.settingsForm.addControl('enableStartDate', new FormControl(settings.enableStartDate, []));
       this.settingsForm.addControl('enableCoverImage', new FormControl(settings.enableCoverImage, []));
+
+
+      this.settingsForm.addControl('enableChapterTitle', new FormControl(settings.enableChapterTitle, []));
+      this.settingsForm.addControl('enableChapterSummary', new FormControl(settings.enableChapterSummary, []));
+      this.settingsForm.addControl('enableChapterReleaseDate', new FormControl(settings.enableChapterReleaseDate, []));
+      this.settingsForm.addControl('enableChapterPublisher', new FormControl(settings.enableChapterPublisher, []));
+      this.settingsForm.addControl('enableChapterCoverImage', new FormControl(settings.enableChapterCoverImage, []));
 
       this.settingsForm.addControl('blacklist', new FormControl((settings.blacklist || '').join(','), []));
       this.settingsForm.addControl('whitelist', new FormControl((settings.whitelist || '').join(','), []));

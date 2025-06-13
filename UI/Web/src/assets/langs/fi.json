@@ -10,7 +10,7 @@
         "devices-tab": "{{tabs.devices-tab}}",
         "smart-filters-tab": "{{tabs.smart-filters-tab}}",
         "success-toast": "Käyttäjäasetukset päivitetty",
-        "global-settings-title": "Laajamittaiset asetukset",
+        "global-settings-title": "Yleisesti pätevät asetukset",
         "page-layout-mode-label": "Sivun asettelutila",
         "page-layout-mode-tooltip": "Näytä kohteet kortteina tai luettelonäkymänä Sarjojen yksityiskohdat -sivulla.",
         "locale-label": "Kieliasetus",
@@ -127,15 +127,6 @@
     },
     "spoiler": {
         "click-to-show": "Spoileri, napsauta näyttääksesi"
-    },
-    "review-series-modal": {
-        "title": "Muokkaa arvostelua",
-        "review-label": "Arvostelu",
-        "close": "{{common.close}}",
-        "save": "{{common.save}}",
-        "delete": "{{common.delete}}",
-        "min-length": "Arvostelussa on oltava vähintään {{count}} merkkiä",
-        "required": "{{validation.required-field}}"
     },
     "review-card-modal": {
         "close": "{{common.close}}",

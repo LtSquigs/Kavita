@@ -4,10 +4,21 @@ import {ToastrService} from 'ngx-toastr';
 import {SettingsService} from '../settings.service';
 import {ServerSettings} from '../_models/server-settings';
 import {shareReplay} from 'rxjs/operators';
-import {debounceTime, defer, distinctUntilChanged, filter, forkJoin, Observable, of, switchMap, tap} from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  defer,
+  distinctUntilChanged,
+  filter,
+  forkJoin,
+  Observable,
+  of,
+  switchMap,
+  tap
+} from 'rxjs';
 import {ServerService} from 'src/app/_services/server.service';
 import {Job} from 'src/app/_models/job/job';
-import {UpdateNotificationModalComponent} from 'src/app/shared/update-notification/update-notification-modal.component';
+import {UpdateNotificationModalComponent} from 'src/app/announcements/_components/update-notification/update-notification-modal.component';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {DownloadService} from 'src/app/shared/_services/download.service';
 import {DefaultValuePipe} from '../../_pipes/default-value.pipe';
@@ -31,14 +42,13 @@ interface AdhocTask {
 }
 
 @Component({
-  selector: 'app-manage-tasks-settings',
-  templateUrl: './manage-tasks-settings.component.html',
-  styleUrls: ['./manage-tasks-settings.component.scss'],
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-manage-tasks-settings',
+    templateUrl: './manage-tasks-settings.component.html',
+    styleUrls: ['./manage-tasks-settings.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, AsyncPipe, TitleCasePipe, DefaultValuePipe,
         TranslocoModule, TranslocoLocaleModule, UtcToLocalTimePipe, SettingItemComponent,
-      SettingButtonComponent, NgxDatatableModule]
+        SettingButtonComponent, NgxDatatableModule]
 })
 export class ManageTasksSettingsComponent implements OnInit {
 
@@ -106,13 +116,6 @@ export class ManageTasksSettingsComponent implements OnInit {
       api: defer(() => of(this.downloadService.download('logs', undefined))),
       successMessage: ''
     },
-    // TODO: Remove this in v0.9. Users should have all updated by then
-    {
-      name: 'analyze-files-task',
-      description: 'analyze-files-task-desc',
-      api: this.serverService.analyzeFiles(),
-      successMessage: 'analyze-files-task-success'
-    },
     {
       name: 'sync-themes-task',
       description: 'sync-themes-task-desc',
@@ -134,6 +137,7 @@ export class ManageTasksSettingsComponent implements OnInit {
       }
     },
   ];
+
   customOption = 'custom';
 
 
@@ -180,9 +184,15 @@ export class ManageTasksSettingsComponent implements OnInit {
         // }),
         switchMap(_ => {
           const data = this.packData();
-          return this.settingsService.updateServerSettings(data);
+          return this.settingsService.updateServerSettings(data).pipe(catchError(err => {
+            console.error(err);
+            return of(null);
+          }));
         }),
         tap(settings => {
+          if (!settings) {
+            return;
+          }
           this.serverSettings = settings;
 
           this.recurringTasks$ = this.serverService.getRecurringJobs().pipe(shareReplay());
@@ -305,7 +315,6 @@ export class ManageTasksSettingsComponent implements OnInit {
       modelSettings.taskCleanup = this.settingsForm.get('taskCleanupCustom')?.value;
     }
 
-    console.log('modelSettings: ', modelSettings);
     return modelSettings;
   }
 

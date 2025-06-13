@@ -15,7 +15,7 @@ namespace API.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
 
             modelBuilder.Entity("API.Entities.AppRole", b =>
                 {
@@ -85,6 +85,9 @@ namespace API.Data.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("HasRunScrobbleEventGeneration")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastActive")
                         .HasColumnType("TEXT");
 
@@ -123,6 +126,9 @@ namespace API.Data.Migrations
                     b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ScrobbleEventGenerationRan")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
@@ -187,6 +193,41 @@ namespace API.Data.Migrations
                     b.HasIndex("AppUserId");
 
                     b.ToTable("AppUserBookmark", (string)null);
+                });
+
+            modelBuilder.Entity("API.Entities.AppUserChapterRating", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("HasBeenRated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<float>("Rating")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Review")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SeriesId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("SeriesId");
+
+                    b.ToTable("AppUserChapterRating");
                 });
 
             modelBuilder.Entity("API.Entities.AppUserCollection", b =>
@@ -352,6 +393,11 @@ namespace API.Data.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowAutomaticWebtoonReaderDetection")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("AniListScrobblingEnabled")
                         .ValueGeneratedOnAdd()
@@ -563,6 +609,120 @@ namespace API.Data.Migrations
                     b.ToTable("AppUserRating", (string)null);
                 });
 
+            modelBuilder.Entity("API.Entities.AppUserReadingProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowAutomaticWebtoonReaderDetection")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AutoCloseMenu")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BackgroundColor")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("#000000");
+
+                    b.Property<string>("BookReaderFontFamily")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("BookReaderFontSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("BookReaderImmersiveMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BookReaderLayoutMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BookReaderLineSpacing")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BookReaderMargin")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BookReaderReadingDirection")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("BookReaderTapToPaginate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BookReaderWritingStyle")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("BookThemeName")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Dark");
+
+                    b.Property<bool>("EmulateBook")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LayoutMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LibraryIds")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PageSplitOption")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PdfScrollMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PdfSpreadMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PdfTheme")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ReaderMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ReadingDirection")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ScalingOption")
+                        .HasColumnType("INTEGER");
+
+                    b.PrimitiveCollection<string>("SeriesIds")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("ShowScreenHints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SwipeToPaginate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("WidthOverride")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.ToTable("AppUserReadingProfiles");
+                });
+
             modelBuilder.Entity("API.Entities.AppUserRole", b =>
                 {
                     b.Property<int>("UserId")
@@ -741,6 +901,9 @@ namespace API.Data.Migrations
                     b.Property<string>("AlternateSeries")
                         .HasColumnType("TEXT");
 
+                    b.Property<float>("AverageExternalRating")
+                        .HasColumnType("REAL");
+
                     b.Property<float>("AvgHoursToRead")
                         .HasColumnType("REAL");
 
@@ -909,24 +1072,6 @@ namespace API.Data.Migrations
                     b.HasIndex("VolumeId");
 
                     b.ToTable("Chapter", (string)null);
-                });
-
-            modelBuilder.Entity("API.Entities.ChapterPeople", b =>
-                {
-                    b.Property<int>("ChapterId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("PersonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("ChapterId", "PersonId", "Role");
-
-                    b.HasIndex("PersonId");
-
-                    b.ToTable("ChapterPeople", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.CollectionTag", b =>
@@ -1323,7 +1468,13 @@ namespace API.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Authority")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("AverageScore")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ChapterId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("FavoriteCount")
@@ -1340,7 +1491,9 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExternalRating", (string)null);
+                    b.HasIndex("ChapterId");
+
+                    b.ToTable("ExternalRating");
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.ExternalRecommendation", b =>
@@ -1386,11 +1539,17 @@ namespace API.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Authority")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Body")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BodyJustText")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("ChapterId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Provider")
                         .HasColumnType("INTEGER");
@@ -1421,7 +1580,9 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExternalReview", (string)null);
+                    b.HasIndex("ChapterId");
+
+                    b.ToTable("ExternalReview");
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.ExternalSeriesMetadata", b =>
@@ -1434,6 +1595,9 @@ namespace API.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("AverageExternalRating")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CbrId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("GoogleBooksId")
@@ -1640,7 +1804,7 @@ namespace API.Data.Migrations
                     b.ToTable("MetadataFieldMapping", (string)null);
                 });
 
-            modelBuilder.Entity("API.Entities.MetadataSettings", b =>
+            modelBuilder.Entity("API.Entities.MetadataMatching.MetadataSettings", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1651,6 +1815,21 @@ namespace API.Data.Migrations
 
                     b.Property<string>("Blacklist")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("EnableChapterCoverImage")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("EnableChapterPublisher")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("EnableChapterReleaseDate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("EnableChapterSummary")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("EnableChapterTitle")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("EnableCoverImage")
                         .ValueGeneratedOnAdd()
@@ -1703,7 +1882,31 @@ namespace API.Data.Migrations
                     b.ToTable("MetadataSettings", (string)null);
                 });
 
-            modelBuilder.Entity("API.Entities.Person", b =>
+            modelBuilder.Entity("API.Entities.Person.ChapterPeople", b =>
+                {
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("KavitaPlusConnection")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrderWeight")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ChapterId", "PersonId", "Role");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("ChapterPeople");
+                });
+
+            modelBuilder.Entity("API.Entities.Person.Person", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1745,6 +1948,54 @@ namespace API.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Person", (string)null);
+                });
+
+            modelBuilder.Entity("API.Entities.Person.PersonAlias", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Alias")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedAlias")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("PersonAlias");
+                });
+
+            modelBuilder.Entity("API.Entities.Person.SeriesMetadataPeople", b =>
+                {
+                    b.Property<int>("SeriesMetadataId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("KavitaPlusConnection")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrderWeight")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("SeriesMetadataId", "PersonId", "Role");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("SeriesMetadataPeople");
                 });
 
             modelBuilder.Entity("API.Entities.ReadingList", b =>
@@ -2109,32 +2360,6 @@ namespace API.Data.Migrations
                     b.HasIndex("LibraryId");
 
                     b.ToTable("Series", (string)null);
-                });
-
-            modelBuilder.Entity("API.Entities.SeriesMetadataPeople", b =>
-                {
-                    b.Property<int>("SeriesMetadataId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("PersonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("KavitaPlusConnection")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("OrderWeight")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(0);
-
-                    b.HasKey("SeriesMetadataId", "PersonId", "Role");
-
-                    b.HasIndex("PersonId");
-
-                    b.ToTable("SeriesMetadataPeople", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.ServerSetting", b =>
@@ -2583,6 +2808,33 @@ namespace API.Data.Migrations
                     b.Navigation("AppUser");
                 });
 
+            modelBuilder.Entity("API.Entities.AppUserChapterRating", b =>
+                {
+                    b.HasOne("API.Entities.AppUser", "AppUser")
+                        .WithMany("ChapterRatings")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Entities.Chapter", "Chapter")
+                        .WithMany("Ratings")
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Entities.Series", "Series")
+                        .WithMany()
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Series");
+                });
+
             modelBuilder.Entity("API.Entities.AppUserCollection", b =>
                 {
                     b.HasOne("API.Entities.AppUser", "AppUser")
@@ -2700,6 +2952,17 @@ namespace API.Data.Migrations
                     b.Navigation("Series");
                 });
 
+            modelBuilder.Entity("API.Entities.AppUserReadingProfile", b =>
+                {
+                    b.HasOne("API.Entities.AppUser", "AppUser")
+                        .WithMany("ReadingProfiles")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
             modelBuilder.Entity("API.Entities.AppUserRole", b =>
                 {
                     b.HasOne("API.Entities.AppRole", "Role")
@@ -2804,25 +3067,6 @@ namespace API.Data.Migrations
                     b.Navigation("Volume");
                 });
 
-            modelBuilder.Entity("API.Entities.ChapterPeople", b =>
-                {
-                    b.HasOne("API.Entities.Chapter", "Chapter")
-                        .WithMany("People")
-                        .HasForeignKey("ChapterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API.Entities.Person", "Person")
-                        .WithMany("ChapterPeople")
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chapter");
-
-                    b.Navigation("Person");
-                });
-
             modelBuilder.Entity("API.Entities.Device", b =>
                 {
                     b.HasOne("API.Entities.AppUser", "AppUser")
@@ -2889,6 +3133,20 @@ namespace API.Data.Migrations
                     b.Navigation("Chapter");
                 });
 
+            modelBuilder.Entity("API.Entities.Metadata.ExternalRating", b =>
+                {
+                    b.HasOne("API.Entities.Chapter", null)
+                        .WithMany("ExternalRatings")
+                        .HasForeignKey("ChapterId");
+                });
+
+            modelBuilder.Entity("API.Entities.Metadata.ExternalReview", b =>
+                {
+                    b.HasOne("API.Entities.Chapter", null)
+                        .WithMany("ExternalReviews")
+                        .HasForeignKey("ChapterId");
+                });
+
             modelBuilder.Entity("API.Entities.Metadata.ExternalSeriesMetadata", b =>
                 {
                     b.HasOne("API.Entities.Series", "Series")
@@ -2943,13 +3201,62 @@ namespace API.Data.Migrations
 
             modelBuilder.Entity("API.Entities.MetadataFieldMapping", b =>
                 {
-                    b.HasOne("API.Entities.MetadataSettings", "MetadataSettings")
+                    b.HasOne("API.Entities.MetadataMatching.MetadataSettings", "MetadataSettings")
                         .WithMany("FieldMappings")
                         .HasForeignKey("MetadataSettingsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("MetadataSettings");
+                });
+
+            modelBuilder.Entity("API.Entities.Person.ChapterPeople", b =>
+                {
+                    b.HasOne("API.Entities.Chapter", "Chapter")
+                        .WithMany("People")
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Entities.Person.Person", "Person")
+                        .WithMany("ChapterPeople")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("API.Entities.Person.PersonAlias", b =>
+                {
+                    b.HasOne("API.Entities.Person.Person", "Person")
+                        .WithMany("Aliases")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("API.Entities.Person.SeriesMetadataPeople", b =>
+                {
+                    b.HasOne("API.Entities.Person.Person", "Person")
+                        .WithMany("SeriesMetadataPeople")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Entities.Metadata.SeriesMetadata", "SeriesMetadata")
+                        .WithMany("People")
+                        .HasForeignKey("SeriesMetadataId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Person");
+
+                    b.Navigation("SeriesMetadata");
                 });
 
             modelBuilder.Entity("API.Entities.ReadingList", b =>
@@ -3070,25 +3377,6 @@ namespace API.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Library");
-                });
-
-            modelBuilder.Entity("API.Entities.SeriesMetadataPeople", b =>
-                {
-                    b.HasOne("API.Entities.Person", "Person")
-                        .WithMany("SeriesMetadataPeople")
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API.Entities.Metadata.SeriesMetadata", "SeriesMetadata")
-                        .WithMany("People")
-                        .HasForeignKey("SeriesMetadataId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Person");
-
-                    b.Navigation("SeriesMetadata");
                 });
 
             modelBuilder.Entity("API.Entities.Volume", b =>
@@ -3297,6 +3585,8 @@ namespace API.Data.Migrations
                 {
                     b.Navigation("Bookmarks");
 
+                    b.Navigation("ChapterRatings");
+
                     b.Navigation("Collections");
 
                     b.Navigation("DashboardStreams");
@@ -3310,6 +3600,8 @@ namespace API.Data.Migrations
                     b.Navigation("Ratings");
 
                     b.Navigation("ReadingLists");
+
+                    b.Navigation("ReadingProfiles");
 
                     b.Navigation("ScrobbleHolds");
 
@@ -3328,9 +3620,15 @@ namespace API.Data.Migrations
 
             modelBuilder.Entity("API.Entities.Chapter", b =>
                 {
+                    b.Navigation("ExternalRatings");
+
+                    b.Navigation("ExternalReviews");
+
                     b.Navigation("Files");
 
                     b.Navigation("People");
+
+                    b.Navigation("Ratings");
 
                     b.Navigation("UserProgress");
                 });
@@ -3351,13 +3649,15 @@ namespace API.Data.Migrations
                     b.Navigation("People");
                 });
 
-            modelBuilder.Entity("API.Entities.MetadataSettings", b =>
+            modelBuilder.Entity("API.Entities.MetadataMatching.MetadataSettings", b =>
                 {
                     b.Navigation("FieldMappings");
                 });
 
-            modelBuilder.Entity("API.Entities.Person", b =>
+            modelBuilder.Entity("API.Entities.Person.Person", b =>
                 {
+                    b.Navigation("Aliases");
+
                     b.Navigation("ChapterPeople");
 
                     b.Navigation("SeriesMetadataPeople");

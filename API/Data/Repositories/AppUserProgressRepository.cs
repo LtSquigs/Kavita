@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Data.Repositories;
 #nullable enable
+
 public interface IAppUserProgressRepository
 {
     void Update(AppUserProgress userProgress);
@@ -43,7 +44,7 @@ public interface IAppUserProgressRepository
     Task<IEnumerable<int>> GetUsersThatHaveFinishedVolume(Volume volume);
     Task UsersUpdateVolumesCompleted(IEnumerable<(Volume, int)> updates);
 }
-#nullable disable
+
 public class AppUserProgressRepository : IAppUserProgressRepository
 {
     private readonly DataContext _context;
@@ -194,6 +195,7 @@ public class AppUserProgressRepository : IAppUserProgressRepository
             .Where(p => p.chapter.MaxNumber != Parser.SpecialVolumeNumber)
             .Select(p => p.chapter.Volume.MaxNumber)
             .ToListAsync();
+
         return list.Count == 0 ? 0 : list.DefaultIfEmpty().Max();
     }
 

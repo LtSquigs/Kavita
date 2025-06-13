@@ -19,7 +19,9 @@ public class AppUser : IdentityUser<int>, IHasConcurrencyToken
     public ICollection<AppUserRole> UserRoles { get; set; } = null!;
     public ICollection<AppUserProgress> Progresses { get; set; } = null!;
     public ICollection<AppUserRating> Ratings { get; set; } = null!;
+    public ICollection<AppUserChapterRating> ChapterRatings { get; set; } = null!;
     public AppUserPreferences UserPreferences { get; set; } = null!;
+    public ICollection<AppUserReadingProfile> ReadingProfiles { get; set; } = null!;
     /// <summary>
     /// Bookmarks associated with this User
     /// </summary>
@@ -76,6 +78,16 @@ public class AppUser : IdentityUser<int>, IHasConcurrencyToken
     /// </summary>
     public string? MalAccessToken { get; set; }
 
+    /// <summary>
+    /// Has the user ran Scrobble Event Generation
+    /// </summary>
+    /// <remarks>Only applicable for Kavita+ and when a Token is present</remarks>
+    public bool HasRunScrobbleEventGeneration { get; set; }
+    /// <summary>
+    /// The timestamp of when Scrobble Event Generation ran (Utc)
+    /// </summary>
+    /// <remarks>Kavita+ only</remarks>
+    public DateTime ScrobbleEventGenerationRan { get; set; }
 
 
     /// <summary>

@@ -1,4 +1,5 @@
-﻿using API.Data;
+﻿using System.Collections.Generic;
+using API.Data;
 using API.Entities.Enums;
 using API.Entities.Enums.UserPreferences;
 
@@ -54,6 +55,10 @@ public class AppUserPreferences
     /// Manga Reader Option: Should swiping trigger pagination
     /// </summary>
     public bool SwipeToPaginate { get; set; }
+    /// <summary>
+    /// Manga Reader Option: Allow Automatic Webtoon detection
+    /// </summary>
+    public bool AllowAutomaticWebtoonReaderDetection { get; set; }
 
     #endregion
 

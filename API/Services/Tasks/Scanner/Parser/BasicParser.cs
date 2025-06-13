@@ -88,7 +88,7 @@ public class BasicParser(IDirectoryService directoryService, IDefaultParser imag
             {
                 ParseFromFallbackFolders(filePath, tempRootPath, type, ref ret);
             }
-
+            ret.Title = Parser.CleanSpecialTitle(fileName);
         }
 
         if (string.IsNullOrEmpty(ret.Series))

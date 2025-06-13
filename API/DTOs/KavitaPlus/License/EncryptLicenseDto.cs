@@ -1,6 +1,7 @@
 ﻿namespace API.DTOs.KavitaPlus.License;
+#nullable enable
 
-public class EncryptLicenseDto
+public sealed record EncryptLicenseDto
 {
     public required string License { get; set; }
     public required string InstallId { get; set; }
