@@ -665,6 +665,9 @@ namespace API.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("Dark");
 
+                    b.Property<int>("DisableWidthOverride")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("EmulateBook")
                         .HasColumnType("INTEGER");
 
@@ -704,7 +707,7 @@ namespace API.Data.Migrations
                     b.Property<int>("ScalingOption")
                         .HasColumnType("INTEGER");
 
-                    b.PrimitiveCollection<string>("SeriesIds")
+                    b.Property<string>("SeriesIds")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("ShowScreenHints")

@@ -20,7 +20,13 @@ import {
 } from 'src/app/admin/_modals/directory-picker/directory-picker.component';
 import {ConfirmService} from 'src/app/shared/confirm.service';
 import {Breakpoint, UtilityService} from 'src/app/shared/_services/utility.service';
-import {allLibraryTypes, Library, LibraryType} from 'src/app/_models/library/library';
+import {
+  allKavitaPlusMetadataApplicableTypes,
+  allKavitaPlusScrobbleEligibleTypes,
+  allLibraryTypes,
+  Library,
+  LibraryType
+} from 'src/app/_models/library/library';
 import {ImageService} from 'src/app/_services/image.service';
 import {LibraryService} from 'src/app/_services/library.service';
 import {UploadService} from 'src/app/_services/upload.service';
@@ -104,8 +110,8 @@ export class LibrarySettingsModalComponent implements OnInit {
     includeInRecommended: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     includeInSearch: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     parseChaptersFromVolumes: new FormControl<boolean>(false, { nonNullable: true, validators: [Validators.required] }),
-    manageCollections: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
-    manageReadingLists: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
+    manageCollections: new FormControl<boolean>(false, { nonNullable: true, validators: [Validators.required] }),
+    manageReadingLists: new FormControl<boolean>(false, { nonNullable: true, validators: [Validators.required] }),
     allowScrobbling: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     allowMetadataMatching: new FormControl<boolean>(true, { nonNullable: true, validators: [Validators.required] }),
     collapseSeriesRelationships: new FormControl<boolean>(false, { nonNullable: true, validators: [Validators.required] }),
@@ -126,13 +132,12 @@ export class LibrarySettingsModalComponent implements OnInit {
 
   get IsKavitaPlusEligible() {
     const libType = parseInt(this.libraryForm.get('type')?.value + '', 10) as LibraryType;
-    return libType === LibraryType.Manga || libType === LibraryType.LightNovel;
+    return allKavitaPlusScrobbleEligibleTypes.includes(libType);
   }
 
   get IsMetadataDownloadEligible() {
     const libType = parseInt(this.libraryForm.get('type')?.value + '', 10) as LibraryType;
-    return libType === LibraryType.Manga || libType === LibraryType.LightNovel
-      || libType === LibraryType.ComicVine || libType === LibraryType.Comic;
+    return allKavitaPlusMetadataApplicableTypes.includes(libType);
   }
 
   ngOnInit(): void {
@@ -232,6 +237,7 @@ export class LibrarySettingsModalComponent implements OnInit {
         } else {
           this.libraryForm.get('allowMetadataMatching')?.disable();
         }
+
 
         this.cdRef.markForCheck();
       }),
