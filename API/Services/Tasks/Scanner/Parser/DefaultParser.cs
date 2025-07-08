@@ -20,7 +20,7 @@ record struct ParsedChapter {
 }
 public interface IDefaultParser
 {
-    ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool parseVolumeChapters = false);
+    ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata = true, ComicInfo? comicInfo = null, bool parseVolumeChapters = false);
     void ParseFromFallbackFolders(string filePath, string rootPath, LibraryType type, ref ParserInfo ret);
     bool IsApplicable(string filePath, LibraryType type);
 }
@@ -38,8 +38,9 @@ public abstract class DefaultParser(IDirectoryService directoryService) : IDefau
     /// <param name="filePath"></param>
     /// <param name="rootPath">Root folder</param>
     /// <param name="type">Allows different Regex to be used for parsing.</param>
+    /// <param name="enableMetadata">Allows overriding data from metadata (ComicInfo/pdf/epub)</param>
     /// <returns><see cref="ParserInfo"/> or null if Series was empty</returns>
-    public abstract ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo? comicInfo = null, bool parseVolumeChapters = false);
+    public abstract ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata = true, ComicInfo? comicInfo = null, bool parseVolumeChapters = false);
 
     /// <summary>
     /// Fills out <see cref="ParserInfo"/> by trying to parse volume, chapters, and series from folders

@@ -27,6 +27,19 @@ public static class RestrictByAgeExtensions
         return q;
     }
 
+    public static IQueryable<SeriesMetadataPeople> RestrictAgainstAgeRestriction(this IQueryable<SeriesMetadataPeople> queryable, AgeRestriction restriction)
+    {
+        if (restriction.AgeRating == AgeRating.NotApplicable) return queryable;
+        var q = queryable.Where(s => s.SeriesMetadata.AgeRating <= restriction.AgeRating);
+
+        if (!restriction.IncludeUnknowns)
+        {
+            return q.Where(s => s.SeriesMetadata.AgeRating != AgeRating.Unknown);
+        }
+
+        return q;
+    }
+
 
     public static IQueryable<Chapter> RestrictAgainstAgeRestriction(this IQueryable<Chapter> queryable, AgeRestriction restriction)
     {
@@ -36,6 +49,19 @@ public static class RestrictByAgeExtensions
         if (!restriction.IncludeUnknowns)
         {
             return q.Where(s => s.Volume.Series.Metadata.AgeRating != AgeRating.Unknown);
+        }
+
+        return q;
+    }
+
+    public static IQueryable<ChapterPeople> RestrictAgainstAgeRestriction(this IQueryable<ChapterPeople> queryable, AgeRestriction restriction)
+    {
+        if (restriction.AgeRating == AgeRating.NotApplicable) return queryable;
+        var q = queryable.Where(cp => cp.Chapter.Volume.Series.Metadata.AgeRating <= restriction.AgeRating);
+
+        if (!restriction.IncludeUnknowns)
+        {
+            return q.Where(cp => cp.Chapter.Volume.Series.Metadata.AgeRating != AgeRating.Unknown);
         }
 
         return q;
@@ -56,6 +82,12 @@ public static class RestrictByAgeExtensions
             sm.Metadata.AgeRating <= restriction.AgeRating && sm.Metadata.AgeRating > AgeRating.Unknown));
     }
 
+    /// <summary>
+    /// Returns all Genres where any of the linked Series/Chapters are less than or equal to restriction age rating
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="restriction"></param>
+    /// <returns></returns>
     public static IQueryable<Genre> RestrictAgainstAgeRestriction(this IQueryable<Genre> queryable, AgeRestriction restriction)
     {
         if (restriction.AgeRating == AgeRating.NotApplicable) return queryable;

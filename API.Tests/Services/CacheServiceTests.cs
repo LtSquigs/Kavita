@@ -51,12 +51,12 @@ internal class MockReadingItemServiceForCacheService : IReadingItemService
         throw new System.NotImplementedException();
     }
 
-    public ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
+    public ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata = true)
     {
         throw new System.NotImplementedException();
     }
 
-    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
+    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata = true)
     {
         throw new System.NotImplementedException();
     }

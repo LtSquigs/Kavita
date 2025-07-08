@@ -36,7 +36,7 @@ public class ComicVineParserTests
     public void Parse_SeriesWithComicInfo()
     {
         var actuals = _parser.Parse("C:/Comics/Birds of Prey (2002)/Birds of Prey 001 (2002).cbz", "C:/Comics/Birds of Prey (2002)/",
-            RootDirectory, LibraryType.ComicVine, new ComicInfo()
+            RootDirectory, LibraryType.ComicVine, true, new ComicInfo()
             {
                 Series = "Birds of Prey",
                 Volume = "2002"
@@ -55,7 +55,7 @@ public class ComicVineParserTests
     public void Parse_SeriesWithDirectoryNameAsSeriesYear()
     {
         var actuals = _parser.Parse("C:/Comics/Birds of Prey (2002)/Birds of Prey 001 (2002).cbz", "C:/Comics/Birds of Prey (2002)/",
-            RootDirectory, LibraryType.ComicVine, null);
+            RootDirectory, LibraryType.ComicVine, true, null);
 
         Assert.NotEmpty(actuals);
         var actual = actuals[0];
@@ -71,7 +71,7 @@ public class ComicVineParserTests
     public void Parse_SeriesWithADirectoryNameAsSeriesYear()
     {
         var actuals = _parser.Parse("C:/Comics/DC Comics/Birds of Prey (1999)/Birds of Prey 001 (1999).cbz", "C:/Comics/DC Comics/",
-            RootDirectory, LibraryType.ComicVine, null);
+            RootDirectory, LibraryType.ComicVine, true, null);
 
         Assert.NotEmpty(actuals);
         var actual = actuals[0];
@@ -87,7 +87,7 @@ public class ComicVineParserTests
     public void Parse_FallbackToDirectoryNameOnly()
     {
         var actuals = _parser.Parse("C:/Comics/DC Comics/Blood Syndicate/Blood Syndicate 001 (1999).cbz", "C:/Comics/DC Comics/",
-            RootDirectory, LibraryType.ComicVine, null);
+            RootDirectory, LibraryType.ComicVine, true, null);
 
         Assert.NotEmpty(actuals);
         var actual = actuals[0];

@@ -53,6 +53,14 @@ public class Library : IEntityDate, IHasCoverImage
     /// <remarks>This does not exclude the library from being linked to wrt Series Relationships</remarks>
     /// <remarks>Requires a valid LicenseKey</remarks>
     public bool AllowMetadataMatching { get; set; } = true;
+    /// <summary>
+    /// Should Kavita read metadata files from the library
+    /// </summary>
+    public bool EnableMetadata { get; set; } = true;
+    /// <summary>
+    /// Should Kavita remove sort articles "The" for the sort name
+    /// </summary>
+    public bool RemovePrefixForSortName { get; set; } = false;
 
 
     public DateTime Created { get; set; }

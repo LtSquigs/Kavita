@@ -13,7 +13,7 @@ public interface IReadingItemService
     int GetNumberOfPages(FileMetadata fileMetadata, MangaFormat format);
     string GetCoverImage(FileMetadata fileMetadata, string fileName, MangaFormat format, EncodeFormat encodeFormat, CoverImageSize size = CoverImageSize.Default);
     void Extract(FileMetadata fileMetadata, string targetDirectory, MangaFormat format, int imageCount = 1);
-    ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters);
+    ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata);
 }
 
 public class ReadingItemService : IReadingItemService
@@ -72,11 +72,11 @@ public class ReadingItemService : IReadingItemService
     /// <param name="path">Path of a file</param>
     /// <param name="rootPath"></param>
     /// <param name="type">Library type to determine parsing to perform</param>
-    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
+    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata)
     {
         try
         {
-            var infos = Parse(path, rootPath, libraryRoot, type, parseVolumeChapters);
+            var infos = Parse(path, rootPath, libraryRoot, type, parseVolumeChapters, enableMetadata);
             if (infos.Length == 0)
             {
                 _logger.LogError("Unable to parse any meaningful information out of file {FilePath}", path);
@@ -175,29 +175,30 @@ public class ReadingItemService : IReadingItemService
     /// <param name="path"></param>
     /// <param name="rootPath"></param>
     /// <param name="type"></param>
+    /// <param name="enableMetadata"></param>
     /// <returns></returns>
-    private ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
+    private ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata)
     {
         var fileMetadata = new FileMetadata(path);
         if (_comicVineParser.IsApplicable(path, type))
         {
-            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
+            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_imageParser.IsApplicable(path, type))
         {
-            return _imageParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
+            return _imageParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_bookParser.IsApplicable(path, type))
         {
-            return _bookParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
+            return _bookParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_pdfParser.IsApplicable(path, type))
         {
-            return _pdfParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
+            return _pdfParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
         if (_basicParser.IsApplicable(path, type))
         {
-            return _basicParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(fileMetadata), parseVolumeChapters);
+            return _basicParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(fileMetadata), parseVolumeChapters);
         }
 
         return [];

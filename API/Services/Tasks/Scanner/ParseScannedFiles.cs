@@ -804,7 +804,7 @@ public class ParseScannedFiles
         {
             // Process files sequentially
             result.ParserInfos = files
-                .Select(file => _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type, library.ParseChaptersFromVolumes))
+                .Select(file => _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type, library.EnableMetadata, library.ParseChaptersFromVolumes))
                 .Where(infos => infos.Length > 0)
                 .SelectMany(infos => infos)
                 .ToList()!;
@@ -813,7 +813,7 @@ public class ParseScannedFiles
         {
             // Process files in parallel
             var tasks = files.Select(file => Task.Run(() =>
-                _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type, library.ParseChaptersFromVolumes)));
+                _readingItemService.ParseFile(file, normalizedFolder, result.LibraryRoot, library.Type, library.EnableMetadata, library.ParseChaptersFromVolumes)));
 
             var infos = await Task.WhenAll(tasks);
             result.ParserInfos = infos.Where(infos => infos.Length > 0).SelectMany(infos => infos).ToList()!;

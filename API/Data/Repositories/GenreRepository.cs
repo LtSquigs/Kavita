@@ -173,20 +173,30 @@ public class GenreRepository : IGenreRepository
     {
         var ageRating = await _context.AppUser.GetUserAgeRestriction(userId);
 
+        var allLibrariesCount = await _context.Library.CountAsync();
+        var userLibs = await _context.Library.GetUserLibraries(userId).ToListAsync();
+
+        var seriesIds = await _context.Series.Where(s => userLibs.Contains(s.LibraryId)).Select(s => s.Id).ToListAsync();
+
         var query = _context.Genre
             .RestrictAgainstAgeRestriction(ageRating)
+            .WhereIf(allLibrariesCount != userLibs.Count,
+                genre => genre.Chapters.Any(cp => seriesIds.Contains(cp.Volume.SeriesId)) ||
+                         genre.SeriesMetadatas.Any(sm => seriesIds.Contains(sm.SeriesId)))
             .Select(g => new BrowseGenreDto
             {
                 Id = g.Id,
                 Title = g.Title,
                 SeriesCount = g.SeriesMetadatas
-                    .Select(sm => sm.Id)
+                    .Where(sm => allLibrariesCount == userLibs.Count || seriesIds.Contains(sm.SeriesId))
+                    .RestrictAgainstAgeRestriction(ageRating)
                     .Distinct()
                     .Count(),
                 ChapterCount = g.Chapters
-                    .Select(ch => ch.Id)
+                    .Where(cp => allLibrariesCount == userLibs.Count || seriesIds.Contains(cp.Volume.SeriesId))
+                    .RestrictAgainstAgeRestriction(ageRating)
                     .Distinct()
-                    .Count()
+                    .Count(),
             })
             .OrderBy(g => g.Title);
 

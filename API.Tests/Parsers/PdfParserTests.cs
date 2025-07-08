@@ -35,7 +35,7 @@ public class PdfParserTests
     {
         var actuals = _parser.Parse("C:/Books/A Dictionary of Japanese Food - Ingredients and Culture/A Dictionary of Japanese Food - Ingredients and Culture.pdf",
             "C:/Books/A Dictionary of Japanese Food - Ingredients and Culture/",
-            RootDirectory, LibraryType.Book, null);
+            RootDirectory, LibraryType.Book, true, null);
 
         Assert.NotEmpty(actuals);
         var actual = actuals[0];

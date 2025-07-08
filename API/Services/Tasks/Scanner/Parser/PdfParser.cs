@@ -7,7 +7,7 @@ namespace API.Services.Tasks.Scanner.Parser;
 
 public class PdfParser(IDirectoryService directoryService) : DefaultParser(directoryService)
 {
-    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, ComicInfo comicInfo = null, bool parseVolumeChapters = false)
+    public override ParserInfo[] Parse(string filePath, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata = true, ComicInfo comicInfo = null, bool parseVolumeChapters = false)
     {
         var fileName = directoryService.FileSystem.Path.GetFileNameWithoutExtension(filePath);
         var ret = new ParserInfo
@@ -69,13 +69,17 @@ public class PdfParser(IDirectoryService directoryService) : DefaultParser(direc
             ParseFromFallbackFolders(filePath, tempRootPath, type, ref ret);
         }
 
-        // Patch in other information from ComicInfo
-        UpdateFromComicInfo(ret);
-
-        if (comicInfo != null && !string.IsNullOrEmpty(comicInfo.Title))
+        if (enableMetadata)
         {
-            ret.Title = comicInfo.Title.Trim();
+            // Patch in other information from ComicInfo
+            UpdateFromComicInfo(ret);
+
+            if (comicInfo != null && !string.IsNullOrEmpty(comicInfo.Title))
+            {
+                ret.Title = comicInfo.Title.Trim();
+            }
         }
+
 
         if (ret.Chapters == Parser.DefaultChapter && ret.Volumes == Parser.LooseLeafVolume && type == LibraryType.Book)
         {

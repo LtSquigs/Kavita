@@ -22,6 +22,11 @@ public class MangaFile : IEntityDate
     /// </summary>
     public required FileMetadata FileMetadata { get; set; }
     /// <summary>
+    /// A hash of the document using Koreader's unique hashing algorithm
+    /// </summary>
+    /// <remark> KoreaderHash is only available for epub types </remark>
+    public string? KoreaderHash { get; set; }
+    /// <summary>
     /// Number of pages for the given file
     /// </summary>
     public int Pages { get; set; }

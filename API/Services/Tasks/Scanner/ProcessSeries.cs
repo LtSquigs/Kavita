@@ -127,13 +127,17 @@ public class ProcessSeries : IProcessSeries
                 series.Format = firstParsedInfo.Format;
             }
 
+            var removePrefix = library.RemovePrefixForSortName;
+            var sortName = removePrefix ? BookSortTitlePrefixHelper.GetSortTitle(series.Name) : series.Name;
+
             if (string.IsNullOrEmpty(series.SortName))
             {
-                series.SortName = series.Name;
+                series.SortName = sortName;
             }
+
             if (!series.SortNameLocked)
             {
-                series.SortName = series.Name;
+                series.SortName = sortName;
                 if (!string.IsNullOrEmpty(firstParsedInfo.SeriesSort))
                 {
                     series.SortName = firstParsedInfo.SeriesSort;
@@ -927,6 +931,7 @@ public class ProcessSeries : IProcessSeries
             existingFile.FileName = Parser.Parser.RemoveExtensionIfSupported(existingFile.FileMetadata.Path);
             existingFile.FileMetadata = info.FileMetadata.Normalized();
             existingFile.Bytes = info.FileMetadata.FileSize != -1 ? info.FileMetadata.FileSize : fileInfo.Length;
+            existingFile.KoreaderHash = KoreaderHelper.HashContents(existingFile.FileMetadata.Path);
             // We skip updating DB here with last modified time so that metadata refresh can do it
         }
         else
@@ -934,6 +939,7 @@ public class ProcessSeries : IProcessSeries
             var file = new MangaFileBuilder(info.FileMetadata, info.Format, _readingItemService.GetNumberOfPages(info.FileMetadata, info.Format))
                 .WithExtension(fileInfo.Extension)
                 .WithBytes(info.FileMetadata.FileSize != -1 ? info.FileMetadata.FileSize : fileInfo.Length)
+                .WithHash()
                 .Build();
             chapter.Files.Add(file);
         }

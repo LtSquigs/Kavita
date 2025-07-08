@@ -42,6 +42,8 @@
         "series-header": "Series",
         "data-header": "Data",
         "is-processed-header": "Is Processed",
+        "select-all-label": "Select all",
+        "delete-selected-label": "Delete selected",
         "no-data": "{{common.no-data}}",
         "volume-and-chapter-num": "Volume {{v}} Chapter {{n}}",
         "volume-num": "Volume {{num}}",
@@ -1129,6 +1131,10 @@
         "include-in-search-tooltip": "Should series and any derived information (genres, people, files) from the library be included in search results.",
         "parse-chapters-volume-label": "Parse Chapters From Volume Archives",
         "parse-chapters-volume-tooltip": "Try to parse chapters from within comic book archives. Requires forced scan after changing.",
+        "enable-metadata-label": "Enable Metadata (ComicInfo/Epub/PDF)",
+        "enable-metadata-tooltip": "Allow Kavita to read metadata files which override filename parsing.",
+        "remove-prefix-for-sortname-label": "Remove common prefixes for Sort Name",
+        "remove-prefix-for-sortname-tooltip": "Kavita will remove common prefixes like 'The', 'A', 'An' from titles for sort name. Does not override set metadata.",
         "force-scan": "Force Scan",
         "force-scan-tooltip": "This will force a scan on the library, treating like a fresh scan",
         "reset": "{{common.reset}}",
@@ -2743,7 +2749,8 @@
         "webtoon-override": "Switching to Webtoon mode due to images representing a webtoon.",
         "scrobble-gen-init": "Enqueued a job to generate scrobble events from past reading history and ratings, syncing them with connected services.",
         "series-bound-to-reading-profile": "Series bound to Reading Profile {{name}}",
-        "library-bound-to-reading-profile": "Library bound to Reading Profile {{name}}"
+        "library-bound-to-reading-profile": "Library bound to Reading Profile {{name}}",
+        "external-match-rate-error": "Kavita ran out of rate looking up {{seriesName}}. Try again in 5 minutes."
     },
 
     "read-time-pipe": {

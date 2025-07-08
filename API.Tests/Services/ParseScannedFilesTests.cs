@@ -59,36 +59,36 @@ public class MockReadingItemService : IReadingItemService
         throw new NotImplementedException();
     }
 
-    public ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters)
+    public ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata, bool parseVolumeChapters)
     {
         var filePath = new FileMetadata(path);
         if (_comicVineParser.IsApplicable(path, type))
         {
-            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
+            return _comicVineParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_imageParser.IsApplicable(path, type))
         {
-            return _imageParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
+            return _imageParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_bookParser.IsApplicable(path, type))
         {
-            return _bookParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
+            return _bookParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_pdfParser.IsApplicable(path, type))
         {
-            return _pdfParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
+            return _pdfParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(filePath), parseVolumeChapters);
         }
         if (_basicParser.IsApplicable(path, type))
         {
-            return _basicParser.Parse(path, rootPath, libraryRoot, type, GetComicInfo(filePath), parseVolumeChapters);
+            return _basicParser.Parse(path, rootPath, libraryRoot, type, enableMetadata, GetComicInfo(filePath), parseVolumeChapters);
         }
 
         return null;
     }
 
-    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool extractChapters)
+    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata, bool extractChapters)
     {
-        return Parse(path, rootPath, libraryRoot, type, extractChapters);
+        return Parse(path, rootPath, libraryRoot, type, enableMetadata, extractChapters);
     }
 }
 
