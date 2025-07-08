@@ -3,6 +3,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Order;
 using System;
 using API.Entities.Enums;
+using API.Structs;
 
 namespace API.Benchmark
 {
@@ -18,7 +19,7 @@ namespace API.Benchmark
         [Benchmark(Baseline = true)]
         public void TestBuildManga_baseline()
         {
-            var file = new MangaFileBuilder(sourceEpub, MangaFormat.Epub)
+            var file = new MangaFileBuilder(new FileMetadata(sourceEpub), MangaFormat.Epub)
                 .Build();
             if (file == null)
             {
@@ -29,7 +30,7 @@ namespace API.Benchmark
         [Benchmark]
         public void TestBuildManga_withHash()
         {
-            var file = new MangaFileBuilder(sourceEpub, MangaFormat.Epub)
+            var file = new MangaFileBuilder(new FileMetadata(sourceEpub), MangaFormat.Epub)
                 .WithHash()
                 .Build();
             if (file == null)

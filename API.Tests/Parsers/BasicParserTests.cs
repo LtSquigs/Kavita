@@ -71,7 +71,7 @@ public class BasicParserTests : AbstractFsTest
     public void Parse_MangaLibrary_VolumeAndChapterInFilename()
     {
         var actual = _parser.Parse($"{_rootDirectory}Mujaki no Rakuen/Mujaki no Rakuen Vol12 ch76.cbz", $"{_rootDirectory}Mujaki no Rakuen/",
-            _rootDirectory, LibraryType.Manga, null);
+            _rootDirectory, LibraryType.Manga, true, null);
         Assert.NotEmpty(actual);
 
         Assert.Equal("Mujaki no Rakuen", actual[0].Series);
@@ -88,7 +88,7 @@ public class BasicParserTests : AbstractFsTest
     {
         var actual = _parser.Parse($"{_rootDirectory}Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen/Vol 1.cbz",
             $"{_rootDirectory}Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen/",
-            _rootDirectory, LibraryType.Manga, null);
+            _rootDirectory, LibraryType.Manga, true, null);
         Assert.NotEmpty(actual);
 
         Assert.Equal("Shimoneta to Iu Gainen ga Sonzai Shinai Taikutsu na Sekai Man-hen", actual[0].Series);
@@ -105,7 +105,7 @@ public class BasicParserTests : AbstractFsTest
     {
         var actual = _parser.Parse($"{_rootDirectory}Beelzebub/Beelzebub_01_[Noodles].zip",
             $"{_rootDirectory}Beelzebub/",
-            _rootDirectory, LibraryType.Manga, null);
+            _rootDirectory, LibraryType.Manga, true, null);
         Assert.NotEmpty(actual);
 
         Assert.Equal("Beelzebub", actual[0].Series);
@@ -122,7 +122,7 @@ public class BasicParserTests : AbstractFsTest
     {
         var actual = _parser.Parse($"{_rootDirectory}Summer Time Rendering/Specials/Record 014 (between chapter 083 and ch084) SP11.cbr",
             $"{_rootDirectory}Summer Time Rendering/",
-            _rootDirectory, LibraryType.Manga, null);
+            _rootDirectory, LibraryType.Manga, true, null);
         Assert.NotEmpty(actual);
 
         Assert.Equal("Summer Time Rendering", actual[0].Series);
@@ -140,7 +140,7 @@ public class BasicParserTests : AbstractFsTest
     {
         var actuals = _parser.Parse($"{_rootDirectory}Summer Time Rendering/Volume SP01.cbr",
             $"{_rootDirectory}Summer Time Rendering/",
-            _rootDirectory, LibraryType.Manga, null);
+            _rootDirectory, LibraryType.Manga, true, null);
         Assert.NotEmpty(actuals);
         var actual = actuals[0];
 
@@ -197,7 +197,7 @@ public class BasicParserTests : AbstractFsTest
     {
         var actual = _parser.Parse($"{_rootDirectory}Air Gear/Air Gear Omnibus v01 (2016) (Digital) (Shadowcat-Empire).cbz",
             $"{_rootDirectory}Air Gear/",
-            _rootDirectory, LibraryType.Manga, null);
+            _rootDirectory, LibraryType.Manga, true, null);
         Assert.NotEmpty(actual);
 
         Assert.Equal("Air Gear", actual[0].Series);
@@ -218,7 +218,7 @@ public class BasicParserTests : AbstractFsTest
     {
         var actual = _parser.Parse($"{_rootDirectory}Epubs/Harrison, Kim - The Good, The Bad, and the Undead - Hollows Vol 2.5.epub",
             $"{_rootDirectory}Epubs/",
-            _rootDirectory, LibraryType.Manga, null);
+            _rootDirectory, LibraryType.Manga, true, null);
         Assert.NotEmpty(actual);
 
         Assert.Equal("Harrison, Kim - The Good, The Bad, and the Undead - Hollows", actual[0].Series);
