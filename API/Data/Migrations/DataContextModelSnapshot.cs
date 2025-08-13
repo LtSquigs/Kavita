@@ -15,7 +15,7 @@ namespace API.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.6");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
 
             modelBuilder.Entity("API.Entities.AppRole", b =>
                 {
@@ -88,6 +88,11 @@ namespace API.Data.Migrations
                     b.Property<bool>("HasRunScrobbleEventGeneration")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("IdentityProvider")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTime>("LastActive")
                         .HasColumnType("TEXT");
 
@@ -112,6 +117,9 @@ namespace API.Data.Migrations
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OidcId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
@@ -1859,6 +1867,9 @@ namespace API.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(true);
+
+                    b.Property<bool>("EnableExtendedMetadataProcessing")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("EnableGenres")
                         .HasColumnType("INTEGER");
@@ -3635,7 +3646,8 @@ namespace API.Data.Migrations
 
                     b.Navigation("TableOfContents");
 
-                    b.Navigation("UserPreferences");
+                    b.Navigation("UserPreferences")
+                        .IsRequired();
 
                     b.Navigation("UserRoles");
 
