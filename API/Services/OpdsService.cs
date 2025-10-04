@@ -1146,9 +1146,9 @@ public class OpdsService : IOpdsService
     {
         var fileSize =
             mangaFile.Bytes > 0 ? DirectoryService.GetHumanReadableBytes(mangaFile.Bytes) :
-            DirectoryService.GetHumanReadableBytes(_directoryService.GetTotalSize((List<string>) [mangaFile.FilePath]));
-        var fileType = _downloadService.GetContentTypeFromFile(mangaFile.FilePath);
-        var filename = Uri.EscapeDataString(Path.GetFileName(mangaFile.FilePath));
+            DirectoryService.GetHumanReadableBytes(mangaFile.FileMetadata.FileSize);
+        var fileType = _downloadService.GetContentTypeFromFile(mangaFile.FileMetadata.Path);
+        var filename =  Uri.EscapeDataString(Path.GetFileName(mangaFile.FileMetadata.Path) + (mangaFile.FileMetadata.PageRange ?? ""));
         var libraryType = await _unitOfWork.LibraryRepository.GetLibraryTypeAsync(series.LibraryId);
         var volume = await _unitOfWork.VolumeRepository.GetVolumeDtoAsync(volumeId, request.UserId);
 

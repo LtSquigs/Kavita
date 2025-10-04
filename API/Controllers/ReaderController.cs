@@ -893,7 +893,7 @@ public class ReaderController : BaseApiController
         if (series.Format == MangaFormat.Epub)
         {
             // Get the word counts for all the pages
-            var pageCounts = await _bookService.GetWordCountsPerPage(chapter.Files.First().FilePath); // TODO: Cache
+            var pageCounts = await _bookService.GetWordCountsPerPage(chapter.Files.First().FileMetadata.Path); // TODO: Cache
             if (pageCounts == null) return _readerService.GetTimeEstimate(series.WordCount, 0, true);
 
             // Sum character counts only for pages that have been read
