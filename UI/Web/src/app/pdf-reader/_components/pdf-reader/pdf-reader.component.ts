@@ -6,13 +6,12 @@ import {
   ElementRef,
   HostListener,
   inject,
-  Inject,
   OnDestroy,
   OnInit,
   ViewChild
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {NgxExtendedPdfViewerModule, PageViewModeType, ProgressBarEvent, ScrollModeType} from 'ngx-extended-pdf-viewer';
+import {NgxExtendedPdfViewerModule, pdfDefaultOptions, PageViewModeType, ProgressBarEvent, ScrollModeType} from 'ngx-extended-pdf-viewer';
 import {ToastrService} from 'ngx-toastr';
 import {take} from 'rxjs';
 import {BookService} from 'src/app/book-reader/_services/book.service';
@@ -31,7 +30,7 @@ import {PdfLayoutMode} from "../../../_models/preferences/pdf-layout-mode";
 import {PdfScrollMode} from "../../../_models/preferences/pdf-scroll-mode";
 import {PdfTheme} from "../../../_models/preferences/pdf-theme";
 import {PdfSpreadMode} from "../../../_models/preferences/pdf-spread-mode";
-import {SpreadType} from "ngx-extended-pdf-viewer/lib/options/spread-type";
+import {SpreadType} from "node_modules/ngx-extended-pdf-viewer/lib/options/spread-type";
 import {PdfScrollModeTypePipe} from "../../_pipe/pdf-scroll-mode.pipe";
 import {PdfSpreadTypePipe} from "../../_pipe/pdf-spread-mode.pipe";
 import {ReadingProfileService} from "../../../_services/reading-profile.service";
@@ -61,6 +60,7 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
   public readonly readerService = inject(ReaderService);
   public readonly utilityService = inject(UtilityService);
   public readonly destroyRef = inject(DestroyRef);
+  public readonly document = inject(DOCUMENT);
 
   protected readonly ScrollModeType = ScrollModeType;
   protected readonly Breakpoint = Breakpoint;
@@ -122,10 +122,11 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
   spreadMode: SpreadType = 'off';
   isSearchOpen: boolean = false;
 
-  constructor(@Inject(DOCUMENT) private document: Document) {
+  constructor() {
       this.navService.hideNavBar();
       this.themeService.clearThemes();
       this.navService.hideSideNav();
+      pdfDefaultOptions.disableAutoFetch = true;
   }
 
   @HostListener('window:keyup', ['$event'])
@@ -354,7 +355,7 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
   }
 
   closeReader() {
-    this.readerService.closeReader(this.readingListMode, this.readingListId);
+    this.readerService.closeReader(this.libraryId, this.seriesId, this.chapterId, this.readingListMode, this.readingListId);
   }
 
   updateLoading(state: boolean) {
@@ -387,5 +388,6 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
     if (this.currentPage > this.maxPages) this.currentPage = this.maxPages;
     this.cdRef.markForCheck();
   }
+
 
 }

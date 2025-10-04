@@ -56,6 +56,10 @@ public enum FilterField
     /// Last time User Read
     /// </summary>
     ReadLast = 32,
+    /// <summary>
+    /// Total filesize accross all files for all chapters of the series
+    /// </summary>
+    FileSize = 33,
 }
 
 public enum PersonFilterField
@@ -64,4 +68,23 @@ public enum PersonFilterField
     Name = 2,
     SeriesCount = 3,
     ChapterCount = 4,
+}
+
+public enum AnnotationFilterField
+{
+    Owner = 1,
+    Library = 2,
+    Spoiler = 3,
+    /// <summary>
+    /// When used, only returns your own annotations
+    /// </summary>
+    HighlightSlot = 4,
+    /// <summary>
+    /// This is the text selected in the book
+    /// </summary>
+    Selection = 5,
+    /// <summary>
+    /// This is the text the user wrote
+    /// </summary>
+    Comment = 6,
 }

@@ -2,37 +2,61 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed, effect,
   EventEmitter,
   inject,
-  Input,
-  OnChanges,
-  Output,
-  SimpleChanges
+  model, OnInit,
+  Output
 } from '@angular/core';
 import {BookChapterItem} from '../../_models/book-chapter-item';
 import {TranslocoDirective} from "@jsverse/transloco";
+import {LoadingComponent} from "../../../shared/loading/loading.component";
+import {DOCUMENT} from "@angular/common";
 
 @Component({
   selector: 'app-table-of-contents',
   templateUrl: './table-of-contents.component.html',
   styleUrls: ['./table-of-contents.component.scss'],
-  imports: [TranslocoDirective],
-  changeDetection: ChangeDetectionStrategy.Default,
+  imports: [TranslocoDirective, LoadingComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TableOfContentsComponent implements OnChanges {
+export class TableOfContentsComponent {
 
-  private readonly cdRef = inject(ChangeDetectorRef);
+  private readonly document = inject(DOCUMENT)
 
-  @Input({required: true}) chapterId!: number;
-  @Input({required: true}) pageNum!: number;
-  @Input({required: true}) currentPageAnchor!: string;
-  @Input() chapters:Array<BookChapterItem> = [];
+  chapterId = model.required<number>();
+  pageNum = model.required<number>();
+  currentPageAnchor = model<string>();
+  chapters = model.required<Array<BookChapterItem>>();
+  loading = model.required<boolean>();
+
+  displayedChapters = computed(() => {
+    const chapters = this.chapters();
+    if (chapters.length === 1) {
+      return chapters[0].children;
+    }
+
+    return chapters;
+  });
+  isDisplayingChildrenOnly = computed(() => this.chapters().length === 1);
+
 
   @Output() loadChapter: EventEmitter<{pageNum: number, part: string}> = new EventEmitter();
 
-  ngOnChanges(changes: SimpleChanges) {
-    //console.log('Current Page: ', this.pageNum, this.currentPageAnchor);
-    this.cdRef.markForCheck();
+  constructor() {
+    effect(() => {
+      const selectedChapterIdx = this.displayedChapters()
+        .findIndex(chapter => this.isChapterSelected(chapter));
+
+      if (selectedChapterIdx < 0) return;
+
+      setTimeout(() => {
+        const chapterElement = this.document.getElementById(`${selectedChapterIdx}`);
+        if (chapterElement) {
+          chapterElement.scrollIntoView({behavior: 'smooth'});
+        }
+      }, 10); // Some delay to allow the items to be rendered into the DOM
+    });
   }
 
   cleanIdSelector(id: string) {
@@ -44,32 +68,38 @@ export class TableOfContentsComponent implements OnChanges {
   }
 
   loadChapterPage(pageNum: number, part: string) {
+    this.pageNum.set(pageNum);
+    this.currentPageAnchor.set(part);
+
     this.loadChapter.emit({pageNum, part});
   }
 
   isChapterSelected(chapterGroup: BookChapterItem) {
-    if (chapterGroup.page === this.pageNum) {
+    const currentPageNum = this.pageNum();
+    const chapters = this.displayedChapters();
+
+    if (chapterGroup.page === currentPageNum) {
       return true;
     }
 
-    const idx = this.chapters.indexOf(chapterGroup);
+    const idx = chapters.indexOf(chapterGroup);
     if (idx < 0) {
       return false; // should never happen
     }
 
     const nextIdx = idx + 1;
     // Last chapter
-    if (nextIdx >= this.chapters.length) {
-      return chapterGroup.page < this.pageNum;
+    if (nextIdx >= chapters.length) {
+      return chapterGroup.page < currentPageNum;
     }
 
     // Passed chapter, and next chapter has not been reached
-    const next = this.chapters[nextIdx];
-    return chapterGroup.page < this.pageNum && next.page > this.pageNum;
+    const next = chapters[nextIdx];
+    return chapterGroup.page < currentPageNum && next.page > currentPageNum;
   }
 
   isAnchorSelected(chapter: BookChapterItem) {
-    return this.cleanIdSelector(chapter.part) === this.currentPageAnchor
+    return this.cleanIdSelector(chapter.part) === this.currentPageAnchor();
   }
 
 }

@@ -11,6 +11,8 @@ import {DashboardUpdateEvent} from "../_models/events/dashboard-update-event";
 import {SideNavUpdateEvent} from "../_models/events/sidenav-update-event";
 import {SiteThemeUpdatedEvent} from "../_models/events/site-theme-updated-event";
 import {ExternalMatchRateLimitErrorEvent} from "../_models/events/external-match-rate-limit-error-event";
+import {AnnotationUpdateEvent} from "../_models/events/annotation-update-event";
+import {toSignal} from "@angular/core/rxjs-interop";
 
 export enum EVENTS {
   UpdateAvailable = 'UpdateAvailable',
@@ -118,7 +120,11 @@ export enum EVENTS {
   /**
    * A Rate limit error was hit when matching a series with Kavita+
    */
-  ExternalMatchRateLimitError = 'ExternalMatchRateLimitError'
+  ExternalMatchRateLimitError = 'ExternalMatchRateLimitError',
+  /**
+   * Annotation is updated within the reader
+   */
+  AnnotationUpdate = 'AnnotationUpdate',
 }
 
 export interface Message<T> {
@@ -140,11 +146,13 @@ export class MessageHubService {
   /**
    * Any events that come from the backend
    */
-  public messages$ = this.messagesSource.asObservable();
+  public readonly messages$ = this.messagesSource.asObservable();
+  public readonly messageSignal = toSignal(this.messages$);
   /**
    * Users that are online
    */
   public onlineUsers$ = this.onlineUsersSource.asObservable();
+  public readonly onlineUsersSignal = toSignal(this.onlineUsers$);
 
   constructor() {}
 
@@ -245,6 +253,13 @@ export class MessageHubService {
       this.messagesSource.next({
         event: EVENTS.ExternalMatchRateLimitError,
         payload: resp.body as ExternalMatchRateLimitErrorEvent
+      });
+    });
+
+    this.hubConnection.on(EVENTS.AnnotationUpdate, resp => {
+      this.messagesSource.next({
+        event: EVENTS.AnnotationUpdate,
+        payload: resp.body as AnnotationUpdateEvent
       });
     });
 

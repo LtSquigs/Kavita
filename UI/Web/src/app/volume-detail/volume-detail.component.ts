@@ -5,6 +5,7 @@ import {
   DestroyRef,
   ElementRef,
   inject,
+  model,
   OnInit,
   ViewChild
 } from '@angular/core';
@@ -81,6 +82,9 @@ import {ReviewsComponent} from "../_single-module/reviews/reviews.component";
 import {ExternalRatingComponent} from "../series-detail/_components/external-rating/external-rating.component";
 import {ChapterService} from "../_services/chapter.service";
 import {User} from "../_models/user";
+import {AnnotationService} from "../_services/annotation.service";
+import {Annotation} from "../book-reader/_models/annotations/annotation";
+import {AnnotationsTabComponent} from "../_single-module/annotations-tab/annotations-tab.component";
 
 enum TabID {
 
@@ -88,6 +92,7 @@ enum TabID {
   Related = 'related-tab',
   Reviews = 'reviews-tab', // Only applicable for books
   Details = 'details-tab',
+  Annotations = 'annotations-tab'
 }
 
 interface VolumeCast extends IHasCast {
@@ -152,7 +157,8 @@ interface VolumeCast extends IHasCast {
     BulkOperationsComponent,
     CoverImageComponent,
     ReviewsComponent,
-    ExternalRatingComponent
+    ExternalRatingComponent,
+    AnnotationsTabComponent
   ],
     templateUrl: './volume-detail.component.html',
     styleUrl: './volume-detail.component.scss',
@@ -182,6 +188,7 @@ export class VolumeDetailComponent implements OnInit {
   private readonly messageHub = inject(MessageHubService);
   private readonly location = inject(Location);
   private readonly chapterService = inject(ChapterService);
+  private readonly annotationService = inject(AnnotationService);
 
 
   protected readonly AgeRating = AgeRating;
@@ -209,6 +216,7 @@ export class VolumeDetailComponent implements OnInit {
   plusReviews: Array<UserReview> = [];
   rating: number = 0;
   hasBeenRated: boolean = false;
+  annotations = model<Annotation[]>([]);
 
   mobileSeriesImgBackground: string | undefined;
   downloadInProgress: boolean = false;
@@ -361,6 +369,7 @@ export class VolumeDetailComponent implements OnInit {
     this.libraryId = parseInt(libraryId, 10);
     this.coverImage = this.imageService.getVolumeCoverImage(this.volumeId);
 
+
     this.messageHub.messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
       if (event.event === EVENTS.CoverUpdate) {
         const coverUpdateEvent = event.payload as CoverUpdateEvent;
@@ -407,6 +416,11 @@ export class VolumeDetailComponent implements OnInit {
           this.rating = detail.rating;
           this.hasBeenRated = detail.hasBeenRated;
         });
+
+        this.annotationService.getAllAnnotations(this.volume.chapters[0].id).subscribe(annotations => {
+          this.annotations.set(annotations);
+        });
+
       }
 
       this.themeService.setColorScape(this.volume!.primaryColor, this.volume!.secondaryColor);

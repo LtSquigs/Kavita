@@ -1,4 +1,4 @@
-<ng-container *transloco="let t; read: 'metadata-filter-row'">
+<ng-container *transloco="let t; prefix: 'metadata-filter-row'">
     <form [formGroup]="formGroup">
         <div class="row g-0">
             <div class="col-md-3 me-2 col-10 mb-2">
@@ -52,7 +52,15 @@
                                  [hideSelectedItems]="true"
                                  [multiple]="isMultiSelectDropdownAllowed()"
                                  [infiniteScroll]="true"
-                                 [resettable]="true">
+                                 [resettable]="true"
+                                 [templates]="template"
+                        >
+                          <ng-template #template let-label="label" let-color="color">
+                            {{label}}
+                            @if (color) {
+                              <i [ngStyle]="selectOptionStyle(color)" class="fas fa-circle"></i>
+                            }
+                          </ng-template>
                         </select2>
                       }
                     }
@@ -64,14 +72,16 @@
             <div class="col pt-2 ms-2">
               @let label = uiLabel();
               @if (label !== null) {
-                <span class="text-muted">{{t(label.unit)}}</span>
+                @if (label.unit) {
+                  <span class="text-muted">{{t(label.unit)}}</span>
+                }
                 @if (label.tooltip) {
                   <i class="fa fa-info-circle ms-1" aria-hidden="true" [ngbTooltip]="t(label.tooltip)"></i>
                 }
               }
             </div>
 
-            <ng-content #removeBtn></ng-content>
+            <ng-content #removeBtn />
         </div>
     </form>
 </ng-container>

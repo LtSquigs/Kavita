@@ -1,4 +1,4 @@
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {HttpClient} from '@angular/common/http';
 import {DestroyRef, inject, Injectable} from '@angular/core';
 import {Observable, of, ReplaySubject, shareReplay} from 'rxjs';
 import {filter, map, switchMap, tap} from 'rxjs/operators';
@@ -7,7 +7,6 @@ import {Preferences} from '../_models/preferences/preferences';
 import {User} from '../_models/user';
 import {Router} from '@angular/router';
 import {EVENTS, MessageHubService} from './message-hub.service';
-import {ThemeService} from './theme.service';
 import {InviteUserResponse} from '../_models/auth/invite-user-response';
 import {UserUpdateEvent} from '../_models/events/user-update-event';
 import {AgeRating} from '../_models/metadata/age-rating';
@@ -48,6 +47,9 @@ export class AccountService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly licenseService = inject(LicenseService);
   private readonly localizationService = inject(LocalizationService);
+  private readonly httpClient = inject(HttpClient);
+  private readonly router = inject(Router);
+  private readonly messageHub = inject(MessageHubService);
 
   baseUrl = environment.apiUrl;
   userKey = 'kavita-user';
@@ -72,9 +74,8 @@ export class AccountService {
 
   private isOnline: boolean = true;
 
-  constructor(private httpClient: HttpClient, private router: Router,
-    private messageHub: MessageHubService, private themeService: ThemeService) {
-      messageHub.messages$.pipe(filter(evt => evt.event === EVENTS.UserUpdate),
+  constructor() {
+      this.messageHub.messages$.pipe(filter(evt => evt.event === EVENTS.UserUpdate),
         map(evt => evt.payload as UserUpdateEvent),
         filter(userUpdateEvent => userUpdateEvent.userName === this.currentUser?.username),
         switchMap(() => this.refreshAccount()))
@@ -223,14 +224,6 @@ export class AccountService {
     if (user) {
       localStorage.setItem(this.userKey, JSON.stringify(user));
       localStorage.setItem(AccountService.lastLoginKey, user.username);
-
-      if (user.preferences && user.preferences.theme) {
-        this.themeService.setTheme(user.preferences.theme.name);
-      } else {
-        this.themeService.setTheme(this.themeService.defaultTheme);
-      }
-    } else {
-      this.themeService.setTheme(this.themeService.defaultTheme);
     }
 
     this.currentUser = user;

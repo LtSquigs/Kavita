@@ -32,6 +32,7 @@ public static partial class Parser
     private const string BookFileExtensions = EpubFileExtension + "|" + PdfFileExtension;
     private const string XmlRegexExtensions = @"\.xml";
     public const string MacOsMetadataFileStartsWith = @"._";
+    public const string FontFileExtensions = @"\.[woff2|ttf|otf|woff]";
 
     public const string SupportedExtensions =
         ArchiveFileExtensions + "|" + ImageFileExtensions + "|" + BookFileExtensions;
@@ -184,6 +185,36 @@ public static partial class Parser
     /// Recognizes the Special token only
     /// </summary>
     private static readonly Regex SpecialTokenRegex = new(@"SP\d+",
+        MatchOptions, RegexTimeout);
+
+    /// <summary>
+    /// An additional check to avoid situations like "One Piece - Vol 4 ch 2 - vol 6 omakes"
+    /// </summary>
+    private static readonly Regex DuplicateVolumeRegex = new Regex(
+        @"(?i)(vol\.?|volume|v)(\s|_)*\d+.*?(vol\.?|volume|v)(\s|_)*\d+",
+        MatchOptions, RegexTimeout);
+
+    private static readonly Regex DuplicateChapterRegex = new Regex(
+        @"(?i)(ch\.?|chapter|c)(\s|_)*\d+.*?(ch\.?|chapter|c)(\s|_)*\d+",
+        MatchOptions, RegexTimeout);
+
+    // Regex to detect range patterns that should NOT be treated as duplicates (History's Strongest c1-c4)
+    private static readonly Regex VolumeRangeRegex = new Regex(
+        @"(vol\.?|v)(\s|_)?\d+(\.\d+)?-(vol\.?|v)(\s|_)?\d+(\.\d+)?",
+        MatchOptions, RegexTimeout);
+
+    private static readonly Regex ChapterRangeRegex = new Regex(
+        @"(ch\.?|c)(\s|_)?\d+(\.\d+)?-(ch\.?|c)(\s|_)?\d+(\.\d+)?",
+        MatchOptions, RegexTimeout);
+
+    // Regex to find volume number after a volume marker
+    private static readonly Regex VolumeNumberRegex = new Regex(
+        @"(vol\.?|volume|v)(\s|_)*(?<Volume>\d+(\.\d+)?(-\d+(\.\d+)?)?)",
+        MatchOptions, RegexTimeout);
+
+    // Regex to find chapter number after a chapter marker
+    private static readonly Regex ChapterNumberRegex = new Regex(
+        @"(ch\.?|chapter|c)(\s|_)*(?<Chapter>\d+(\.\d+)?(-\d+(\.\d+)?)?)",
         MatchOptions, RegexTimeout);
 
 
@@ -477,7 +508,7 @@ public static partial class Parser
             MatchOptions, RegexTimeout),
         // Historys Strongest Disciple Kenichi_v11_c90-98.zip or Dance in the Vampire Bund v16-17
         new Regex(
-            @"(?<Series>.*)(\b|_)(?!\[)v(?<Volume>" + NumberRange + @")(?!\])",
+            @"(?<Series>.*)(\b|_)(?!\[)v(?<Volume>" + NumberRange + @")(?!\])(\b|_)",
             MatchOptions, RegexTimeout),
         // Kodomo no Jikan vol. 10, [dmntsf.net] One Piece - Digital Colored Comics Vol. 20.5-21.5 Ch. 177
         new Regex(
@@ -491,9 +522,9 @@ public static partial class Parser
         new Regex(
             @"((volume|tome)\s)(?<Volume>\d+(\.\d)?)",
             MatchOptions, RegexTimeout),
-        // Tower Of God S01 014 (CBT) (digital).cbz, Tower Of God T01 014 (CBT) (digital).cbz,
+            // Tower Of God S01 014 (CBT) (digital).cbz, Tower Of God T01 014 (CBT) (digital).cbz,
         new Regex(
-            @"(?<Series>.*)(\b|_)((S|T)(?<Volume>\d+))",
+            @"(?<Series>.*)(\b|_)((S|T)(?<Volume>\d+)(\b|_))",
             MatchOptions, RegexTimeout),
         // vol_001-1.cbz for MangaPy default naming convention
         new Regex(
@@ -514,7 +545,7 @@ public static partial class Parser
             MatchOptions, RegexTimeout),
         // Korean Season: 시즌n -> Season n,
         new Regex(
-            @"시즌(?<Volume>\d+\-?\d+)",
+            @"시즌(?<Volume>\d+(\-\d+)?)",
             MatchOptions, RegexTimeout),
         // Korean Season: 시즌n -> Season n, n시즌 -> season n
         new Regex(
@@ -838,6 +869,8 @@ public static partial class Parser
 
     public static string ParseMangaVolume(string filename)
     {
+        filename = RemoveDuplicateVolumeIfExists(filename);
+
         foreach (var regex in MangaVolumeRegex)
         {
             var matches = regex.Matches(filename);
@@ -977,6 +1010,8 @@ public static partial class Parser
     }
     private static string ParseMangaChapter(string filename)
     {
+        filename = RemoveDuplicateChapterIfExists(filename);
+
         foreach (var regex in MangaChapterRegex)
         {
             var matches = regex.Matches(filename);
@@ -1320,6 +1355,83 @@ public static partial class Parser
         }
         return filename;
     }
+
+    /// <summary>
+    /// Checks for a duplicate volume marker and removes it
+    /// </summary>
+    /// <param name="filename"></param>
+    /// <returns></returns>
+    private static string RemoveDuplicateVolumeIfExists(string filename)
+    {
+        // First check if this contains a volume range pattern - if so, don't process as duplicate (v1-v2, edge case)
+        if (VolumeRangeRegex.IsMatch(filename))
+            return filename;
+
+        var duplicateMatch = DuplicateVolumeRegex.Match(filename);
+        if (!duplicateMatch.Success) return filename;
+
+        // Find the start position of the first volume marker
+        var firstVolumeStart = duplicateMatch.Groups[1].Index;
+
+        // Find the volume number after the first marker
+        var volumeNumberMatch = VolumeNumberRegex.Match(filename, firstVolumeStart);
+        if (!volumeNumberMatch.Success) return filename;
+
+        var volumeNumberEnd = volumeNumberMatch.Index + volumeNumberMatch.Length;
+
+        // Find the second volume marker after the first volume number
+        var secondVolumeMatch = VolumeNumberRegex.Match(filename, volumeNumberEnd);
+        if (secondVolumeMatch.Success)
+        {
+            // Truncate the filename at the second volume marker
+            return filename.Substring(0, secondVolumeMatch.Index).TrimEnd(' ', '-', '_');
+        }
+
+        return filename;
+    }
+
+    /**
+     * Replaced non-alphanumerical chars with a space
+     */
+    public static string PrettifyFileName(string name)
+    {
+        return Regex.Replace(name, "[^a-zA-Z0-9]", " ");
+    }
+
+    /// <summary>
+    /// Removes duplicate chapter markers from filename, keeping only the first occurrence
+    /// </summary>
+    /// <param name="filename">Original filename</param>
+    /// <returns>Processed filename with duplicate chapter markers removed</returns>
+    public static string RemoveDuplicateChapterIfExists(string filename)
+    {
+        // First check if this contains a chapter range pattern - if so, don't process as duplicate (c1-c2, edge case)
+        if (ChapterRangeRegex.IsMatch(filename))
+            return filename;
+
+        var duplicateMatch = DuplicateChapterRegex.Match(filename);
+        if (!duplicateMatch.Success) return filename;
+
+        // Find the start position of the first chapter marker
+        var firstChapterStart = duplicateMatch.Groups[1].Index;
+
+        // Find the chapter number after the first marker
+        var chapterNumberMatch = ChapterNumberRegex.Match(filename, firstChapterStart);
+        if (!chapterNumberMatch.Success) return filename;
+
+        var chapterNumberEnd = chapterNumberMatch.Index + chapterNumberMatch.Length;
+
+        // Find the second chapter marker after the first chapter number
+        var secondChapterMatch = ChapterNumberRegex.Match(filename, chapterNumberEnd);
+        if (secondChapterMatch.Success)
+        {
+            // Truncate the filename at the second chapter marker
+            return filename.Substring(0, secondChapterMatch.Index).TrimEnd(' ', '-', '_');
+        }
+
+        return filename;
+    }
+
 
     [GeneratedRegex(SupportedExtensions)]
     private static partial Regex SupportedExtensionsRegex();

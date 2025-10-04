@@ -298,6 +298,7 @@ public class Startup
 
                     // v0.8.8
                     await ManualMigrateEnableMetadataMatchingDefault.Migrate(dataContext, unitOfWork, logger);
+                    await ManualMigrateBookReadingProgress.Migrate(dataContext, unitOfWork, logger);
 
                     #endregion
 
@@ -399,11 +400,13 @@ public class Startup
         app.UseStaticFiles(new StaticFileOptions
         {
             // bcmap files needed for PDF reader localizations (https://github.com/Kareadita/Kavita/issues/2970)
+            // ftl files are needed for PDF zoom options (https://github.com/Kareadita/Kavita/issues/3995)
             ContentTypeProvider = new FileExtensionContentTypeProvider
             {
                 Mappings =
                 {
-                    [".bcmap"] = "application/octet-stream"
+                    [".bcmap"] = "application/octet-stream",
+                    [".ftl"] = "text/plain"
                 }
             },
             HttpsCompression = HttpsCompressionMode.Compress,
@@ -421,6 +424,11 @@ public class Startup
             opts.IncludeQueryInRequestPath = true;
         });
 
+        if (Configuration.AllowIFraming)
+        {
+            logger.LogCritical("appsetting.json has allow iframing on! This may allow for clickjacking on the server. User beware");
+        }
+
         app.Use(async (context, next) =>
         {
             context.Response.Headers[HeaderNames.Vary] =
@@ -433,11 +441,7 @@ public class Startup
                 context.Response.Headers.XFrameOptions = "SAMEORIGIN";
 
                 // Setup CSP to ensure we load assets only from these origins
-                context.Response.Headers.Add("Content-Security-Policy", "frame-ancestors 'none';");
-            }
-            else
-            {
-                logger.LogCritical("appsetting.json has allow iframing on! This may allow for clickjacking on the server. User beware");
+                context.Response.Headers.ContentSecurityPolicy = "frame-ancestors 'none';";
             }
 
             await next();

@@ -1,8 +1,9 @@
-<ng-container *transloco="let t; read: 'manage-tasks-settings'">
+<ng-container *transloco="let t; prefix: 'manage-tasks-settings'">
   @if (serverSettings) {
     <form [formGroup]="settingsForm">
 
       <h4>{{t('title')}}</h4>
+
       <ng-container>
         <div class="row g-0 mt-4 mb-4">
           @if (settingsForm.get('taskScan'); as formControl) {

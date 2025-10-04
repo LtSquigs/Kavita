@@ -1,26 +1,29 @@
-/// <reference types="@angular/localize" />
 import {ApplicationConfig, importProvidersFrom, inject, provideAppInitializer,} from '@angular/core';
 import {AppComponent} from './app/app.component';
 import {NgCircleProgressModule} from 'ng-circle-progress';
-import {ToastrModule, ToastrService} from 'ngx-toastr';
+import {ToastrModule} from 'ngx-toastr';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {AppRoutingModule} from './app/app-routing.module';
 import {bootstrapApplication, BrowserModule, Title} from '@angular/platform-browser';
 import {JwtInterceptor} from './app/_interceptors/jwt.interceptor';
 import {ErrorInterceptor} from './app/_interceptors/error.interceptor';
-import {HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
-import {provideTransloco, translate, TranslocoConfig, TranslocoService} from "@jsverse/transloco";
+import {HTTP_INTERCEPTORS, provideHttpClient, withFetch, withInterceptorsFromDi} from '@angular/common/http';
+import {provideTransloco, TranslocoConfig, TranslocoService} from "@jsverse/transloco";
 import {environment} from "./environments/environment";
 import {AccountService} from "./app/_services/account.service";
-import {catchError, filter, firstValueFrom, Observable, of, switchMap, take, tap, timeout} from "rxjs";
+import {catchError, firstValueFrom, of, switchMap, tap} from "rxjs";
 import {provideTranslocoLocale} from "@jsverse/transloco-locale";
 import {LazyLoadImageModule} from "ng-lazyload-image";
 import {getSaver, SAVER} from "./app/_providers/saver.provider";
 import {APP_BASE_HREF, PlatformLocation} from "@angular/common";
 import {provideTranslocoPersistTranslations} from '@jsverse/transloco-persist-translations';
 import {HttpLoader} from "./httpLoader";
-import {SettingsService} from "./app/admin/settings.service";
+import {register as registerSwiperElements} from 'swiper/element/bundle';
+import {ColorPickerModule} from "@iplab/ngx-color-picker";
+
 const disableAnimations = !('animate' in document.documentElement);
+
+registerSwiperElements();
 
 function transformLanguageCodes(arr: Array<string>) {
     const transformedArray: Array<string> = [];
@@ -129,6 +132,7 @@ bootstrapApplication(AppComponent, {
             autoDismiss: true
           }),
           NgCircleProgressModule.forRoot(),
+          ColorPickerModule,
         ),
         provideTransloco(translocoOptions),
         provideTranslocoLocale({
@@ -148,7 +152,7 @@ bootstrapApplication(AppComponent, {
           useFactory: getBaseHref,
           deps: [PlatformLocation]
         },
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withInterceptorsFromDi(), withFetch()),
         provideAppInitializer(() => bootstrapUser()),
     ]
 } as ApplicationConfig)

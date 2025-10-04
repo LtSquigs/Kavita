@@ -41,6 +41,7 @@ public interface ICacheService
     IEnumerable<FileDimensionDto> GetCachedFileDimensions(string cachePath);
     string GetCachedBookmarkPagePath(int seriesId, int page);
     string GetCachedFile(Chapter chapter);
+    string GetCachedFile(int chapterId, string firstFilePath);
     public void ExtractChapterFiles(string extractPath, IReadOnlyList<MangaFile> files, bool extractPdfImages = false);
     Task<int> CacheBookmarkForSeries(int userId, int seriesId);
     void CleanupBookmarkCache(int seriesId);
@@ -151,6 +152,17 @@ public class CacheService : ICacheService
         if (!(_directoryService.FileSystem.FileInfo.New(path).Exists))
         {
             path = chapter.Files.First().FileMetadata.Path;
+        }
+        return path;
+    }
+
+    public string GetCachedFile(int chapterId, string firstFilePath)
+    {
+        var extractPath = GetCachePath(chapterId);
+        var path = Path.Join(extractPath, _directoryService.FileSystem.Path.GetFileName(firstFilePath));
+        if (!(_directoryService.FileSystem.FileInfo.New(path).Exists))
+        {
+            path = firstFilePath;
         }
         return path;
     }
@@ -342,9 +354,7 @@ public class CacheService : ICacheService
         // Calculate what chapter the page belongs to
         var path = GetCachePath(chapterId);
         // NOTE: We can optimize this by extracting and renaming, so we don't need to scan for the files and can do a direct access
-        var files = _directoryService.GetFilesWithExtension(path, Tasks.Scanner.Parser.Parser.ImageFileExtensions)
-            //.OrderByNatural(Path.GetFileNameWithoutExtension) // This is already done in GetPageFromFiles
-            .ToArray();
+        var files = _directoryService.GetFilesWithExtension(path, Tasks.Scanner.Parser.Parser.ImageFileExtensions);
 
         return GetPageFromFiles(files, page);
     }

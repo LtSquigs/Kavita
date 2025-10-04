@@ -29,15 +29,16 @@
   }
 }
 
-::ng-deep .swiper-slide {
-    width: auto !important;
+::ng-deep swiper-slide {
+  width: auto !important;
+  margin: 0 .25rem;
 }
 
-::ng-deep .swiper-wrapper {
+::ng-deep swiper-container {
     margin-bottom: 10px;
 }
 
-::ng-deep .last-carousel {
+::ng-deep swiper-slide:last-child {
     margin-bottom: 0;
 }
 
@@ -46,7 +47,7 @@
 }
 
 .title-icon {
-    color: var(--body-text-color);
-    font-size: 0.9rem;
-    cursor: pointer;
+  color: var(--body-text-color);
+  font-size: 0.9rem;
+  cursor: pointer;
 }

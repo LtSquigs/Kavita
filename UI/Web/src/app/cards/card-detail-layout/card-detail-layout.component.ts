@@ -1,5 +1,6 @@
-import {DOCUMENT, NgClass, NgForOf, NgTemplateOutlet} from '@angular/common';
+import {DOCUMENT, NgClass, NgTemplateOutlet} from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -10,7 +11,6 @@ import {
   EventEmitter,
   HostListener,
   inject,
-  Inject,
   input,
   Input,
   OnChanges,
@@ -18,7 +18,6 @@ import {
   Output,
   signal,
   Signal,
-  SimpleChange,
   SimpleChanges,
   TemplateRef,
   TrackByFunction,
@@ -62,14 +61,15 @@ const ANIMATION_TIME_MS = 0;
  */
 @Component({
   selector: 'app-card-detail-layout',
-  imports: [LoadingComponent, VirtualScrollerModule, CardActionablesComponent, MetadataFilterComponent,
-    TranslocoDirective, NgTemplateOutlet, NgClass, NgForOf],
+  imports: [LoadingComponent, VirtualScrollerModule, CardActionablesComponent, MetadataFilterComponent, TranslocoDirective, NgTemplateOutlet, NgClass],
   templateUrl: './card-detail-layout.component.html',
   styleUrls: ['./card-detail-layout.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true
 })
-export class CardDetailLayoutComponent<TFilter extends number, TSort extends number> implements OnInit, OnChanges {
+export class CardDetailLayoutComponent<TFilter extends number, TSort extends number> implements OnInit, OnChanges, AfterViewInit {
+  private document = inject<Document>(DOCUMENT);
+
 
   protected readonly utilityService = inject(UtilityService);
   private readonly cdRef = inject(ChangeDetectorRef);
@@ -122,6 +122,14 @@ export class CardDetailLayoutComponent<TFilter extends number, TSort extends num
   @ContentChild('cardItem') itemTemplate!: TemplateRef<any>;
   @ContentChild('noData') noDataTemplate: TemplateRef<any> | null = null;
   @ViewChild('.jump-bar') jumpBar!: ElementRef<HTMLDivElement>;
+  /**
+   * Template that is rendered next to the save button
+   */
+  @ContentChild('extraButtons') extraButtonsRef!: TemplateRef<any>;
+  /**
+   * Template that is rendered above the grid, but always below the filter
+   */
+  @ContentChild('topBar') topBar!: TemplateRef<any>;
 
   @ViewChild(VirtualScrollerComponent) private virtualScroller!: VirtualScrollerComponent;
 
@@ -129,6 +137,7 @@ export class CardDetailLayoutComponent<TFilter extends number, TSort extends num
 
   updateApplied: number = 0;
   bufferAmount: number = 1;
+  resumed: boolean = false;
 
 
   filterSignal: WritableSignal<FilterV2<number, number> | undefined> = signal(undefined);
@@ -139,9 +148,6 @@ export class CardDetailLayoutComponent<TFilter extends number, TSort extends num
     const filter = this.filterSignal();
     return filter?.sortOptions?.sortField != SortField.SortName || !filter?.sortOptions.isAscending;
   });
-
-
-  constructor(@Inject(DOCUMENT) private document: Document) {}
 
 
   @HostListener('window:resize', ['$event'])
@@ -174,9 +180,35 @@ export class CardDetailLayoutComponent<TFilter extends number, TSort extends num
       filter(event => event instanceof NavigationStart),
       takeUntilDestroyed(this.destroyRef),
       map(evt => evt as NavigationStart),
-      tap(_ => this.tryToSaveJumpKey()),
+      tap(_ => this.tryToSaveJumpKey({})),
     ).subscribe();
 
+  }
+
+  ngAfterViewInit(): void {
+    if (this.resumed) return;
+
+    this.jumpBarKeysToRender = [...this.jumpBarKeys];
+    this.resizeJumpBar();
+
+    if (this.jumpBarKeysToRender.length > 0) {
+      this.resumed = true;
+
+      // Check if there is an exact scroll position to restore
+      const scrollOffset = this.jumpbarService.getResumePosition(this.router.url);
+      if (scrollOffset > 0) {
+        setTimeout(() => {
+          this.virtualScroller.scrollToPosition(scrollOffset, ANIMATION_TIME_MS);
+        }, 100)
+      } else {
+        const resumeKey = this.jumpbarService.getResumeKey(this.router.url);
+        if (resumeKey === '') return;
+        const keys = this.jumpBarKeysToRender.filter(k => k.key === resumeKey);
+        if (keys.length < 1) return;
+
+        setTimeout(() => this.scrollTo(keys[0]), 100);
+      }
+    }
   }
 
 
@@ -184,16 +216,22 @@ export class CardDetailLayoutComponent<TFilter extends number, TSort extends num
     this.jumpBarKeysToRender = [...this.jumpBarKeys];
     this.resizeJumpBar();
 
-    const startIndex = this.jumpbarService.getResumePosition(this.router.url);
-    if (startIndex > 0) {
-      setTimeout(() => this.virtualScroller.scrollToIndex(startIndex, true, 0, ANIMATION_TIME_MS), 10);
-      return;
-    }
+    if (this.jumpBarKeysToRender.length > 0) {
+      this.resumed = true;
 
-    if (changes.hasOwnProperty('isLoading')) {
-      const loadingChange = changes['isLoading'] as SimpleChange;
-      if (loadingChange.previousValue === true && loadingChange.currentValue === false) {
-        setTimeout(() => this.virtualScroller.scrollToIndex(0, true, 0, ANIMATION_TIME_MS), 10);
+      // Check if there is an exact scroll position to restore
+      const scrollOffset = this.jumpbarService.getResumePosition(this.router.url);
+      if (scrollOffset > 0) {
+        setTimeout(() => {
+          this.virtualScroller.scrollToPosition(scrollOffset, ANIMATION_TIME_MS);
+        }, 100)
+      } else {
+        const resumeKey = this.jumpbarService.getResumeKey(this.router.url);
+        if (resumeKey === '') return;
+        const keys = this.jumpBarKeysToRender.filter(k => k.key === resumeKey);
+        if (keys.length < 1) return;
+
+        setTimeout(() => this.scrollTo(keys[0]), 100);
       }
     }
   }
@@ -225,8 +263,17 @@ export class CardDetailLayoutComponent<TFilter extends number, TSort extends num
     setTimeout(() => this.jumpbarService.saveResumePosition(this.router.url, this.virtualScroller.viewPortInfo.startIndex), ANIMATION_TIME_MS + 100);
   }
 
-  tryToSaveJumpKey() {
-    this.jumpbarService.saveResumePosition(this.router.url, this.virtualScroller.viewPortInfo.startIndex);
+  tryToSaveJumpKey(item: any) {
+    let name = '';
+    if (item.hasOwnProperty('seriesName')) {
+      name = item.seriesName;
+    } else if (item.hasOwnProperty('name')) {
+      name = item.name;
+    } else if (item.hasOwnProperty('title')) {
+      name = item.title;
+    }
+    this.jumpbarService.saveResumeKey(this.router.url, name.charAt(0));
+    this.jumpbarService.saveResumePosition(this.router.url, this.virtualScroller.viewPortInfo.scrollStartPosition);
   }
 
   protected readonly Breakpoint = Breakpoint;

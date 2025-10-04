@@ -1,8 +1,18 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  OnInit,
+  signal
+} from '@angular/core';
 import {ReadingProfileService} from "../../_services/reading-profile.service";
 import {
   bookLayoutModes,
-  bookWritingStyles, breakPoints,
+  bookWritingStyles,
+  breakPoints,
   layoutModes,
   pageSplitOptions,
   pdfScrollModes,
@@ -19,10 +29,9 @@ import {NgStyle, NgTemplateOutlet, TitleCasePipe} from "@angular/common";
 import {VirtualScrollerModule} from "@iharbeck/ngx-virtual-scroller";
 import {User} from "../../_models/user";
 import {AccountService} from "../../_services/account.service";
-import {debounceTime, distinctUntilChanged, map, take, tap} from "rxjs/operators";
+import {debounceTime, distinctUntilChanged, tap} from "rxjs/operators";
 import {SentenceCasePipe} from "../../_pipes/sentence-case.pipe";
 import {FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
-import {BookService} from "../../book-reader/_services/book.service";
 import {BookPageLayoutMode} from "../../_models/readers/book-page-layout-mode";
 import {PdfTheme} from "../../_models/preferences/pdf-theme";
 import {PdfScrollMode} from "../../_models/preferences/pdf-scroll-mode";
@@ -40,15 +49,21 @@ import {ScalingOptionPipe} from "../../_pipes/scaling-option.pipe";
 import {SettingItemComponent} from "../../settings/_components/setting-item/setting-item.component";
 import {SettingSwitchComponent} from "../../settings/_components/setting-switch/setting-switch.component";
 import {WritingStylePipe} from "../../_pipes/writing-style.pipe";
-import {ColorPickerDirective} from "ngx-color-picker";
 import {NgbNav, NgbNavContent, NgbNavItem, NgbNavLinkBase, NgbNavOutlet, NgbTooltip} from "@ng-bootstrap/ng-bootstrap";
-import {catchError, filter, of, switchMap} from "rxjs";
+import {catchError, filter, forkJoin, of, switchMap} from "rxjs";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {LoadingComponent} from "../../shared/loading/loading.component";
 import {ToastrService} from "ngx-toastr";
 import {ConfirmService} from "../../shared/confirm.service";
 import {WikiLink} from "../../_models/wiki";
 import {BreakpointPipe} from "../../_pipes/breakpoint.pipe";
+import {
+  SettingColorPickerComponent
+} from "../../settings/_components/setting-colour-picker/setting-color-picker.component";
+import {ColorscapeService} from "../../_services/colorscape.service";
+import {Color} from "@iplab/ngx-color-picker";
+import {FontService} from "../../_services/font.service";
+import {EpubFont} from "../../_models/preferences/epub-font";
 
 enum TabId {
   ImageReader = "image-reader",
@@ -79,7 +94,6 @@ enum TabId {
     TitleCasePipe,
     WritingStylePipe,
     NgStyle,
-    ColorPickerDirective,
     NgbNav,
     NgbNavItem,
     NgbNavLinkBase,
@@ -88,6 +102,7 @@ enum TabId {
     LoadingComponent,
     NgbTooltip,
     BreakpointPipe,
+    SettingColorPickerComponent
   ],
   templateUrl: './manage-reading-profiles.component.html',
   styleUrl: './manage-reading-profiles.component.scss',
@@ -96,19 +111,20 @@ enum TabId {
 export class ManageReadingProfilesComponent implements OnInit {
 
   private readonly readingProfileService = inject(ReadingProfileService);
+  protected readonly colorscapeService = inject(ColorscapeService);
   private readonly cdRef = inject(ChangeDetectorRef);
   private readonly accountService = inject(AccountService);
-  private readonly bookService = inject(BookService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly toastr = inject(ToastrService);
   private readonly confirmService = inject(ConfirmService);
   private readonly transLoco = inject(TranslocoService);
+  private readonly fontService = inject(FontService);
 
   virtualScrollerBreakPoint = 20;
 
   savingProfile = signal(false);
+  fonts = signal<EpubFont[]>([]);
 
-  fontFamilies: Array<string> = [];
   readingProfiles: ReadingProfile[] = [];
   user!: User;
   activeTabId = TabId.ImageReader;
@@ -123,18 +139,21 @@ export class ManageReadingProfilesComponent implements OnInit {
   });
 
   constructor() {
-    this.fontFamilies = this.bookService.getFontFamilies().map(f => f.title);
-    this.cdRef.markForCheck();
-  }
-
-  ngOnInit(): void {
-    this.accountService.currentUser$.pipe(take(1)).subscribe(user => {
+    effect(() => {
+      const user = this.accountService.currentUserSignal();
       if (user) {
         this.user = user;
       }
     });
+  }
 
-    this.readingProfileService.getAllProfiles().subscribe(profiles => {
+  ngOnInit(): void {
+    forkJoin([
+      this.fontService.getFonts(),
+      this.readingProfileService.getAllProfiles()
+    ]).subscribe(([fonts, profiles]) => {
+      this.fonts.set(fonts);
+
       this.readingProfiles = profiles;
       this.loading = false;
       this.setupForm();
@@ -144,7 +163,6 @@ export class ManageReadingProfilesComponent implements OnInit {
 
       this.cdRef.markForCheck();
     });
-
   }
 
   async delete(readingProfile: ReadingProfile) {
@@ -170,7 +188,7 @@ export class ManageReadingProfilesComponent implements OnInit {
     return (val <= 0) ? '' : val + '%'
   }
 
-  setupForm() {
+  async setupForm() {
     if (this.selectedProfile == null) {
       return;
     }
@@ -178,8 +196,8 @@ export class ManageReadingProfilesComponent implements OnInit {
 
     this.readingProfileForm = new FormGroup({})
 
-    if (this.fontFamilies.indexOf(this.selectedProfile.bookReaderFontFamily) < 0) {
-      this.selectedProfile.bookReaderFontFamily = 'default';
+    if (this.fonts().find(font => font.name === this.selectedProfile?.bookReaderFontFamily) === undefined) {
+      this.selectedProfile.bookReaderFontFamily = FontService.DefaultEpubFont;
     }
 
     this.readingProfileForm.addControl('name', new FormControl(this.selectedProfile.name, Validators.required));
@@ -287,13 +305,13 @@ export class ManageReadingProfilesComponent implements OnInit {
     return data;
   }
 
-  handleBackgroundColorChange(color: string) {
+  handleBackgroundColorChange(color: Color) {
     if (!this.readingProfileForm || !this.selectedProfile) return;
 
     this.readingProfileForm.markAsDirty();
     this.readingProfileForm.markAsTouched();
-    this.selectedProfile.backgroundColor = color;
-    this.readingProfileForm.get('backgroundColor')?.setValue(color);
+    this.selectedProfile.backgroundColor = color.toHexString();
+    this.readingProfileForm.get('backgroundColor')?.setValue(color.toHexString());
     this.cdRef.markForCheck();
   }
 

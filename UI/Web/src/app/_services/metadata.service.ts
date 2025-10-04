@@ -1,7 +1,7 @@
 import {HttpClient, HttpParams} from '@angular/common/http';
-import {inject, Injectable} from '@angular/core';
+import {computed, inject, Injectable} from '@angular/core';
 import {tap} from 'rxjs/operators';
-import {map, of} from 'rxjs';
+import {map, Observable, of} from 'rxjs';
 import {environment} from 'src/environments/environment';
 import {Genre} from '../_models/metadata/genre';
 import {AgeRatingDto} from '../_models/metadata/age-rating-dto';
@@ -22,7 +22,7 @@ import {TextResonse} from "../_types/text-response";
 import {QueryContext} from "../_models/metadata/v2/query-context";
 import {AgeRatingPipe} from "../_pipes/age-rating.pipe";
 import {MangaFormatPipe} from "../_pipes/manga-format.pipe";
-import {TranslocoService} from "@jsverse/transloco";
+import {translate, TranslocoService} from "@jsverse/transloco";
 import {LibraryService} from './library.service';
 import {CollectionTagService} from "./collection-tag.service";
 import {PaginatedResult} from "../_models/pagination";
@@ -33,24 +33,34 @@ import {ValidFilterEntity} from "../metadata-filter/filter-settings";
 import {PersonFilterField} from "../_models/metadata/v2/person-filter-field";
 import {PersonRolePipe} from "../_pipes/person-role.pipe";
 import {PersonSortField} from "../_models/metadata/v2/person-sort-field";
+import {AnnotationsFilterField} from "../_models/metadata/v2/annotations-filter";
+import {AccountService} from "./account.service";
+import {MemberService} from "./member.service";
+import {RgbaColor} from "../book-reader/_models/annotations/highlight-slot";
 
 @Injectable({
   providedIn: 'root'
 })
 export class MetadataService {
+  private httpClient = inject(HttpClient);
+
 
   private readonly translocoService = inject(TranslocoService);
   private readonly libraryService = inject(LibraryService);
   private readonly collectionTagService = inject(CollectionTagService);
   private readonly utilityService = inject(UtilityService);
+  private readonly accountService = inject(AccountService);
+  private readonly memberService = inject(MemberService)
+
+  private readonly highlightSlots = computed(() => {
+    return this.accountService.currentUserSignal()?.preferences?.bookReaderHighlightSlots ?? [];
+  });
 
   baseUrl = environment.apiUrl;
   private validLanguages: Array<Language> = [];
   private ageRatingPipe = new AgeRatingPipe();
-  private mangaFormatPipe = new MangaFormatPipe(this.translocoService);
+  private mangaFormatPipe = new MangaFormatPipe();
   private personRolePipe = new PersonRolePipe();
-
-  constructor(private httpClient: HttpClient) { }
 
   getSeriesMetadataFromPlus(seriesId: number, libraryType: LibraryType) {
     return this.httpClient.get<SeriesDetailPlus | null>(this.baseUrl + 'metadata/series-detail-plus?seriesId=' + seriesId + '&libraryType=' + libraryType);
@@ -167,6 +177,12 @@ export class MetadataService {
 
   createDefaultFilterStatement(entityType: ValidFilterEntity) {
     switch (entityType) {
+      case "annotation":
+        const userId = this.accountService.currentUserSignal()?.id;
+        if (userId) {
+          return this.createFilterStatement(AnnotationsFilterField.Owner, FilterComparison.Equal, `${this.accountService.currentUserSignal()!.id}`);
+        }
+        return this.createFilterStatement(AnnotationsFilterField.Owner);
       case 'series':
         return this.createFilterStatement(FilterField.SeriesName);
       case 'person':
@@ -240,13 +256,33 @@ export class MetadataService {
    * @param entityType
    */
   getOptionsForFilterField<T extends number>(filterField: T, entityType: ValidFilterEntity) {
-
     switch (entityType) {
+      case "annotation":
+        return this.getAnnotationOptionsForFilterField(filterField as AnnotationsFilterField);
       case 'series':
         return this.getSeriesOptionsForFilterField(filterField as FilterField);
       case 'person':
         return this.getPersonOptionsForFilterField(filterField as PersonFilterField);
     }
+  }
+
+  private getAnnotationOptionsForFilterField(field: AnnotationsFilterField): Observable<{value: number, label: string, color?: RgbaColor}[]> {
+    switch (field) {
+      case AnnotationsFilterField.Owner:
+        return this.memberService.getMembers(false).pipe(map(members => members.map(member => {
+          return {value: member.id, label: member.username};
+        })));
+      case AnnotationsFilterField.Library:
+        return this.libraryService.getLibraries().pipe(map(libs => libs.map(lib => {
+          return {value: lib.id, label: lib.name};
+        })));
+      case AnnotationsFilterField.HighlightSlots:
+        return of(this.highlightSlots().map((slot, idx) => {
+          return {value: slot.slotNumber, label: translate('highlight-bar.slot-label', {slot: slot.slotNumber + 1}), color: slot.color}; // Slots start at 0
+        }));
+    }
+
+    return of([]);
   }
 
   private getPersonOptionsForFilterField(field: PersonFilterField) {

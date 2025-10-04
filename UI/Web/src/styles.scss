@@ -1,4 +1,4 @@
-@use '../node_modules/swiper/swiper' as swiper;
+@use 'swiper/swiper-bundle.min' as swiper;
 
 @use './theme/variables' as theme;
 
@@ -7,6 +7,8 @@
 
 // Import colors for overrides of bootstrap theme
 @use './theme/toastr' as toastr;
+
+@use '../node_modules/quill/dist/quill.snow.css' as quill;
 
 
 // Bootstrap must be after _colors since we define the colors there
@@ -55,11 +57,13 @@
 @use './theme/utilities/global';
 @use "./theme/utilities/spinners";
 
+@use './theme/directives/resize';
+
 
 // Global Styles
 @font-face {
   font-family: "EBGarmond";
-  src: url("assets/fonts/EBGarmond/EBGaramond-VariableFont_wght.woff2") format("woff2");
+  src: url("assets/fonts/EB Garamond/EBGaramond-VariableFont_wght.woff2") format("woff2");
   font-display: swap;
 }
 

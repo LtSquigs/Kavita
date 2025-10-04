@@ -37,5 +37,13 @@ public enum SortField
     /// <summary>
     /// Randomise the order
     /// </summary>
-    Random = 9
+    Random = 9,
+}
+
+public enum AnnotationSortField
+{
+    Owner = 1,
+    Created = 2,
+    LastModified = 3,
+    Color = 4,
 }

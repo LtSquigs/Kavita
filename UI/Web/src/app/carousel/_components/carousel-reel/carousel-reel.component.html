@@ -1,10 +1,10 @@
-<ng-container *transloco="let t; read: 'carousel-reel'">
+<ng-container *transloco="let t; prefix: 'carousel-reel'">
 
   @if (alwaysShow || items && items.length > 0) {
     <div class="carousel-container mb-3">
       <div>
         @if (actionables.length > 0) {
-          <app-card-actionables [inputActions]="actionables" (actionHandler)="performAction($event)"></app-card-actionables>
+          <app-card-actionables [inputActions]="actionables" (actionHandler)="performAction($event)" />
         }
         <h4 class="header" (click)="sectionClicked($event)" [ngClass]="{'non-selectable': !clickableTitle}">
           @if (titleLink !== '') {
@@ -27,22 +27,22 @@
       </div>
       @if (items.length > 0) {
         <div>
-          <swiper
-            [slidesPerView]="'auto'"
-            (init)="onSwiper($event)"
-            [freeMode]="true">
+          <swiper-container #swiperContainer
+            slides-per-view="auto"
+            free-mode="true"
+            (swiperprogress)="onProgress($event)">
             @for(item of items; track item; let i = $index;) {
-              <ng-template swiperSlide>
-                <ng-container [ngTemplateOutlet]="carouselItemTemplate" [ngTemplateOutletContext]="{ $implicit: item, idx: i }"></ng-container>
-              </ng-template>
+              <swiper-slide>
+                <ng-container [ngTemplateOutlet]="carouselItemTemplate" [ngTemplateOutletContext]="{ $implicit: item, idx: i }" />
+              </swiper-slide>
             } @empty {
               @if (alwaysShow) {
-                <ng-template swiperSlide>
-                  <ng-container [ngTemplateOutlet]="carouselItemTemplate"></ng-container>
-                </ng-template>
+                <swiper-slide>
+                  <ng-container [ngTemplateOutlet]="carouselItemTemplate" />
+                </swiper-slide>
               }
             }
-          </swiper>
+          </swiper-container>
         </div>
       }
     </div>

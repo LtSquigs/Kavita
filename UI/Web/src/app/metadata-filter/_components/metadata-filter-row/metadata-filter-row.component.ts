@@ -15,11 +15,22 @@ import {
 } from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {FilterStatement} from '../../../_models/metadata/v2/filter-statement';
-import {BehaviorSubject, distinctUntilChanged, filter, map, Observable, of, startWith, switchMap, tap} from 'rxjs';
+import {
+  BehaviorSubject,
+  distinctUntilChanged,
+  filter,
+  map,
+  Observable,
+  of,
+  pipe,
+  startWith,
+  switchMap,
+  tap
+} from 'rxjs';
 import {MetadataService} from 'src/app/_services/metadata.service';
 import {FilterComparison} from 'src/app/_models/metadata/v2/filter-comparison';
 import {FilterField} from 'src/app/_models/metadata/v2/filter-field';
-import {AsyncPipe} from "@angular/common";
+import {AsyncPipe, NgStyle} from "@angular/common";
 import {FilterComparisonPipe} from "../../../_pipes/filter-comparison.pipe";
 import {takeUntilDestroyed, toSignal} from "@angular/core/rxjs-interop";
 import {Select2, Select2Option} from "ng-select2-component";
@@ -27,6 +38,8 @@ import {NgbDate, NgbDateParserFormatter, NgbInputDatepicker, NgbTooltip} from "@
 import {TranslocoDirective, TranslocoService} from "@jsverse/transloco";
 import {ValidFilterEntity} from "../../filter-settings";
 import {FilterUtilitiesService} from "../../../shared/_services/filter-utilities.service";
+import {AnnotationsFilterField} from "../../../_models/metadata/v2/annotations-filter";
+import {RgbaColor} from "../../../book-reader/_models/annotations/highlight-slot";
 
 interface FieldConfig {
   type: PredicateType;
@@ -55,50 +68,19 @@ class FilterRowUi {
   }
 }
 
-const unitLabels: Map<FilterField, FilterRowUi> = new Map([
-    [FilterField.ReadingDate, new FilterRowUi('unit-reading-date')],
-    [FilterField.AverageRating, new FilterRowUi('unit-average-rating')],
-    [FilterField.ReadProgress, new FilterRowUi('unit-reading-progress')],
-    [FilterField.UserRating, new FilterRowUi('unit-user-rating')],
-    [FilterField.ReadLast, new FilterRowUi('unit-read-last')],
-]);
-
-// const StringFields = [FilterField.SeriesName, FilterField.Summary, FilterField.Path, FilterField.FilePath, PersonFilterField.Name];
-// const NumberFields = [
-//   FilterField.ReadTime, FilterField.ReleaseYear, FilterField.ReadProgress,
-//   FilterField.UserRating, FilterField.AverageRating, FilterField.ReadLast
-// ];
-// const DropdownFields = [
-//   FilterField.PublicationStatus, FilterField.Languages, FilterField.AgeRating,
-//   FilterField.Translators, FilterField.Characters, FilterField.Publisher,
-//   FilterField.Editor, FilterField.CoverArtist, FilterField.Letterer,
-//   FilterField.Colorist, FilterField.Inker, FilterField.Penciller,
-//   FilterField.Writers, FilterField.Genres, FilterField.Libraries,
-//   FilterField.Formats, FilterField.CollectionTags, FilterField.Tags,
-//   FilterField.Imprint, FilterField.Team, FilterField.Location, PersonFilterField.Role
-// ];
-// const BooleanFields = [FilterField.WantToRead];
-// const DateFields = [FilterField.ReadingDate];
-//
-// const DropdownFieldsWithoutMustContains = [
-//   FilterField.Libraries, FilterField.Formats, FilterField.AgeRating, FilterField.PublicationStatus
-// ];
-// const DropdownFieldsThatIncludeNumberComparisons = [
-//   FilterField.AgeRating
-// ];
-// const NumberFieldsThatIncludeDateComparisons = [
-//   FilterField.ReleaseYear
-// ];
-//
-// const FieldsThatShouldIncludeIsEmpty = [
-//   FilterField.Summary, FilterField.UserRating, FilterField.Genres,
-//   FilterField.CollectionTags, FilterField.Tags, FilterField.ReleaseYear,
-//   FilterField.Translators, FilterField.Characters, FilterField.Publisher,
-//   FilterField.Editor, FilterField.CoverArtist, FilterField.Letterer,
-//   FilterField.Colorist, FilterField.Inker, FilterField.Penciller,
-//   FilterField.Writers, FilterField.Imprint, FilterField.Team,
-//   FilterField.Location,
-// ];
+const unitLabels: Map<ValidFilterEntity, Map<number, FilterRowUi>> = new Map([
+  ['series', new Map([
+    [FilterField.ReadingDate as number, new FilterRowUi('unit-reading-date')],
+    [FilterField.AverageRating as number, new FilterRowUi('unit-average-rating')],
+    [FilterField.ReadProgress as number, new FilterRowUi('unit-reading-progress')],
+    [FilterField.UserRating as number, new FilterRowUi('unit-user-rating')],
+    [FilterField.ReadLast as number, new FilterRowUi('unit-read-last')],
+    [FilterField.FileSize as number, new FilterRowUi('unit-file-size', 'disclaimer-file-size')]
+  ])],
+  ['annotation', new Map([
+    [AnnotationsFilterField.HighlightSlots as number, new FilterRowUi('', 'disclaimer-highlight-slots')],
+  ])],
+])
 
 const StringComparisons = [
   FilterComparison.Equal,
@@ -139,7 +121,8 @@ const BooleanComparisons = [
     NgbTooltip,
     TranslocoDirective,
     NgbInputDatepicker,
-    Select2
+    Select2,
+    NgStyle
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -200,10 +183,7 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
       , {requireSync: true, injector: this.injector});
 
     this.isEmptySelected = computed(() => this.comparisonSignal() !== FilterComparison.IsEmpty);
-    this.uiLabel = computed(() => {
-      if (!unitLabels.has(this.inputSignal())) return null;
-      return unitLabels.get(this.inputSignal()) as FilterRowUi;
-    });
+    this.uiLabel = computed(() => unitLabels.get(this.entityType())?.get(this.inputSignal()) ?? null);
 
     this.isMultiSelectDropdownAllowed = computed(() => {
       return this.comparisonSignal() === FilterComparison.Contains || this.comparisonSignal() === FilterComparison.NotContains || this.comparisonSignal() === FilterComparison.MustContains;
@@ -213,7 +193,11 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
       return this.filterUtilitiesService.getFilterFields(this.entityType());
     });
 
-    this.formGroup.get('input')?.valueChanges.pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)).subscribe((val: string) => this.handleFieldChange(val));
+    this.formGroup.get('input')?.valueChanges.pipe(
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef),
+      tap((val: string) => this.handleFieldChange(val)),
+    ).subscribe();
     this.populateFromPreset();
 
     this.formGroup.get('filterValue')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
@@ -323,6 +307,7 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
     const dropdownFieldsThatIncludeDateComparisons = this.filterUtilitiesService.getDropdownFieldsThatIncludeDateComparisons<TFilter>(this.entityType());
     const dropdownFieldsWithoutMustContains = this.filterUtilitiesService.getDropdownFieldsWithoutMustContains<TFilter>(this.entityType());
     const dropdownFieldsThatIncludeNumberComparisons = this.filterUtilitiesService.getDropdownFieldsThatIncludeNumberComparisons<TFilter>(this.entityType());
+    const customComparisons = this.filterUtilitiesService.getCustomComparisons(this.entityType(), inputVal);
 
     if (stringFields.includes(inputVal)) {
       let comps = [...StringComparisons];
@@ -331,19 +316,23 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
         comps.push(FilterComparison.IsEmpty);
       }
 
+      if (customComparisons && customComparisons.length > 0) {
+        comps = customComparisons;
+      }
+
       this.validComparisons$.next([...new Set(comps)]);
       this.predicateType$.next(PredicateType.Text);
 
       if (this.loaded) {
         this.formGroup.get('filterValue')?.patchValue('');
-        this.formGroup.get('comparison')?.patchValue(StringComparisons[0]);
+        this.formGroup.get('comparison')?.patchValue(comps[0]);
       }
       this.cdRef.markForCheck();
       return;
     }
 
     if (numberFields.includes(inputVal)) {
-      const comps = [...NumberComparisons];
+      let comps = [...NumberComparisons];
 
       if (numberFieldsThatIncludeDateComparisons.includes(inputVal)) {
         comps.push(...DateComparisons);
@@ -352,12 +341,16 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
         comps.push(FilterComparison.IsEmpty);
       }
 
+      if (customComparisons && customComparisons.length > 0) {
+        comps = customComparisons;
+      }
+
       this.validComparisons$.next([...new Set(comps)]);
       this.predicateType$.next(PredicateType.Number);
 
       if (this.loaded) {
         this.formGroup.get('filterValue')?.patchValue(0);
-        this.formGroup.get('comparison')?.patchValue(NumberComparisons[0]);
+        this.formGroup.get('comparison')?.patchValue(comps[0]);
       }
 
       this.cdRef.markForCheck();
@@ -365,9 +358,13 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
     }
 
     if (dateFields.includes(inputVal)) {
-      const comps = [...DateComparisons];
+      let comps = [...DateComparisons];
       if (fieldsThatShouldIncludeIsEmpty.includes(inputVal)) {
         comps.push(FilterComparison.IsEmpty);
+      }
+
+      if (customComparisons && customComparisons.length > 0) {
+        comps = customComparisons;
       }
 
       this.validComparisons$.next([...new Set(comps)]);
@@ -375,16 +372,20 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
 
       if (this.loaded) {
         this.formGroup.get('filterValue')?.patchValue(false);
-        this.formGroup.get('comparison')?.patchValue(DateComparisons[0]);
+        this.formGroup.get('comparison')?.patchValue(comps[0]);
       }
       this.cdRef.markForCheck();
       return;
     }
 
     if (booleanFields.includes(inputVal)) {
-      let comps = [...DateComparisons];
+      let comps = [...BooleanComparisons];
       if (fieldsThatShouldIncludeIsEmpty.includes(inputVal)) {
         comps.push(FilterComparison.IsEmpty);
+      }
+
+      if (customComparisons && customComparisons.length > 0) {
+        comps = customComparisons;
       }
 
 
@@ -393,7 +394,7 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
 
       if (this.loaded) {
         this.formGroup.get('filterValue')?.patchValue(false);
-        this.formGroup.get('comparison')?.patchValue(BooleanComparisons[0]);
+        this.formGroup.get('comparison')?.patchValue(comps[0]);
       }
       this.cdRef.markForCheck();
       return;
@@ -409,6 +410,10 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
       }
       if (fieldsThatShouldIncludeIsEmpty.includes(inputVal)) {
         comps.push(FilterComparison.IsEmpty);
+      }
+
+      if (customComparisons && customComparisons.length > 0) {
+        comps = customComparisons;
       }
 
       this.validComparisons$.next([...new Set(comps)]);
@@ -428,6 +433,12 @@ export class MetadataFilterRowComponent<TFilter extends number = number, TSort e
 
   updateIfDateFilled() {
     this.propagateFilterUpdate();
+  }
+
+  selectOptionStyle(c?: RgbaColor) {
+    if (!c) return {}
+
+    return { 'color': `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})` };
   }
 
   protected readonly FilterComparison = FilterComparison;

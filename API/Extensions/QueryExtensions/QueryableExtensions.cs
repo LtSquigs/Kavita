@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using API.Data.Misc;
 using API.Data.Repositories;
 using API.DTOs;
+using API.DTOs.Annotations;
 using API.DTOs.Filtering;
 using API.DTOs.KavitaPlus.Manage;
 using API.DTOs.Metadata.Browse;
@@ -291,10 +292,29 @@ public static class QueryableExtensions
             PersonSortField.SeriesCount => query.OrderByDescending(p => p.SeriesMetadataPeople.Count),
             PersonSortField.ChapterCount when sort.IsAscending => query.OrderBy(p => p.ChapterPeople.Count),
             PersonSortField.ChapterCount => query.OrderByDescending(p => p.ChapterPeople.Count),
-            _ => query.OrderBy(p => p.Name)
+            _ => query.OrderBy(p => p.Name),
         };
+    }
 
+    public static IQueryable<AppUserAnnotation> SortBy(this IQueryable<AppUserAnnotation> query, AnnotationSortOptions? sort)
+    {
+        if (sort == null)
+        {
+            return query.OrderBy(a => a.CreatedUtc);
+        }
 
+        return sort.SortField switch
+        {
+            AnnotationSortField.Owner when sort.IsAscending => query.OrderBy(a => a.AppUser.UserName),
+            AnnotationSortField.Owner => query.OrderByDescending(a => a.AppUser.UserName),
+            AnnotationSortField.Created when sort.IsAscending => query.OrderBy(a => a.CreatedUtc),
+            AnnotationSortField.Created => query.OrderByDescending(a => a.CreatedUtc),
+            AnnotationSortField.LastModified when sort.IsAscending => query.OrderBy(a => a.LastModifiedUtc),
+            AnnotationSortField.LastModified => query.OrderByDescending(a => a.LastModifiedUtc),
+            AnnotationSortField.Color when sort.IsAscending => query.OrderBy(a => a.SelectedSlotIndex),
+            AnnotationSortField.Color => query.OrderByDescending(a => a.SelectedSlotIndex),
+            _ => query.OrderBy(a => a.CreatedUtc),
+        };
     }
 
     /// <summary>
@@ -324,5 +344,36 @@ public static class QueryableExtensions
             MatchStateOption.DontMatch => query.Where(s => s.DontMatch),
             _ => query
         };
+    }
+
+    public static IQueryable<FullAnnotationDto> SelectFullAnnotation(this IQueryable<AppUserAnnotation> query)
+    {
+        return query.Select(a => new FullAnnotationDto
+            {
+                Id = a.Id,
+                UserId = a.AppUserId,
+                SelectedText = a.SelectedText,
+                Comment = a.Comment,
+                CommentHtml = a.CommentHtml,
+                CommentPlainText = a.CommentPlainText,
+                Context = a.Context,
+                ChapterTitle = a.ChapterTitle,
+                PageNumber = a.PageNumber,
+                SelectedSlotIndex = a.SelectedSlotIndex,
+                ContainsSpoiler = a.ContainsSpoiler,
+                CreatedUtc = a.CreatedUtc,
+                LastModifiedUtc = a.LastModifiedUtc,
+                LibraryId = a.LibraryId,
+                LibraryName = a.Chapter.Volume.Series.Library.Name,
+                SeriesId = a.SeriesId,
+                SeriesName = a.Chapter.Volume.Series.Name,
+                VolumeId = a.VolumeId,
+                VolumeName = a.Chapter.Volume.Name,
+                ChapterId = a.ChapterId,
+            })
+            .OrderBy(a => a.SeriesId)
+            .ThenBy(a => a.VolumeId)
+            .ThenBy(a => a.ChapterId)
+            .ThenBy(a => a.PageNumber);
     }
 }

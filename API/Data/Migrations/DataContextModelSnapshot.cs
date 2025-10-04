@@ -160,6 +160,86 @@ namespace API.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("API.Entities.AppUserAnnotation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ChapterTitle")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CommentHtml")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CommentPlainText")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("ContainsSpoiler")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Context")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EndingXPath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HighlightCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LibraryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PageNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SelectedSlotIndex")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SelectedText")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SeriesId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("VolumeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("XPath")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("SeriesId");
+
+                    b.ToTable("AppUserAnnotation");
+                });
+
             modelBuilder.Entity("API.Entities.AppUserBookmark", b =>
                 {
                     b.Property<int>("Id")
@@ -172,6 +252,9 @@ namespace API.Data.Migrations
                     b.Property<int>("ChapterId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ChapterTitle")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("Created")
                         .HasColumnType("TEXT");
 
@@ -180,6 +263,9 @@ namespace API.Data.Migrations
 
                     b.Property<string>("FileName")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("ImageOffset")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("LastModified")
                         .HasColumnType("TEXT");
@@ -195,6 +281,9 @@ namespace API.Data.Migrations
 
                     b.Property<int>("VolumeId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("XPath")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -432,6 +521,11 @@ namespace API.Data.Migrations
                     b.Property<int>("BookReaderFontSize")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("BookReaderHighlightSlots")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("[]");
+
                     b.Property<bool>("BookReaderImmersiveMode")
                         .HasColumnType("INTEGER");
 
@@ -462,6 +556,11 @@ namespace API.Data.Migrations
 
                     b.Property<bool>("CollapseSeriesRelationships")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ColorScapeEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("EmulateBook")
                         .HasColumnType("INTEGER");
@@ -832,6 +931,9 @@ namespace API.Data.Migrations
                     b.Property<int>("ChapterId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ChapterTitle")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("Created")
                         .HasColumnType("TEXT");
 
@@ -849,6 +951,9 @@ namespace API.Data.Migrations
 
                     b.Property<int>("PageNumber")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("SelectedText")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SeriesId")
                         .HasColumnType("INTEGER");
@@ -1220,6 +1325,41 @@ namespace API.Data.Migrations
                     b.HasIndex("Sent", "AppUserId", "EmailTemplate", "SendDate");
 
                     b.ToTable("EmailHistory", (string)null);
+                });
+
+            modelBuilder.Entity("API.Entities.EpubFont", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EpubFont");
                 });
 
             modelBuilder.Entity("API.Entities.FolderPath", b =>
@@ -2832,6 +2972,33 @@ namespace API.Data.Migrations
                     b.ToTable("SeriesMetadataTag", (string)null);
                 });
 
+            modelBuilder.Entity("API.Entities.AppUserAnnotation", b =>
+                {
+                    b.HasOne("API.Entities.AppUser", "AppUser")
+                        .WithMany("Annotations")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Entities.Series", "Series")
+                        .WithMany()
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Series");
+                });
+
             modelBuilder.Entity("API.Entities.AppUserBookmark", b =>
                 {
                     b.HasOne("API.Entities.AppUser", "AppUser")
@@ -3618,6 +3785,8 @@ namespace API.Data.Migrations
 
             modelBuilder.Entity("API.Entities.AppUser", b =>
                 {
+                    b.Navigation("Annotations");
+
                     b.Navigation("Bookmarks");
 
                     b.Navigation("ChapterRatings");

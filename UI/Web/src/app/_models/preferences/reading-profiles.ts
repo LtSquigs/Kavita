@@ -10,8 +10,6 @@ import {PdfTheme} from "./pdf-theme";
 import {PdfScrollMode} from "./pdf-scroll-mode";
 import {PdfLayoutMode} from "./pdf-layout-mode";
 import {PdfSpreadMode} from "./pdf-spread-mode";
-import {Series} from "../series";
-import {Library} from "../library/library";
 import {UserBreakpoint} from "../../shared/_services/utility.service";
 
 export enum ReadingProfileKind {

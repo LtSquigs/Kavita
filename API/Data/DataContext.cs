@@ -80,6 +80,9 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<MetadataFieldMapping> MetadataFieldMapping { get; set; } = null!;
     public DbSet<AppUserChapterRating> AppUserChapterRating { get; set; } = null!;
     public DbSet<AppUserReadingProfile> AppUserReadingProfiles { get; set; } = null!;
+    public DbSet<AppUserAnnotation> AppUserAnnotation { get; set; } = null!;
+    public DbSet<EpubFont> EpubFont { get; set; } = null!;
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -137,6 +140,9 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
             .HasDefaultValue(true);
         builder.Entity<AppUserPreferences>()
             .Property(b => b.AllowAutomaticWebtoonReaderDetection)
+            .HasDefaultValue(true);
+        builder.Entity<AppUserPreferences>()
+            .Property(b => b.ColorScapeEnabled)
             .HasDefaultValue(true);
 
         builder.Entity<Library>()
@@ -302,6 +308,14 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
                 v => JsonSerializer.Deserialize<IList<MetadataSettingField>>(v, JsonSerializerOptions.Default) ?? new List<MetadataSettingField>())
             .HasColumnType("TEXT")
             .HasDefaultValue(new List<MetadataSettingField>());
+
+        builder.Entity<AppUserPreferences>()
+            .Property(a => a.BookReaderHighlightSlots)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, JsonSerializerOptions.Default),
+                v => JsonSerializer.Deserialize<List<HighlightSlot>>(v, JsonSerializerOptions.Default) ?? new List<HighlightSlot>())
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new List<HighlightSlot>());
 
         builder.Entity<AppUser>()
             .Property(user => user.IdentityProvider)

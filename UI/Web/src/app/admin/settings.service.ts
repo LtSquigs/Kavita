@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import {computed, Injectable, signal} from '@angular/core';
+import { computed, Injectable, signal, inject } from '@angular/core';
 import {map, of, tap} from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { TextResonse } from '../_types/text-response';
@@ -22,10 +22,10 @@ export interface EmailTestResult {
   providedIn: 'root'
 })
 export class SettingsService {
+  private http = inject(HttpClient);
+
 
   baseUrl = environment.apiUrl;
-
-  constructor(private http: HttpClient) { }
 
   getServerSettings() {
     return this.http.get<ServerSettings>(this.baseUrl + 'settings');
@@ -71,7 +71,7 @@ export class SettingsService {
   }
 
   isEmailSetup() {
-    return this.http.get<string>(this.baseUrl + 'server/is-email-setup', TextResonse).pipe(map(d => d == "true"));
+    return this.http.get<string>(this.baseUrl + 'settings/is-email-setup', TextResonse).pipe(map(d => d == "true"));
   }
 
   getTaskFrequencies() {

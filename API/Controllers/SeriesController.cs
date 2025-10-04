@@ -180,11 +180,16 @@ public class SeriesController : BaseApiController
     [HttpGet("chapter")]
     public async Task<ActionResult<ChapterDto>> GetChapter(int chapterId)
     {
-        var chapter = await _unitOfWork.ChapterRepository.GetChapterDtoAsync(chapterId);
+        var chapter = await _unitOfWork.ChapterRepository.GetChapterDtoAsync(chapterId, User.GetUserId());
         if (chapter == null) return NoContent();
         return Ok(await _unitOfWork.ChapterRepository.AddChapterModifiers(User.GetUserId(), chapter));
     }
 
+    /// <summary>
+    /// All chapter entities will load this data by default. Will not be maintained as of v0.8.1
+    /// </summary>
+    /// <param name="chapterId"></param>
+    /// <returns></returns>
     [Obsolete("All chapter entities will load this data by default. Will not be maintained as of v0.8.1")]
     [HttpGet("chapter-metadata")]
     public async Task<ActionResult<ChapterMetadataDto>> GetChapterMetadata(int chapterId)
@@ -299,12 +304,14 @@ public class SeriesController : BaseApiController
     /// <summary>
     /// Returns series that were recently updated, like adding or removing a chapter
     /// </summary>
+    /// <param name="userParams">Page size and offset</param>
     /// <returns></returns>
     [ResponseCache(CacheProfileName = "Instant")]
     [HttpPost("recently-updated-series")]
-    public async Task<ActionResult<IEnumerable<RecentlyAddedItemDto>>> GetRecentlyAddedChapters()
+    public async Task<ActionResult<IEnumerable<RecentlyAddedItemDto>>> GetRecentlyAddedChapters([FromQuery] UserParams? userParams)
     {
-        return Ok(await _unitOfWork.SeriesRepository.GetRecentlyUpdatedSeries(User.GetUserId(), 20));
+        userParams ??= UserParams.Default;
+        return Ok(await _unitOfWork.SeriesRepository.GetRecentlyUpdatedSeries(User.GetUserId(), userParams));
     }
 
     /// <summary>

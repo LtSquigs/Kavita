@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using API.DTOs.Theme;
 using API.Entities;
 using API.Entities.Enums;
@@ -36,9 +37,15 @@ public sealed record UserPreferencesDto
     /// <inheritdoc cref="API.Entities.AppUserPreferences.Locale"/>
     [Required]
     public string Locale { get; set; }
+    /// <inheritdoc cref="API.Entities.AppUserPreferences.ColorScapeEnabled"/>
+    [Required]
+    public bool ColorScapeEnabled { get; set; } = true;
 
     /// <inheritdoc cref="API.Entities.AppUserPreferences.AniListScrobblingEnabled"/>
     public bool AniListScrobblingEnabled { get; set; }
     /// <inheritdoc cref="API.Entities.AppUserPreferences.WantToReadSync"/>
     public bool WantToReadSync { get; set; }
+    /// <inheritdoc cref="API.Entities.AppUserPreferences.BookReaderHighlightSlots"/>
+    [Required]
+    public List<HighlightSlot> BookReaderHighlightSlots { get; set; }
 }

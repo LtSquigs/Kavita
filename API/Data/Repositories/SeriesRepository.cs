@@ -16,6 +16,7 @@ using API.DTOs.Filtering.v2;
 using API.DTOs.KavitaPlus.Metadata;
 using API.DTOs.Metadata;
 using API.DTOs.Person;
+using API.DTOs.Reader;
 using API.DTOs.ReadingLists;
 using API.DTOs.Recommendation;
 using API.DTOs.Scrobbling;
@@ -134,7 +135,7 @@ public interface ISeriesRepository
     Task<Series?> GetFullSeriesForSeriesIdAsync(int seriesId);
     Task<Chunk> GetChunkInfo(int libraryId = 0);
     Task<IList<SeriesMetadata>> GetSeriesMetadataForIdsAsync(IEnumerable<int> seriesIds);
-    Task<IEnumerable<GroupedSeriesDto>> GetRecentlyUpdatedSeries(int userId, int pageSize = 30);
+    Task<IEnumerable<GroupedSeriesDto>> GetRecentlyUpdatedSeries(int userId, UserParams? userParams);
     Task<RelatedSeriesDto> GetRelatedSeries(int userId, int seriesId);
     Task<IEnumerable<SeriesDto>> GetSeriesForRelationKind(int userId, int seriesId, RelationKind kind);
     Task<PagedList<SeriesDto>> GetQuickReads(int userId, int libraryId, UserParams userParams);
@@ -402,6 +403,14 @@ public class SeriesRepository : ISeriesRepository
             .ProjectTo<LibraryDto>(_mapper.ConfigurationProvider)
             .ToListAsync();
 
+        result.Annotations = await _context.AppUserAnnotation
+            .Where(a => a.AppUserId == userId &&
+                        (EF.Functions.Like(a.Comment,  $"%{searchQueryNormalized}%") || EF.Functions.Like(a.Context, $"%{searchQueryNormalized}%")))
+            .Take(maxRecords)
+            .OrderBy(l => l.CreatedUtc)
+            .ProjectTo<AnnotationDto>(_mapper.ConfigurationProvider)
+            .ToListAsync();
+
         var justYear = _yearRegex.Match(searchQuery).Value;
         var hasYearInQuery = !string.IsNullOrEmpty(justYear);
         var yearComparison = hasYearInQuery ? int.Parse(justYear) : 0;
@@ -417,7 +426,8 @@ public class SeriesRepository : ISeriesRepository
             .Include(s => s.Library)
             .AsNoTracking()
             .AsSplitQuery()
-            .OrderBy(s => s.SortName!.ToLower())
+            .OrderBy(s => s.SortName!.Length)
+            .ThenBy(s => s.SortName!.ToLower())
             .Take(maxRecords)
             .ProjectTo<SearchResultDto>(_mapper.ConfigurationProvider)
             .AsEnumerable();
@@ -435,7 +445,8 @@ public class SeriesRepository : ISeriesRepository
                                EF.Functions.Like(joined.Series.OriginalName, $"%{searchQuery}%")) ||
                               (joined.Series.LocalizedName != null &&
                                EF.Functions.Like(joined.Series.LocalizedName, $"%{searchQuery}%"))))
-            .OrderBy(joined => joined.Series.Name)
+            .OrderBy(joined => joined.Series.NormalizedName.Length)
+            .ThenBy(joined => joined.Series.NormalizedName)
             .Take(maxRecords)
             .Select(joined => new BookmarkSearchResultDto()
             {
@@ -473,7 +484,8 @@ public class SeriesRepository : ISeriesRepository
 
         result.Persons = await _context.Person
             .Where(p => personIds.Contains(p.Id))
-            .OrderBy(p => p.NormalizedName)
+            .OrderBy(p => p.NormalizedName.Length)
+            .ThenBy(p => p.NormalizedName)
             .ProjectTo<PersonDto>(_mapper.ConfigurationProvider)
             .ToListAsync();
 
@@ -523,7 +535,8 @@ public class SeriesRepository : ISeriesRepository
                 )
                 .Where(c => c.Files.All(f => fileIds.Contains(f.Id)))
                 .AsSplitQuery()
-                .OrderBy(c => c.TitleName)
+                .OrderBy(c => c.TitleName.Length)
+                .ThenBy(c => c.TitleName)
                 .Take(maxRecords)
                 .ProjectTo<ChapterDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -739,7 +752,10 @@ public class SeriesRepository : ISeriesRepository
 
     public async Task<PlusSeriesRequestDto?> GetPlusSeriesDto(int seriesId)
     {
-        return await _context.Series
+
+        // I need to check Weblinks when AniListId/MalId is already set in ExternalSeries
+        // Updating stale data should prioritize ExernalSeriesMetada before Weblinks, to priorize prior matches
+        var result = await _context.Series
             .Where(s => s.Id == seriesId)
             .Include(s => s.ExternalSeriesMetadata)
             .Select(series => new PlusSeriesRequestDto()
@@ -747,13 +763,16 @@ public class SeriesRepository : ISeriesRepository
                 MediaFormat = series.Library.Type.ConvertToPlusMediaFormat(series.Format),
                 SeriesName = series.Name,
                 AltSeriesName = series.LocalizedName,
-                AniListId = ScrobblingService.ExtractId<int?>(series.Metadata.WebLinks,
-                    ScrobblingService.AniListWeblinkWebsite),
-                MalId = ScrobblingService.ExtractId<long?>(series.Metadata.WebLinks,
-                    ScrobblingService.MalWeblinkWebsite),
+                AniListId = series.ExternalSeriesMetadata.AniListId != 0
+                    ? series.ExternalSeriesMetadata.AniListId
+                    : ScrobblingService.ExtractId<int?>(series.Metadata.WebLinks, ScrobblingService.AniListWeblinkWebsite),
+                MalId = series.ExternalSeriesMetadata.MalId != 0
+                    ? series.ExternalSeriesMetadata.MalId
+                    : ScrobblingService.ExtractId<long?>(series.Metadata.WebLinks, ScrobblingService.MalWeblinkWebsite),
                 CbrId = series.ExternalSeriesMetadata.CbrId,
-                GoogleBooksId = ScrobblingService.ExtractId<string?>(series.Metadata.WebLinks,
-                    ScrobblingService.GoogleBooksWeblinkWebsite),
+                GoogleBooksId = !string.IsNullOrEmpty(series.ExternalSeriesMetadata.GoogleBooksId)
+                    ? series.ExternalSeriesMetadata.GoogleBooksId
+                    : ScrobblingService.ExtractId<string?>(series.Metadata.WebLinks, ScrobblingService.GoogleBooksWeblinkWebsite),
                 MangaDexId = ScrobblingService.ExtractId<string?>(series.Metadata.WebLinks,
                     ScrobblingService.MangaDexWeblinkWebsite),
                 VolumeCount = series.Volumes.Count,
@@ -761,6 +780,8 @@ public class SeriesRepository : ISeriesRepository
                 Year = series.Metadata.ReleaseYear
             })
             .FirstOrDefaultAsync();
+
+        return result;
     }
 
     public async Task<int> GetCountAsync()
@@ -1296,7 +1317,8 @@ public class SeriesRepository : ISeriesRepository
             FilterField.ReadingDate => query.HasReadingDate(true, statement.Comparison, (DateTime) value, userId),
             FilterField.ReadLast => query.HasReadLast(true, statement.Comparison, (int) value, userId),
             FilterField.AverageRating => query.HasAverageRating(true, statement.Comparison, (float) value),
-            _ => throw new ArgumentOutOfRangeException(nameof(statement.Field), $"Unexpected value for field: {statement.Field}")
+            FilterField.FileSize => query.HasFileSize(true, statement.Comparison, (long) value),
+            _ => throw new ArgumentOutOfRangeException(nameof(statement.Field), $"Unexpected value for field: {statement.Field}"),
         };
     }
 
@@ -1476,12 +1498,12 @@ public class SeriesRepository : ISeriesRepository
     /// <remarks>This provides 2 levels of pagination. Fetching the individual chapters only looks at 3000. Then when performing grouping
     /// in memory, we stop after 30 series. </remarks>
     /// <param name="userId">Used to ensure user has access to libraries</param>
-    /// <param name="pageSize">How many entities to return</param>
+    /// <param name="userParams">Page size and offset</param>
     /// <returns></returns>
-    public async Task<IEnumerable<GroupedSeriesDto>> GetRecentlyUpdatedSeries(int userId, int pageSize = 30)
+    public async Task<IEnumerable<GroupedSeriesDto>> GetRecentlyUpdatedSeries(int userId, UserParams? userParams)
     {
-        var seriesMap = new Dictionary<string, GroupedSeriesDto>();
-        var index = 0;
+        userParams ??= UserParams.Default;
+
         var userRating = await _context.AppUser.GetUserAgeRestriction(userId);
 
         var items = (await GetRecentlyAddedChaptersQuery(userId));
@@ -1490,20 +1512,30 @@ public class SeriesRepository : ISeriesRepository
             items = items.RestrictAgainstAgeRestriction(userRating);
         }
 
+        var index = 0;
+        var seriesMap = new Dictionary<int, GroupedSeriesDto>();
+        var toSkip = (userParams.PageNumber - 1) * userParams.PageSize;
+        var skipped = new HashSet<int>();
+
         foreach (var item in items)
         {
-            if (seriesMap.Keys.Count == pageSize) break;
+            if (seriesMap.Keys.Count == userParams.PageSize) break;
 
             if (item.SeriesName == null) continue;
 
+            if (skipped.Count < toSkip)
+            {
+                skipped.Add(item.SeriesId);
+                continue;
+            }
 
-            if (seriesMap.TryGetValue(item.SeriesName + "_" + item.LibraryId, out var value))
+            if (seriesMap.TryGetValue(item.SeriesId, out var value))
             {
                 value.Count += 1;
             }
             else
             {
-                seriesMap[item.SeriesName + "_" + item.LibraryId] = new GroupedSeriesDto()
+                seriesMap[item.SeriesId] = new GroupedSeriesDto()
                 {
                     LibraryId = item.LibraryId,
                     LibraryType = item.LibraryType,

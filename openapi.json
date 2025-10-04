@@ -2,12 +2,12 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.7.7",
+    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.7.18",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
     },
-    "version": "0.8.7.7"
+    "version": "0.8.7.18"
   },
   "servers": [
     {
@@ -427,7 +427,9 @@
         "tags": [
           "Account"
         ],
+        "summary": "Change the Age Rating restriction for the user",
         "requestBody": {
+          "description": "",
           "content": {
             "application/json": {
               "schema": {
@@ -966,12 +968,488 @@
         }
       }
     },
+    "/api/Annotation/all-filtered": {
+      "post": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Returns a list of annotations for browsing",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "If set to 0, will set as MaxInt",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrowseAnnotationFilterDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrowseAnnotationFilterDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrowseAnnotationFilterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Annotation/all": {
+      "get": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Returns the annotations for the given chapter",
+        "parameters": [
+          {
+            "name": "chapterId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnnotationDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Annotation/all-for-series": {
+      "get": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Returns all annotations by Series",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Annotation/{annotationId}": {
+      "get": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Returns the Annotation by Id. User must have access to annotation.",
+        "parameters": [
+          {
+            "name": "annotationId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Annotation/create": {
+      "post": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Create a new Annotation for the user against a Chapter",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Annotation/update": {
+      "post": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Update the modifiable fields (Spoiler, highlight slot, and comment) for an annotation",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnotationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Annotation": {
+      "delete": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Delete the annotation for the user",
+        "parameters": [
+          {
+            "name": "annotationId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Annotation/bulk-delete": {
+      "post": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Removes annotations in bulk. Requires every annotation to be owned by the authenticated user",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Annotation/export-filter": {
+      "post": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Exports annotations for the given users",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "If set to 0, will set as MaxInt",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrowseAnnotationFilterDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrowseAnnotationFilterDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrowseAnnotationFilterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Annotation/export": {
+      "post": {
+        "tags": [
+          "Annotation"
+        ],
+        "summary": "Exports Annotations for the User",
+        "requestBody": {
+          "description": "Export annotations with the given ids",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Book/{chapterId}/book-info": {
       "get": {
         "tags": [
           "Book"
         ],
-        "summary": "Retrieves information for the PDF and Epub reader",
+        "summary": "Retrieves information for the PDF and Epub reader. This will cache the file.",
         "description": "This only applies to Epub or PDF files",
         "parameters": [
           {
@@ -2662,6 +3140,221 @@
         }
       }
     },
+    "/api/Font/all": {
+      "get": {
+        "tags": [
+          "Font"
+        ],
+        "summary": "List out the fonts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpubFontDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpubFontDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpubFontDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Font": {
+      "get": {
+        "tags": [
+          "Font"
+        ],
+        "summary": "Returns a font file",
+        "parameters": [
+          {
+            "name": "fontId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Font"
+        ],
+        "summary": "Removes a font from the system",
+        "parameters": [
+          {
+            "name": "fontId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "description": "If the font is in use by other users and an admin wants it deleted, they must confirm to force delete it. This is prompted in the UI.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Font/in-use": {
+      "get": {
+        "tags": [
+          "Font"
+        ],
+        "summary": "Returns if the given font is in use by any other user. System provided fonts will always return true.",
+        "parameters": [
+          {
+            "name": "fontId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Font/upload": {
+      "post": {
+        "tags": [
+          "Font"
+        ],
+        "summary": "Manual upload",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "formFile": {
+                    "type": "string",
+                    "description": "",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "formFile": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubFontDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubFontDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpubFontDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Font/upload-by-url": {
+      "post": {
+        "tags": [
+          "Font"
+        ],
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Health": {
       "get": {
         "tags": [
@@ -2892,6 +3585,15 @@
             "description": "API Key for user. Needed to authenticate request",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "imageOffset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
             }
           }
         ],
@@ -3165,24 +3867,7 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/KoreaderBookDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KoreaderBookDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KoreaderBookDto"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -4014,7 +4699,7 @@
         "tags": [
           "License"
         ],
-        "summary": "Has any license registered with the instance. Does not check Kavita+ API",
+        "summary": "Has any license registered with the instance. Does not validate against Kavita+ API",
         "responses": {
           "200": {
             "description": "OK",
@@ -4151,6 +4836,36 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/License/resend-license": {
+      "post": {
+        "tags": [
+          "License"
+        ],
+        "summary": "Resend the welcome email to the user",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         }
       }
@@ -4926,10 +5641,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns the Catalogue for Kavita's OPDS Service",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -4946,10 +5663,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns the Catalogue for Kavita's OPDS Service",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -4968,7 +5687,7 @@
         "tags": [
           "Opds"
         ],
-        "summary": "Returns the Series matching this smart filter. If FromDashboard, will only return 20 records.",
+        "summary": "Get the User's Smart Filter series - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
@@ -4993,7 +5712,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 0
+              "default": 1
             }
           }
         ],
@@ -5009,35 +5728,25 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get the User's Smart Filters (Dashboard Context) - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Opds/{apiKey}/external-sources": {
-      "get": {
-        "tags": [
-          "Opds"
-        ],
-        "parameters": [
+          },
           {
-            "name": "apiKey",
-            "in": "path",
-            "required": true,
+            "name": "pageNumber",
+            "in": "query",
+            "description": "",
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int32",
+              "default": 1
             }
           }
         ],
@@ -5053,13 +5762,25 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get the User's Libraries - No Pagination Support",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
             }
           }
         ],
@@ -5075,10 +5796,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get the User's Want to Read list - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5087,10 +5810,11 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 0
+              "default": 1
             }
           }
         ],
@@ -5106,13 +5830,25 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get all Collections - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
             }
           }
         ],
@@ -5128,10 +5864,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get Series for a given Collection - Supports Pagination",
         "parameters": [
           {
             "name": "collectionId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5141,6 +5879,7 @@
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5149,10 +5888,11 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 0
+              "default": 1
             }
           }
         ],
@@ -5168,10 +5908,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get a User's Reading Lists - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5180,10 +5922,11 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 0
+              "default": 1
             }
           }
         ],
@@ -5199,10 +5942,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns individual items (chapters) from Reading List by ID - Supports Pagination",
         "parameters": [
           {
             "name": "readingListId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5212,6 +5957,7 @@
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5220,10 +5966,11 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 0
+              "default": 1
             }
           }
         ],
@@ -5239,10 +5986,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns Series from the Library - Supports Pagination",
         "parameters": [
           {
             "name": "libraryId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5252,6 +6001,7 @@
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5260,10 +6010,11 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 0
+              "default": 1
             }
           }
         ],
@@ -5279,10 +6030,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns Recently Added (Dashboard Feed) - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5291,6 +6044,7 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -5310,10 +6064,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns More In a Genre (Dashboard Feed) - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5322,6 +6078,7 @@
           {
             "name": "genreId",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -5330,6 +6087,7 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -5349,10 +6107,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get the Recently Updated Series (Dashboard) - Pagination available, total pages will not be filled due to underlying implementation",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5361,6 +6121,7 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -5380,10 +6141,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Get the On Deck (Dashboard) - Supports Pagination",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5392,6 +6155,7 @@
           {
             "name": "pageNumber",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -5465,10 +6229,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns the items within a Series (Series Detail)",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5477,6 +6243,7 @@
           {
             "name": "seriesId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5496,10 +6263,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Returns items for a given Volume",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5508,6 +6277,7 @@
           {
             "name": "seriesId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5517,6 +6287,7 @@
           {
             "name": "volumeId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5536,10 +6307,12 @@
         "tags": [
           "Opds"
         ],
+        "summary": "Gets items for a given Chapter",
         "parameters": [
           {
             "name": "apiKey",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "string"
@@ -5548,6 +6321,7 @@
           {
             "name": "seriesId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5557,6 +6331,7 @@
           {
             "name": "volumeId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5566,6 +6341,7 @@
           {
             "name": "chapterId",
             "in": "path",
+            "description": "",
             "required": true,
             "schema": {
               "type": "integer",
@@ -5585,7 +6361,7 @@
         "tags": [
           "Opds"
         ],
-        "summary": "Downloads a file",
+        "summary": "Downloads a file (user must have download permission)",
         "parameters": [
           {
             "name": "apiKey",
@@ -6958,7 +7734,7 @@
           {
             "name": "includeDimensions",
             "in": "query",
-            "description": "Include file dimensions. Only useful for image based reading",
+            "description": "Include file dimensions. Only useful for image-based reading",
             "schema": {
               "type": "boolean",
               "default": false
@@ -7934,6 +8710,57 @@
         "parameters": [
           {
             "name": "seriesId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/HourEstimateRangeDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HourEstimateRangeDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HourEstimateRangeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Reader/time-left-for-chapter": {
+      "get": {
+        "tags": [
+          "Reader"
+        ],
+        "summary": "For the current user, returns an estimate on how long it would take to finish reading the chapter.",
+        "description": "For Epubs, this does not check words inside a chapter due to overhead so may not work in all cases.",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "chapterId",
             "in": "query",
             "description": "",
             "schema": {
@@ -11355,10 +12182,12 @@
         "tags": [
           "Series"
         ],
+        "summary": "All chapter entities will load this data by default. Will not be maintained as of v0.8.1",
         "parameters": [
           {
             "name": "chapterId",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -11596,6 +12425,25 @@
           "Series"
         ],
         "summary": "Returns series that were recently updated, like adding or removing a chapter",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "If set to 0, will set as MaxInt",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -16506,6 +17354,177 @@
         },
         "additionalProperties": false
       },
+      "AnnotationDto": {
+        "required": [
+          "chapterId",
+          "libraryId",
+          "ownerUserId",
+          "seriesId",
+          "volumeId",
+          "xPath"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "xPath": {
+            "type": "string",
+            "description": "Starting point of the Highlight",
+            "nullable": true
+          },
+          "endingXPath": {
+            "type": "string",
+            "description": "Ending point of the Highlight. Can be the same as API.DTOs.Reader.AnnotationDto.XPath",
+            "nullable": true
+          },
+          "selectedText": {
+            "type": "string",
+            "description": "The text selected.",
+            "nullable": true
+          },
+          "comment": {
+            "type": "string",
+            "description": "Rich text Comment",
+            "nullable": true
+          },
+          "commentHtml": {
+            "type": "string",
+            "nullable": true
+          },
+          "commentPlainText": {
+            "type": "string",
+            "nullable": true
+          },
+          "chapterTitle": {
+            "type": "string",
+            "description": "Title of the TOC Chapter within Epub (not Chapter Entity)",
+            "nullable": true
+          },
+          "context": {
+            "type": "string",
+            "description": "A calculated selection of the surrounding text. This does not update after creation.",
+            "nullable": true
+          },
+          "highlightCount": {
+            "type": "integer",
+            "description": "The number of characters selected",
+            "format": "int32"
+          },
+          "containsSpoiler": {
+            "type": "boolean"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "selectedSlotIndex": {
+            "type": "integer",
+            "description": "Selected Highlight Slot Index [0-4]",
+            "format": "int32"
+          },
+          "chapterId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "volumeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seriesId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "libraryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ownerUserId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ownerUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModifiedUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents an annotation on a book"
+      },
+      "AnnotationFilterStatementDto": {
+        "type": "object",
+        "properties": {
+          "comparison": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "field": {
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnnotationSortOptions": {
+        "type": "object",
+        "properties": {
+          "sortField": {
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "isAscending": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "description": "All Sorting Options for a query related to Annotation Entity"
+      },
       "AppRole": {
         "type": "object",
         "properties": {
@@ -16704,6 +17723,13 @@
             "description": "A list of Table of Contents for a given Chapter",
             "nullable": true
           },
+          "annotations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppUserAnnotation"
+            },
+            "nullable": true
+          },
           "apiKey": {
             "type": "string",
             "description": "An API Key to interact with external services, like OPDS",
@@ -16826,6 +17852,127 @@
         },
         "additionalProperties": false
       },
+      "AppUserAnnotation": {
+        "required": [
+          "appUserId",
+          "chapterId",
+          "libraryId",
+          "seriesId",
+          "volumeId",
+          "xPath"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "xPath": {
+            "type": "string",
+            "description": "Starting point of the Highlight",
+            "nullable": true
+          },
+          "endingXPath": {
+            "type": "string",
+            "description": "Ending point of the Highlight. Can be the same as API.Entities.AppUserAnnotation.XPath",
+            "nullable": true
+          },
+          "selectedText": {
+            "type": "string",
+            "description": "The text selected.",
+            "nullable": true
+          },
+          "comment": {
+            "type": "string",
+            "description": "Rich text Comment",
+            "nullable": true
+          },
+          "commentHtml": {
+            "type": "string",
+            "description": "The annotation in html format, this is generated by the UI (quill)",
+            "nullable": true
+          },
+          "commentPlainText": {
+            "type": "string",
+            "description": "All html stripped from API.Entities.AppUserAnnotation.CommentHtml, this is done by the backend",
+            "nullable": true
+          },
+          "highlightCount": {
+            "type": "integer",
+            "description": "The number of characters selected",
+            "format": "int32"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "selectedSlotIndex": {
+            "type": "integer",
+            "description": "Selected Highlight Slot Index [0-4]",
+            "format": "int32"
+          },
+          "context": {
+            "type": "string",
+            "description": "A calculated selection of the surrounding text. This does not update after creation.",
+            "nullable": true
+          },
+          "containsSpoiler": {
+            "type": "boolean"
+          },
+          "chapterTitle": {
+            "type": "string",
+            "description": "Title of the TOC Chapter within Epub (not Chapter Entity)",
+            "nullable": true
+          },
+          "libraryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seriesId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "series": {
+            "$ref": "#/components/schemas/Series"
+          },
+          "volumeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chapterId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chapter": {
+            "$ref": "#/components/schemas/Chapter"
+          },
+          "appUserId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "appUser": {
+            "$ref": "#/components/schemas/AppUser"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModified": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastModifiedUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Represents an annotation in the Epub reader"
+      },
       "AppUserBookmark": {
         "type": "object",
         "properties": {
@@ -16852,6 +17999,21 @@
           "fileName": {
             "type": "string",
             "description": "Filename in the Bookmark Directory",
+            "nullable": true
+          },
+          "imageOffset": {
+            "type": "integer",
+            "description": "Only applicable for Epubs - handles multiple images on one page",
+            "format": "int32"
+          },
+          "xPath": {
+            "type": "string",
+            "description": "Only applicable for Epubs",
+            "nullable": true
+          },
+          "chapterTitle": {
+            "type": "string",
+            "description": "Chapter name (from ToC) or Title (from ComicInfo/PDF)",
             "nullable": true
           },
           "appUserId": {
@@ -17391,6 +18553,14 @@
             "type": "boolean",
             "description": "Book Reader Option: A flag that hides the menu-ing system behind a click on the screen. This should be used with tap to paginate, but the app doesn't enforce this."
           },
+          "bookReaderHighlightSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HighlightSlot"
+            },
+            "description": "Book Reader Option: A set of 5 distinct highlight slots with default colors. User can customize. Binds to all Highlight Annotations (API.Entities.AppUserAnnotation.",
+            "nullable": true
+          },
           "pdfTheme": {
             "enum": [
               0,
@@ -17456,6 +18626,10 @@
             "type": "string",
             "description": "UI Site Global Setting: The language locale that should be used for the user",
             "nullable": true
+          },
+          "colorScapeEnabled": {
+            "type": "boolean",
+            "description": "UI Site Global Setting: Should Kavita render ColorScape gradients"
           },
           "aniListScrobblingEnabled": {
             "type": "boolean",
@@ -17961,6 +19135,21 @@
             "description": "The title of the bookmark. Defaults to Page {PageNumber} if not set",
             "nullable": true
           },
+          "bookScrollId": {
+            "type": "string",
+            "description": "For Book Reader, represents the nearest passed anchor on the screen that can be used to resume scroll point. If empty, the ToC point is the beginning of the page",
+            "nullable": true
+          },
+          "selectedText": {
+            "type": "string",
+            "description": "Text of the bookmark",
+            "nullable": true
+          },
+          "chapterTitle": {
+            "type": "string",
+            "description": "Title of the Chapter this PToC was created in",
+            "nullable": true
+          },
           "seriesId": {
             "type": "integer",
             "format": "int32"
@@ -17982,11 +19171,6 @@
           "libraryId": {
             "type": "integer",
             "format": "int32"
-          },
-          "bookScrollId": {
-            "type": "string",
-            "description": "For Book Reader, represents the nearest passed anchor on the screen that can be used to resume scroll point. If empty, the ToC point is the beginning of the page",
-            "nullable": true
           },
           "created": {
             "type": "string",
@@ -18168,8 +19352,23 @@
             "type": "integer",
             "format": "int32"
           },
+          "imageOffset": {
+            "type": "integer",
+            "description": "Only applicable for Epubs",
+            "format": "int32"
+          },
+          "xPath": {
+            "type": "string",
+            "description": "Only applicable for Epubs",
+            "nullable": true
+          },
           "series": {
             "$ref": "#/components/schemas/SeriesDto"
+          },
+          "chapterTitle": {
+            "type": "string",
+            "description": "Not required, will be filled out at API before saving to the DB",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -18263,6 +19462,45 @@
           "localizedSeriesName": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BrowseAnnotationFilterDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Not used - For parity with Series Filter",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "Not used - For parity with Series Filter",
+            "nullable": true
+          },
+          "statements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnnotationFilterStatementDto"
+            },
+            "nullable": true
+          },
+          "combination": {
+            "enum": [
+              0,
+              1
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "sortOptions": {
+            "$ref": "#/components/schemas/AnnotationSortOptions"
+          },
+          "limitTo": {
+            "type": "integer",
+            "description": "Limit the number of rows returned. Defaults to not applying a limit (aka 0)",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -19859,6 +21097,10 @@
           "bookScrollId": {
             "type": "string",
             "nullable": true
+          },
+          "selectedText": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -20288,6 +21530,32 @@
         },
         "additionalProperties": false,
         "description": "Represents if Test Email Service URL was successful or not and if any error occured"
+      },
+      "EpubFontDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "provider": {
+            "enum": [
+              1,
+              2
+            ],
+            "type": "integer",
+            "format": "int32"
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ExternalChapterDto": {
         "type": "object",
@@ -21311,7 +22579,8 @@
               29,
               30,
               31,
-              32
+              32,
+              33
             ],
             "type": "integer",
             "description": "Represents the field which will dictate the value type and the Extension used for filtering",
@@ -21485,6 +22754,23 @@
           "title": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HighlightSlot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "slotNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "color": {
+            "$ref": "#/components/schemas/RgbaColor"
           }
         },
         "additionalProperties": false
@@ -21766,6 +23052,11 @@
             "type": "string",
             "description": "An XPath string read by Koreader to determine the location within the epub.\nEssentially, it is Koreader's equivalent to ProgressDto.BookScrollId.",
             "nullable": true
+          },
+          "timestamp": {
+            "type": "integer",
+            "description": "Last Progress in Unix seconds since epoch",
+            "format": "int64"
           }
         },
         "additionalProperties": false,
@@ -23288,25 +24579,43 @@
       "PersonalToCDto": {
         "required": [
           "chapterId",
+          "id",
           "pageNumber",
           "title"
         ],
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
           "chapterId": {
             "type": "integer",
             "format": "int32"
           },
           "pageNumber": {
             "type": "integer",
+            "description": "The page to bookmark",
             "format": "int32"
           },
           "title": {
             "type": "string",
+            "description": "The title of the bookmark. Defaults to Page {PageNumber} if not set",
             "nullable": true
           },
           "bookScrollId": {
             "type": "string",
+            "description": "For Book Reader, represents the nearest passed anchor on the screen that can be used to resume scroll point. If empty, the ToC point is the beginning of the page",
+            "nullable": true
+          },
+          "selectedText": {
+            "type": "string",
+            "description": "Text of the bookmark",
+            "nullable": true
+          },
+          "chapterTitle": {
+            "type": "string",
+            "description": "Title of the Chapter this PToC was created in",
             "nullable": true
           }
         },
@@ -24198,6 +25507,28 @@
         },
         "additionalProperties": false
       },
+      "RgbaColor": {
+        "type": "object",
+        "properties": {
+          "r": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "g": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "b": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "a": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "additionalProperties": false
+      },
       "ScanFolderDto": {
         "type": "object",
         "properties": {
@@ -24524,6 +25855,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BookmarkSearchResultDto"
+            },
+            "nullable": true
+          },
+          "annotations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnnotationDto"
             },
             "nullable": true
           }
@@ -27916,6 +29254,10 @@
       "UserDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
           "username": {
             "type": "string",
             "nullable": true
@@ -27996,7 +29338,9 @@
       "UserPreferencesDto": {
         "required": [
           "blurUnreadSummaries",
+          "bookReaderHighlightSlots",
           "collapseSeriesRelationships",
+          "colorScapeEnabled",
           "locale",
           "noTransitions",
           "promptForDownloadSize",
@@ -28035,11 +29379,20 @@
             "minLength": 1,
             "type": "string"
           },
+          "colorScapeEnabled": {
+            "type": "boolean"
+          },
           "aniListScrobblingEnabled": {
             "type": "boolean"
           },
           "wantToReadSync": {
             "type": "boolean"
+          },
+          "bookReaderHighlightSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HighlightSlot"
+            }
           }
         },
         "additionalProperties": false

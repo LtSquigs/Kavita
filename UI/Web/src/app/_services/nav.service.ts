@@ -1,5 +1,5 @@
 import {DOCUMENT} from '@angular/common';
-import {DestroyRef, inject, Inject, Injectable, Renderer2, RendererFactory2, RendererStyleFlags2} from '@angular/core';
+import {DestroyRef, inject, Injectable, Renderer2, RendererFactory2, RendererStyleFlags2} from '@angular/core';
 import {filter, ReplaySubject, take} from 'rxjs';
 import {HttpClient} from "@angular/common/http";
 import {environment} from "../../environments/environment";
@@ -8,11 +8,9 @@ import {TextResonse} from "../_types/text-response";
 import {AccountService} from "./account.service";
 import {map} from "rxjs/operators";
 import {NavigationEnd, Router} from "@angular/router";
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {SettingsTabId} from "../sidenav/preference-nav/preference-nav.component";
+import {takeUntilDestroyed, toSignal} from "@angular/core/rxjs-interop";
 import {WikiLink} from "../_models/wiki";
 import {AuthGuard} from "../_guards/auth.guard";
-import {SettingsService} from "../admin/settings.service";
 
 /**
  * NavItem used to construct the dropdown or NavLinkModal on mobile
@@ -34,6 +32,9 @@ interface NavItem {
   providedIn: 'root'
 })
 export class NavService {
+  private document = inject<Document>(DOCUMENT);
+  private httpClient = inject(HttpClient);
+
 
   private readonly accountService = inject(AccountService);
   private readonly router = inject(Router);
@@ -53,6 +54,10 @@ export class NavService {
     {
       transLocoKey: 'browse-tags',
       routerLink: '/browse/tags',
+    },
+    {
+      transLocoKey: 'all-annotations',
+      routerLink: '/browse/annotations'
     },
     {
       transLocoKey: 'announcements',
@@ -79,12 +84,14 @@ export class NavService {
    * If the Side Nav is in a collapsed state or not.
    */
   sideNavCollapsed$ = this.sideNavCollapseSource.asObservable();
+  sideNavCollapsedSignal = toSignal(this.sideNavCollapsed$, {initialValue: false});
 
   private sideNavVisibilitySource = new ReplaySubject<boolean>(1);
   /**
    * If the side nav is rendered or not into the DOM.
    */
   sideNavVisibility$ = this.sideNavVisibilitySource.asObservable();
+  sideNavVisibilitySignal = toSignal(this.sideNavVisibility$, {initialValue: false})
 
   usePreferenceSideNav$ = this.router.events.pipe(
     filter(event => event instanceof NavigationEnd),
@@ -101,7 +108,9 @@ export class NavService {
   private renderer: Renderer2;
   baseUrl = environment.apiUrl;
 
-  constructor(@Inject(DOCUMENT) private document: Document, rendererFactory: RendererFactory2, private httpClient: HttpClient) {
+  constructor() {
+    const rendererFactory = inject(RendererFactory2);
+
     this.renderer = rendererFactory.createRenderer(null, null);
 
     // To avoid flashing, let's check if we are authenticated before we show

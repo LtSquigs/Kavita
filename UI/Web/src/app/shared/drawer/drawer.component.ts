@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import {CommonModule} from "@angular/common";
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  inject,
+  Input,
+  Output
+} from '@angular/core';
+import {NgStyle} from "@angular/common";
 import {TranslocoDirective} from "@jsverse/transloco";
 
 export class DrawerOptions {
@@ -11,13 +19,15 @@ export class DrawerOptions {
 
 @Component({
     selector: 'app-drawer',
-    imports: [CommonModule, TranslocoDirective],
+  imports: [TranslocoDirective, NgStyle],
     templateUrl: './drawer.component.html',
     styleUrls: ['./drawer.component.scss'],
     exportAs: "drawer",
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DrawerComponent {
+  private readonly cdRef = inject(ChangeDetectorRef);
+
   @Input() isOpen = false;
   @Input() width: number = 400;
   /**
@@ -27,8 +37,6 @@ export class DrawerComponent {
   @Input() options: Partial<DrawerOptions> = new DrawerOptions();
   @Output() drawerClosed = new EventEmitter();
   @Output() isOpenChange: EventEmitter<boolean> = new EventEmitter();
-
-  constructor(private readonly cdRef: ChangeDetectorRef) {}
 
   close() {
     this.isOpen = false;

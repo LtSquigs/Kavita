@@ -4,7 +4,6 @@ import {
   Component,
   EventEmitter,
   inject,
-  Inject,
   Input,
   OnInit,
   Output
@@ -20,6 +19,7 @@ import {UploadService} from 'src/app/_services/upload.service';
 import {DOCUMENT, NgClass} from '@angular/common';
 import {ImageComponent} from "../../shared/image/image.component";
 import {translate, TranslocoModule} from "@jsverse/transloco";
+import {ColorscapeService} from "../../_services/colorscape.service";
 
 @Component({
     selector: 'app-cover-image-chooser',
@@ -41,6 +41,8 @@ export class CoverImageChooserComponent implements OnInit {
   public readonly fb = inject(FormBuilder);
   public readonly toastr = inject(ToastrService);
   public readonly uploadService = inject(UploadService);
+  private readonly colorscapeService = inject(ColorscapeService)
+  private readonly document = inject(DOCUMENT)
 
   /**
    * If buttons show under images to allow immediate selection of cover images.
@@ -85,33 +87,12 @@ export class CoverImageChooserComponent implements OnInit {
   acceptableExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif'].join(',');
   mode: 'file' | 'url' | 'all' = 'all';
 
-  constructor(@Inject(DOCUMENT) private document: Document) { }
-
   ngOnInit(): void {
     this.form = this.fb.group({
       coverImageUrl: new FormControl('', [])
     });
 
     this.cdRef.markForCheck();
-  }
-
-
-  /**
-   * Generates a base64 encoding for an Image. Used in manual file upload flow.
-   * @param img
-   * @returns
-   */
-  getBase64Image(img: HTMLImageElement) {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d", {alpha: false});
-    if (!ctx) {
-      return '';
-    }
-
-    ctx.drawImage(img, 0, 0);
-    return canvas.toDataURL("image/png");
   }
 
   selectImage(index: number, callback?: Function) {
@@ -240,7 +221,7 @@ export class CoverImageChooserComponent implements OnInit {
   }
 
   handleUrlImageAdd(img: HTMLImageElement, index: number = -1) {
-    const url = this.getBase64Image(img);
+    const url = this.colorscapeService.getBase64Image(img);
     if (index >= 0) {
       this.imageUrls[index] = url;
     } else {

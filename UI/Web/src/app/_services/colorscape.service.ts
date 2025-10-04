@@ -1,7 +1,8 @@
-import { Injectable, Inject } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import {inject, Injectable} from '@angular/core';
+import {DOCUMENT} from '@angular/common';
 import {BehaviorSubject, filter, take, tap, timer} from 'rxjs';
 import {NavigationEnd, Router} from "@angular/router";
+import {AccountService} from "./account.service";
 
 interface ColorSpace {
   primary: string;
@@ -30,20 +31,122 @@ const colorScapeSelector = 'colorscape';
   providedIn: 'root'
 })
 export class ColorscapeService {
+  private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
+  private readonly accountService = inject(AccountService);
+
   private colorSubject = new BehaviorSubject<ColorSpaceRGBA | null>(null);
   private colorSeedSubject = new BehaviorSubject<{primary: string, complementary: string | null} | null>(null);
-  public readonly colors$ = this.colorSubject.asObservable();
 
   private minDuration = 1000; // minimum duration
   private maxDuration = 4000; // maximum duration
   private defaultColorspaceDuration = 300; // duration to wait before defaulting back to default colorspace
+  // Use 0.179 as threshold (roughly equivalent to #767676)
+  // This gives better visual results than 0.5
+  public static readonly defaultLuminanceThreshold =  0.179;
 
-  constructor(@Inject(DOCUMENT) private document: Document, private readonly router: Router) {
+
+  constructor() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
       tap(() => this.checkAndResetColorscapeAfterDelay())
     ).subscribe();
 
+
+  }
+
+  /**
+   * Returns a fitting text color depending on the background color of the element
+   * style.backgroundColor **must** be set on the passed element for this to work
+   * @param el
+   */
+  getContrastingTextColor(el: HTMLElement): string {
+    const style = window.getComputedStyle(el);
+    const bgColor = style.backgroundColor;
+
+    if (bgColor === '') {
+      return 'black';
+    }
+
+    const rgba = this.rgbStringToRGBA(bgColor);
+    const luminance = this.getLuminance(rgba);
+
+    return luminance > ColorscapeService.defaultLuminanceThreshold ? 'black' : 'white';
+  }
+
+  getLuminance(rgba: RGBAColor): number {
+    // Convert RGB to relative luminance with gamma correction
+    const getRelativeLuminance = (color: number): number => {
+      const c = color / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+
+    const r = getRelativeLuminance(rgba.r);
+    const g = getRelativeLuminance(rgba.g);
+    const b = getRelativeLuminance(rgba.b);
+
+    // WCAG relative luminance formula (https://www.w3.org/WAI/GL/wiki/Relative_luminance)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  /**
+   * Generates a base64 encoding for an Image. Used in manual file upload flow.
+   * @param img
+   * @returns
+   */
+  getBase64Image(img: HTMLImageElement) {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d", {alpha: false});
+    if (!ctx) {
+      return '';
+    }
+
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL("image/png");
+  }
+
+  getAverageColour(img: HTMLImageElement, sampleWidth?: number, sampleHeight?: number): RGBAColor | undefined {
+    let canvas = document.createElement('canvas');
+    let ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const sw = sampleWidth ?? 20;
+    const sh = sampleHeight ?? 20;
+    let imageData: ImageData;
+    try {
+      imageData = ctx.getImageData(
+        canvas.width -sw,
+        canvas.height - sh,
+        sw,
+        sh
+      );
+    } catch (e) {
+      return;
+    }
+
+    let r = 0, g = 0, b = 0;
+    const pixels = imageData.data;
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      r += pixels[i];
+      g += pixels[i + 1];
+      b += pixels[i + 2];
+    }
+
+    const pixelCount = pixels.length / 4;
+    return {
+      r: Math.round(r / pixelCount),
+      g: Math.round(g / pixelCount),
+      b: Math.round(b / pixelCount),
+      a: 0.5,
+    };
   }
 
   /**
@@ -73,7 +176,7 @@ export class ColorscapeService {
    * @param complementaryColor
    */
   setColorScape(primaryColor: string, complementaryColor: string | null = null) {
-    if (this.getCssVariable('--colorscape-enabled') === 'false') {
+    if (this.accountService.currentUserSignal()?.preferences?.colorScapeEnabled === false || this.getCssVariable('--colorscape-enabled') === 'false') {
       return;
     }
 
@@ -153,7 +256,7 @@ export class ColorscapeService {
     }
   }
 
-  private hexToRGBA(hex: string, opacity: number = 1): RGBAColor {
+  public hexToRGBA(hex: string, opacity: number = 1): RGBAColor {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
       ? {

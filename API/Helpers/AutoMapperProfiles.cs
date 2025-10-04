@@ -11,6 +11,7 @@ using API.DTOs.Device;
 using API.DTOs.Email;
 using API.DTOs.Filtering;
 using API.DTOs.Filtering.v2;
+using API.DTOs.Font;
 using API.DTOs.KavitaPlus.Manage;
 using API.DTOs.KavitaPlus.Metadata;
 using API.DTOs.MediaErrors;
@@ -282,6 +283,8 @@ public class AutoMapperProfiles : Profile
                 opt =>
                     opt.MapFrom(src => src.BookThemeName));
 
+        CreateMap<EpubFont, EpubFontDto>();
+
 
         CreateMap<AppUserBookmark, BookmarkDto>();
 
@@ -385,6 +388,10 @@ public class AutoMapperProfiles : Profile
             .ForMember(dest => dest.Whitelist, opt => opt.MapFrom(src => src.Whitelist ?? new List<string>()))
             .ForMember(dest => dest.Overrides, opt => opt.MapFrom(src => src.Overrides ?? new List<MetadataSettingField>()))
             .ForMember(dest => dest.AgeRatingMappings, opt => opt.MapFrom(src => src.AgeRatingMappings ?? new Dictionary<string, AgeRating>()));
+
+        CreateMap<AppUserAnnotation, AnnotationDto>()
+            .ForMember(dest => dest.OwnerUsername, opt => opt.MapFrom(src => src.AppUser.UserName))
+            .ForMember(dest => dest.OwnerUserId, opt => opt.MapFrom(src => src.AppUserId)) ;
 
         CreateMap<OidcConfigDto, OidcPublicConfigDto>();
     }

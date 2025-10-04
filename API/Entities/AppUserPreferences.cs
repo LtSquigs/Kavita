@@ -2,6 +2,7 @@
 using API.Data;
 using API.Entities.Enums;
 using API.Entities.Enums.UserPreferences;
+using API.Services.Tasks;
 
 namespace API.Entities;
 
@@ -79,7 +80,7 @@ public class AppUserPreferences
     /// <summary>
     /// Book Reader Option: Maps to the default Kavita font-family (inherit) or an override
     /// </summary>
-    public string BookReaderFontFamily { get; set; } = "default";
+    public string BookReaderFontFamily { get; set; } = FontService.DefaultFont;
     /// <summary>
     /// Book Reader Option: Allows tapping on side of screens to paginate
     /// </summary>
@@ -108,6 +109,10 @@ public class AppUserPreferences
     /// </summary>
     /// <remarks>Defaults to false</remarks>
     public bool BookReaderImmersiveMode { get; set; } = false;
+    /// <summary>
+    /// Book Reader Option: A set of 5 distinct highlight slots with default colors. User can customize. Binds to all Highlight Annotations (<see cref="AppUserAnnotation"/>.
+    /// </summary>
+    public List<HighlightSlot> BookReaderHighlightSlots { get; set; }
     #endregion
 
     #region PdfReader
@@ -165,6 +170,10 @@ public class AppUserPreferences
     /// UI Site Global Setting: The language locale that should be used for the user
     /// </summary>
     public string Locale { get; set; }
+    /// <summary>
+    /// UI Site Global Setting: Should Kavita render ColorScape gradients
+    /// </summary>
+    public bool ColorScapeEnabled { get; set; } = true;
     #endregion
 
     #region KavitaPlus

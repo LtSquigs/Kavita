@@ -40,14 +40,14 @@ public class KoreaderService : IKoreaderService
     /// <param name="userId"></param>
     public async Task SaveProgress(KoreaderBookDto koreaderBookDto, int userId)
     {
-        _logger.LogDebug("Saving Koreader progress for User ({UserId}): {KoreaderProgress}", userId, koreaderBookDto.Progress.Sanitize());
-        var file = await _unitOfWork.MangaFileRepository.GetByKoreaderHash(koreaderBookDto.Document);
+        _logger.LogDebug("Saving Koreader progress for User ({UserId}): {KoreaderProgress}", userId, koreaderBookDto.progress.Sanitize());
+        var file = await _unitOfWork.MangaFileRepository.GetByKoreaderHash(koreaderBookDto.document);
         if (file == null) throw new KavitaException(await _localizationService.Translate(userId, "file-missing"));
 
         var userProgressDto = await _unitOfWork.AppUserProgressRepository.GetUserProgressDtoAsync(file.ChapterId, userId);
         if (userProgressDto == null)
         {
-            var chapterDto = await _unitOfWork.ChapterRepository.GetChapterDtoAsync(file.ChapterId);
+            var chapterDto = await _unitOfWork.ChapterRepository.GetChapterDtoAsync(file.ChapterId, userId);
             if (chapterDto == null) throw new KavitaException(await _localizationService.Translate(userId, "chapter-doesnt-exist"));
 
             var volumeDto = await _unitOfWork.VolumeRepository.GetVolumeByIdAsync(chapterDto.VolumeId);
@@ -61,7 +61,7 @@ public class KoreaderService : IKoreaderService
             };
         }
         // Update the bookScrollId if possible
-        KoreaderHelper.UpdateProgressDto(userProgressDto, koreaderBookDto.Progress);
+        KoreaderHelper.UpdateProgressDto(userProgressDto, koreaderBookDto.progress);
 
         await _readerService.SaveReadingProgress(userProgressDto, userId);
     }
@@ -86,6 +86,7 @@ public class KoreaderService : IKoreaderService
         return new KoreaderBookDtoBuilder(bookHash).WithProgress(koreaderProgress)
             .WithPercentage(progressDto?.PageNum, file.Pages)
             .WithDeviceId(settingsDto.InstallId, userId)
+            .WithTimestamp(progressDto?.LastModifiedUtc)
             .Build();
     }
 }

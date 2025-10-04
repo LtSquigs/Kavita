@@ -3,6 +3,7 @@ import {FilterField} from "../_models/metadata/v2/filter-field";
 import {translate} from "@jsverse/transloco";
 import {ValidFilterEntity} from "../metadata-filter/filter-settings";
 import {PersonFilterField} from "../_models/metadata/v2/person-filter-field";
+import {AnnotationsFilterField} from "../_models/metadata/v2/annotations-filter";
 
 @Pipe({
   name: 'genericFilterField'
@@ -12,12 +13,32 @@ export class GenericFilterFieldPipe implements PipeTransform {
   transform<T extends number>(value: T, entityType: ValidFilterEntity): string {
 
     switch (entityType) {
+      case "annotation":
+        return this.annotationsFilterField(value as AnnotationsFilterField);
       case "series":
         return this.translateFilterField(value as FilterField);
       case "person":
         return this.translatePersonFilterField(value as PersonFilterField);
     }
   }
+
+  private annotationsFilterField(value: AnnotationsFilterField) {
+    switch (value) {
+      case AnnotationsFilterField.Selection:
+        return translate('generic-filter-field-pipe.annotation-selection')
+      case AnnotationsFilterField.Comment:
+        return translate('generic-filter-field-pipe.annotation-comment')
+      case AnnotationsFilterField.HighlightSlots:
+        return translate('generic-filter-field-pipe.annotation-highlights')
+      case AnnotationsFilterField.Owner:
+        return translate('generic-filter-field-pipe.annotation-owner');
+      case AnnotationsFilterField.Library:
+        return translate('filter-field-pipe.libraries');
+      case AnnotationsFilterField.Spoiler:
+        return translate('generic-filter-field-pipe.annotation-spoiler');
+    }
+  }
+
 
   private translatePersonFilterField(value: PersonFilterField) {
     switch (value) {
@@ -100,6 +121,8 @@ export class GenericFilterFieldPipe implements PipeTransform {
         return translate('filter-field-pipe.read-last');
       case FilterField.AverageRating:
         return translate('filter-field-pipe.average-rating');
+      case FilterField.FileSize:
+        return translate('filter-field-pipe.file-size');
       default:
         throw new Error(`Invalid FilterField value: ${value}`);
     }
