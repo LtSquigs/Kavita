@@ -9,7 +9,7 @@
   }
 
   &::-webkit-scrollbar {
-    background-color: transparent; /*make scrollbar space invisible */
+    background-color: transparent;
     width: inherit;
     display: none;
     visibility: hidden;
@@ -17,7 +17,7 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: transparent; /*makes it invisible when not hovering*/
+    background: transparent;
   }
 
   &:hover {
@@ -68,7 +68,7 @@
 }
 
 .side-nav-header {
-  color: #d5d5d5;
+  color: var(--pref-side-nav-header-text-color);
   font-weight: bold;
   margin-left: 5px;
 }

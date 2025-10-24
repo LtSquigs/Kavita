@@ -1,5 +1,5 @@
 import {HttpClient} from '@angular/common/http';
-import {DestroyRef, inject, Injectable} from '@angular/core';
+import {computed, DestroyRef, inject, Injectable} from '@angular/core';
 import {Observable, of, ReplaySubject, shareReplay} from 'rxjs';
 import {filter, map, switchMap, tap} from 'rxjs/operators';
 import {environment} from 'src/environments/environment';
@@ -16,6 +16,7 @@ import {takeUntilDestroyed, toSignal} from "@angular/core/rxjs-interop";
 import {Action} from "./action-factory.service";
 import {LicenseService} from "./license.service";
 import {LocalizationService} from "./localization.service";
+import {Annotation} from "../book-reader/_models/annotations/annotation";
 
 export enum Role {
   Admin = 'Admin',
@@ -64,8 +65,10 @@ export class AccountService {
     if (!u) return false;
     return this.hasAdminRole(u);
   }), shareReplay({bufferSize: 1, refCount: true}));
+  public readonly isAdmin = toSignal(this.isAdmin$);
 
-  public readonly currentUserSignal = toSignal(this.currentUserSource);
+  public readonly currentUserSignal = toSignal(this.currentUser$);
+  public readonly userId = computed(() => this.currentUserSignal()?.id);
 
   /**
    * SetTimeout handler for keeping track of refresh token call
@@ -189,7 +192,47 @@ export class AccountService {
   }
 
   getRoles() {
-    return this.httpClient.get<string[]>(this.baseUrl + 'account/roles');
+    return this.httpClient.get<Role[]>(this.baseUrl + 'account/roles');
+  }
+
+  /**
+   * Should likes be displayed for the given annotation
+   * @param annotation
+   */
+  showAnnotationLikes(annotation: Annotation) {
+    const user = this.currentUserSignal();
+    if (!user) return false;
+
+    const shareAnnotations = user.preferences.socialPreferences.shareAnnotations;
+    return this.isSocialFeatureEnabled(shareAnnotations, annotation.libraryId, annotation.ageRating);
+  }
+
+  /**
+   * Checks if the given social feature is enabled in a library with associated age rating on the entity
+   * @param feature
+   * @param activeLibrary
+   * @param ageRating
+   * @private
+   */
+  private isSocialFeatureEnabled(feature: boolean, activeLibrary: number, ageRating: AgeRating) {
+    const user = this.currentUserSignal();
+    if (!user || !feature) return false;
+
+    const socialPreferences = user.preferences.socialPreferences;
+
+    const libraryAllowed = socialPreferences.socialLibraries.length === 0 ||
+      socialPreferences.socialLibraries.includes(activeLibrary);
+
+    if (!libraryAllowed || socialPreferences.socialMaxAgeRating === AgeRating.NotApplicable) {
+      return libraryAllowed;
+    }
+
+    if (socialPreferences.socialIncludeUnknowns) {
+      return socialPreferences.socialMaxAgeRating >= ageRating;
+    }
+
+    return socialPreferences.socialMaxAgeRating >= ageRating && ageRating !== AgeRating.Unknown;
+
   }
 
 
@@ -201,8 +244,7 @@ export class AccountService {
         if (user) {
           this.setCurrentUser(user);
         }
-      }),
-      takeUntilDestroyed(this.destroyRef)
+      })
     );
   }
 
@@ -258,7 +300,7 @@ export class AccountService {
     this.messageHub.stopHubConnection();
 
     if (!user.token) {
-      window.location.href = '/oidc/logout';
+      window.location.href = this.baseUrl.substring(0, environment.apiUrl.indexOf("api")) + 'oidc/logout';
       return;
     }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -20,8 +21,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using MessageReceivedContext = Microsoft.AspNetCore.Authentication.JwtBearer.MessageReceivedContext;
 using TokenValidatedContext = Microsoft.AspNetCore.Authentication.OpenIdConnect.TokenValidatedContext;
 
@@ -139,8 +142,51 @@ public static class IdentityServiceExtensions
         var isDevelopment = environment.IsEnvironment(Environments.Development);
         var baseUrl = Configuration.BaseUrl;
 
-        var apiPrefix = baseUrl + "api";
-        var hubsPrefix = baseUrl + "hubs";
+        const string apiPrefix = "/api";
+        const string hubsPrefix = "/hubs";
+
+        var authority = Configuration.OidcSettings.Authority;
+        if (!isDevelopment && !authority.StartsWith("https"))
+        {
+            Log.Error("OpenIdConnect authority is not using https, you must configure tls for your idp.");
+            return;
+        }
+
+        var hasTrailingSlash = authority.EndsWith('/');
+        var url = authority + (hasTrailingSlash ? string.Empty : "/") + ".well-known/openid-configuration";
+
+        var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
+            url,
+            new OpenIdConnectConfigurationRetriever(),
+            new HttpDocumentRetriever { RequireHttps = !isDevelopment }
+        );
+
+        ICollection<string> supportedScopes;
+        try
+        {
+            supportedScopes = configurationManager.GetConfigurationAsync()
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult()
+                .ScopesSupported;
+        }
+        catch (Exception ex)
+        {
+            // Do not interrupt startup if OIDC fails (Network outage should still allow Kavita to run)
+            Log.Error(ex, "Failed to load OIDC configuration, OIDC will not be enabled. Restart to retry");
+            return;
+        }
+
+        List<string> scopes = ["openid", "profile", "offline_access", "roles", "email"];
+        scopes.AddRange(settings.CustomScopes);
+        var validScopes = scopes.Where(scope =>
+        {
+            if (supportedScopes.Contains(scope))
+                return true;
+
+            Log.Warning("Scope {Scope} is configured, but not supported by your OIDC provider. Skipping", scope);
+            return false;
+        }).ToList();
 
         services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme).Configure<ITicketStore>((options, store) =>
         {
@@ -150,6 +196,7 @@ public static class IdentityServiceExtensions
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
             options.Cookie.MaxAge = TimeSpan.FromDays(7);
+            options.Cookie.SameSite = SameSiteMode.Strict;
             options.SessionStore = store;
 
             if (isDevelopment)
@@ -193,21 +240,25 @@ public static class IdentityServiceExtensions
 
             options.SaveTokens = true;
             options.GetClaimsFromUserInfoEndpoint = true;
-            options.Scope.Clear();
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-            options.Scope.Add("offline_access");
-            options.Scope.Add("roles");
-            options.Scope.Add("email");
 
-            foreach (var customScope in settings.CustomScopes)
+            // Due to some (Authelia) OIDC providers, we need to map these claims explicitly. Such that no flow breaks in the
+            // OidcService
+            options.MapInboundClaims = true;
+            options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+            options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+            options.ClaimActions.MapJsonKey(JwtRegisteredClaimNames.PreferredUsername, "preferred_username");
+            options.ClaimActions.MapJsonKey(ClaimTypes.GivenName, "given_name");
+
+            options.Scope.Clear();
+            foreach (var scope in validScopes)
             {
-                options.Scope.Add(customScope);
+                options.Scope.Add(scope);
             }
+
 
             options.Events = new OpenIdConnectEvents
             {
-                OnTokenValidated = OidcClaimsPrincipalConverter,
+                OnTicketReceived = OidcClaimsPrincipalConverter,
                 OnAuthenticationFailed = ctx =>
                 {
                     ctx.Response.Redirect(baseUrl + "login?skipAutoLogin=true&error=" + Uri.EscapeDataString(ctx.Exception.Message));
@@ -252,7 +303,7 @@ public static class IdentityServiceExtensions
     /// Kavita roles the user has
     /// </summary>
     /// <param name="ctx"></param>
-    private static async Task OidcClaimsPrincipalConverter(TokenValidatedContext ctx)
+    private static async Task OidcClaimsPrincipalConverter(TicketReceivedContext ctx)
     {
         if (ctx.Principal == null) return;
 
@@ -264,56 +315,14 @@ public static class IdentityServiceExtensions
         }
 
         var claims = await OidcService.ConstructNewClaimsList(ctx.HttpContext.RequestServices, ctx.Principal, user);
-        var tokens = CopyOidcTokens(ctx);
 
         var identity = new ClaimsIdentity(claims, ctx.Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
-
-        ctx.Properties ??= new AuthenticationProperties();
-        ctx.Properties.StoreTokens(tokens);
 
         ctx.HttpContext.User = principal;
         ctx.Principal = principal;
 
         ctx.Success();
-    }
-
-    /// <summary>
-    /// Copy tokens returned by the OIDC provider that we require later
-    /// </summary>
-    /// <param name="ctx"></param>
-    /// <returns></returns>
-    private static List<AuthenticationToken> CopyOidcTokens(TokenValidatedContext ctx)
-    {
-        if (ctx.TokenEndpointResponse == null)
-        {
-            return [];
-        }
-
-        var tokens = new List<AuthenticationToken>();
-
-        if (!string.IsNullOrEmpty(ctx.TokenEndpointResponse.RefreshToken))
-        {
-            tokens.Add(new AuthenticationToken { Name = OidcService.RefreshToken, Value = ctx.TokenEndpointResponse.RefreshToken });
-        }
-        else
-        {
-            var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<OidcService>>();
-            logger.LogWarning("OIDC login without refresh token, automatic sync will not work for this user");
-        }
-
-        if (!string.IsNullOrEmpty(ctx.TokenEndpointResponse.IdToken))
-        {
-            tokens.Add(new AuthenticationToken { Name = OidcService.IdToken, Value = ctx.TokenEndpointResponse.IdToken });
-        }
-
-        if (!string.IsNullOrEmpty(ctx.TokenEndpointResponse.ExpiresIn))
-        {
-            var expiresAt = DateTimeOffset.UtcNow.AddSeconds(double.Parse(ctx.TokenEndpointResponse.ExpiresIn));
-            tokens.Add(new AuthenticationToken { Name = OidcService.ExpiresAt, Value = expiresAt.ToString("o") });
-        }
-
-        return tokens;
     }
 
     private static Task SetTokenFromQuery(MessageReceivedContext context)

@@ -20,12 +20,13 @@
         "save": "{{common.save}}",
         "save-success": "Successfully updated your OIDC settings",
         "notice": "Notice",
-        "restart-required": "Changing Authority or Client ID requires a manual restart of Kavita to take effect.",
+        "restart-required": "Changing Provider or advanced settings requires a manual restart of Kavita to take effect.",
         "provider-title": "Provider",
         "provider-tooltip": "Provider settings require you to manually click Save. Kavita must be configured as a confidential client and needs a redirect URL. See the <a href='https://wiki.kavitareader.com/guides/admin-settings/open-id-connect/' target='_blank' rel='noreferrer noopener'>wiki</a> for more details.",
         "behavior-title": "Behavior",
         "other-field-required": "{{validation.other-field-required}}",
         "invalid-uri": "{{validation.invalid-uri}}",
+        "tls-required": "The OIDC provider must use tls (https)",
         "manual-save-label": "Changing provider settings requires a manual save",
 
         "authority-label": "Authority",
@@ -48,12 +49,14 @@
         "provider-name-tooltip": "Name shown on the login screen",
 
         "defaults-title": "Defaults",
-        "defaults-requirement": "The following settings are used when a user is registered via OIDC while SyncUserSettings is turned off",
+        "defaults-requirement": "The following settings are used when a user is registered via OIDC while Sync User Settings is turned off",
         "default-include-unknowns-label": "Include unknowns",
         "default-include-unknowns-tooltip": "Include unknown age ratings",
         "default-age-restriction-label": "Age rating",
         "default-age-restriction-tooltip": "Maximum age rating shown to new users",
         "no-restriction": "{{restriction-selector.no-restriction}}",
+        "default-roles-label": "{{common.roles}}",
+        "default-libraries-label": "{{common.libraries}}",
 
         "advanced-title": "Advanced settings",
         "advanced-tooltip": "Only modify these options if you understand their impact.",
@@ -95,7 +98,9 @@
         "out-of-sync": "This user was created via OIDC. If the SyncUsers setting is enabled, any changes made to this account may be overwritten.",
         "oidc-managed": "This user is managed via OIDC. Please contact your OIDC administrator to request any changes.",
         "identity-provider": "Identity provider",
-        "identity-provider-tooltip": "Kavita users are never synced with OIDC accounts."
+        "identity-provider-tooltip": "Kavita users are never synced with OIDC accounts.",
+        "libraries-label": "{{common.libraries}}",
+        "roles-label": "{{common.roles}}"
     },
 
     "user-scrobble-history": {
@@ -202,18 +207,31 @@
         "disable-animations-tooltip": "Turns off animations in the site. Useful for e-ink readers.",
         "collapse-series-relationships-label": "Collapse Series Relationships",
         "collapse-series-relationships-tooltip": "Should Kavita show Series that have no relationships or is the parent/prequel",
-        "share-series-reviews-label": "Share Series Reviews",
-        "share-series-reviews-tooltip": "Allow your reviews to be visible to other users on this server",
         "highlight-bar-label": "Annotations highlight colors",
         "highlight-bar-tooltip": "These colors are shared between all books",
         "colorscape-label": "Use ColorScape",
         "colorscape-tooltip": "Global toggle to enable/disable the dynamic gradient feature. Will override theme settings",
+        "data-saver-label": "Data saver",
+        "data-saver-tooltip": "Minimizes data usage by preventing automatic prefetching (e.g., PDF reader)",
 
         "kavitaplus-settings-title": "Kavita+",
         "anilist-scrobbling-label": "AniList Scrobbling",
         "anilist-scrobbling-tooltip": "Allow Kavita to Scrobble (one-way sync) reading progress and ratings to AniList",
         "want-to-read-sync-label": "Want To Read Sync",
         "want-to-read-sync-tooltip": "Allow Kavita to add items to your Want to Read list based on AniList and MAL series in Pending read list",
+
+        "share-series-reviews-label": "Share Series Reviews",
+        "share-series-reviews-tooltip": "Allow your reviews to be visible to other users on this server",
+        "share-annotations-label": "Share Annotations",
+        "share-annotations-tooltip": "Allow your annotations to be visible to other users on this server",
+        "view-other-annotations-label": "View Shared Annotations",
+        "view-other-annotations-tooltip": "View other users' annotations while reading",
+        "social-libraries-label": "Social Libraries",
+        "social-libraries-tooltip": "Libraries on which social features should be enabled. No selection enables social features everywhere. Disable specific features if you wish to use them nowhere.",
+        "social-max-age-rating-label": "Max age rating",
+        "social-max-age-rating-tooltip": "Max age rating on which social features will work",
+        "social-include-unknowns-label": "Include unknowns",
+        "social-include-unknowns-tooltip": "Enable social features for series and chapters with an unknown age rating",
 
         "clients-opds-alert": "OPDS is not enabled on this server. This will not affect Mihon users.",
         "clients-opds-description": "All 3rd Party clients will either use the API key or the Connection Url below. These are like passwords, keep it private.",
@@ -224,6 +242,11 @@
 
         "reset": "{{common.reset}}",
         "save": "{{common.save}}"
+    },
+
+    "multi-check-box-form": {
+        "select-all": "Select all",
+        "deselect-all": "Deselect all"
     },
 
     "user-holds": {
@@ -238,7 +261,7 @@
 
     "theme-manager": {
         "title": "Theme Manager",
-        "description": "Kavita comes in my colors, find a color scheme that meets your needs or build one yourself and share it. Themes may be applied for your account or applied to all accounts.",
+        "description": "Kavita comes in many colors, find a color scheme that meets your needs or build one yourself and share it. Themes may be applied for your account or applied to all accounts.",
         "site-themes": "Site Themes",
         "set-default": "Set Default",
         "default-theme": "Default",
@@ -471,7 +494,7 @@
     },
 
     "role-selector": {
-        "title": "Roles",
+        "title": "{{common.roles}}",
         "deselect-all": "{{common.deselect-all}}",
         "select-all": "{{common.select-all}}"
     },
@@ -748,11 +771,13 @@
         "inviting": "Inviting…",
         "cancel": "{{common.cancel}}",
         "email-not-sent": "{{toasts.email-not-sent}}",
-        "notice": "{{manage-settings.notice}}"
+        "notice": "{{manage-settings.notice}}",
+        "libraries-label": "{{common.libraries}}",
+        "roles-label": "{{common.roles}}"
     },
 
     "library-selector": {
-        "title": "Libraries",
+        "title": "{{common.libraries}}",
         "select-all": "{{common.select-all}}",
         "deselect-all": "{{common.deselect-all}}",
         "no-data": "There are no libraries setup yet."
@@ -760,7 +785,7 @@
 
     "license": {
         "title": "Kavita+ License",
-        "kavita+-warning": "Kavita+ is separate from Kavita. If you uninstall Kavita without unsubscribing, you will be charged.",
+        "kavita+-warning": "Kavita+ is separate from Kavita. Uninstalling without first cancelling your subscription will continue the billing cycle.",
         "manage": "Manage",
         "invalid-license-tooltip": "If your subscription has ended, you must email support to get a new subscription created",
         "check": "Check",
@@ -793,6 +818,7 @@
         "faq-title": "FAQ",
         "total-subbed-months-label": "Total Months Subscribed",
         "email-label": "Registered Email",
+        "supportId-label": "Support Id",
 
         "license-mismatch": "License may be registered to another Kavita instance. Re-register to fix.",
         "k+-license-overwrite": "License is registered to another Kavita instance. This can happen on re-installation and rarely due to system updates. Select overwrite to force this instance to register with Kavita+.",
@@ -907,7 +933,7 @@
         "field-mapping-description": "Setup rules for certain strings found in Genre/Tag field and map it to a new string in Genre/Tag and optionally remove it from the Source list. Matching is normalized and case-insensitive, the first matching value is used. Only applicable when Genre/Tag are enabled to be written.",
         "first-last-name-label": "First Last Naming",
         "first-last-name-tooltip": "Ensure People's names are written First then Last",
-        "person-roles-label": "Roles",
+        "person-roles-label": "{{common.roles}}",
         "overrides-label": "Overrides",
         "overrides-description": "Allow Kavita to write over locked fields.",
         "chapter-header": "Chapter Fields",
@@ -931,7 +957,10 @@
     "annotation-card": {
         "page-num": "{{book-reader.page-num-label}}",
         "contains-spoilers-label": "Spoilers",
-        "view-in-reader-label": "View in Reader"
+        "view-in-reader-label": "View in Reader",
+        "location-tooltip": "{{library}} - {{series}}",
+        "liked": "Liked by {{amount}} people, including you",
+        "not-liked": "Liked by {{amount}} people, you did not like it"
     },
 
     "annotations-tab": {
@@ -1143,7 +1172,8 @@
         "publication-status-title": "Publication",
         "publication-status-tooltip": "Publication Status",
         "on": "{{reader-settings.on}}",
-        "off": "{{reader-settings.off}}"
+        "off": "{{reader-settings.off}}",
+        "loading": "{{common.loading}}"
     },
 
     "match-series-modal": {
@@ -1252,7 +1282,7 @@
         "cover-image-description": "{{edit-series-modal.cover-image-description}}",
         "issue-count": "{{common.issue-count}}",
         "series-count": "{{common.series-count}}",
-        "roles-label": "Roles",
+        "roles-label": "{{common.roles}}",
         "sort-label": "Sort",
         "name-label": "Name",
         "issue-count-label": "Issue Count",
@@ -1289,7 +1319,7 @@
         "individual-role-title": "As a {{role}}",
         "browse-person-title": "All Works of {{name}}",
         "browse-person-by-role-title": "All Works of {{name}} as a {{role}}",
-        "all-roles": "Roles",
+        "all-roles": "{{common.roles}}",
         "anilist-url": "{{edit-person-modal.anilist-tooltip}}",
         "no-info": "No information about this Person"
     },
@@ -1317,7 +1347,7 @@
         "help-us-part-3": "to naming and organizing your media.",
         "naming-conventions-part-1": "Kavita has ",
         "naming-conventions-part-2": "folder requirements.",
-        "naming-conventions-part-3": "Check this link to ensure you are following, else files my not show up in scan.",
+        "naming-conventions-part-3": "Check this link to ensure you are following, else files may not show up in scan.",
         "cover-description": "Custom library image icons are optional",
         "cover-description-extra": "Library image should not be large. Aim for a small file, 32x32 pixels in size. Kavita does not perform validation on size.",
         "manage-collection-label": "Manage Collections",
@@ -1464,7 +1494,8 @@
         "release-title": "{{sort-field-pipe.release-year}}",
         "format-title": "{{metadata-filter.format-label}}",
         "length-title": "{{edit-chapter-modal.words-label}}",
-        "age-rating-title": "{{metadata-fields.age-rating-title}}"
+        "age-rating-title": "{{metadata-fields.age-rating-title}}",
+        "file-path-title": "Folder path"
     },
 
     "related-tab": {
@@ -1600,7 +1631,7 @@
     },
 
     "manage-library": {
-        "title": "Libraries",
+        "title": "{{common.libraries}}",
         "add-library": "Add Library",
         "no-data": "There are no libraries. Try creating one.",
         "loading": "{{common.loading}}",
@@ -1838,7 +1869,7 @@
         "resend": "Resend",
         "setup": "Setup",
         "last-active-header": "Last Active",
-        "roles-header": "Roles",
+        "roles-header": "{{common.roles}}",
         "name-header": "Name",
         "none": "None",
         "never": "Never",
@@ -1910,7 +1941,7 @@
         "admin-general": "General",
         "admin-oidc": "OpenID Connect",
         "admin-users": "Users",
-        "admin-libraries": "Libraries",
+        "admin-libraries": "{{common.libraries}}",
         "admin-media": "Media",
         "admin-media-issues": "Media Issues",
         "admin-logs": "Logs",
@@ -2054,7 +2085,7 @@
         "annotations": "{{tabs.annotations-tab}}",
         "genres": "{{metadata-fields.genres-title}}",
         "bookmarks": "{{side-nav.bookmarks}}",
-        "libraries": "Libraries",
+        "libraries": "{{common.libraries}}",
         "reading-lists": "Reading Lists",
         "collections": "Collections",
         "close": "{{common.close}}",
@@ -2155,7 +2186,7 @@
         "next": "{{import-cbl-modal.next}}",
         "save": "{{common.save}}",
 
-        "import-description": "Upload a file you, or someone else has exported to replace or merge with your current settings.",
+        "import-description": "Upload a file you, or someone else, has exported to replace or merge with your current settings.",
         "select-files-warning": "You must upload a json file to continue",
         "invalid-file": "Failed to parse your file, check your input",
         "file-no-valid-content": "Your import did not contain any meaningful data to continue with",
@@ -2300,7 +2331,7 @@
         "limit-label": "Limit",
 
         "format-label": "Format",
-        "libraries-label": "Libraries",
+        "libraries-label": "{{common.libraries}}",
         "collections-label": "Collections",
         "genres-label": "{{metadata-fields.genres-title}}",
         "tags-label": "{{metadata-fields.tags-title}}",
@@ -2687,6 +2718,7 @@
         "delete-font-in-use": "Font is currently in use by at least one user, cannot delete",
         "font-manual-upload": "There was an issue creating Font from manual upload",
         "font-already-in-use": "Font already exists by that name",
+        "upload-too-large": "The file is too large for upload, select a smaller image and try again.",
         "import-fields": {
             "non-unique-age-ratings": "Age rating mapping keys aren't unique, please correct your import file",
             "non-unique-fields": "Field mappings do not have a unique id, please correct your import file"
@@ -2815,7 +2847,7 @@
         "team": "Team",
         "location": "Location",
         "languages": "Languages",
-        "libraries": "Libraries",
+        "libraries": "{{common.libraries}}",
         "letterer": "Letterer",
         "publication-status": "Publication Status",
         "penciller": "Penciller",
@@ -2911,7 +2943,8 @@
         "annotation-spoiler": "Spoiler",
         "annotation-highlights": "Highlight color",
         "annotation-comment": "Annotation Text",
-        "annotation-selection": "Highlight Text"
+        "annotation-selection": "Highlight Text",
+        "series": "{{tabs.series-tab}}"
     },
 
 
@@ -3157,7 +3190,9 @@
         "rename": "Rename",
         "rename-tooltip": "Rename the Smart Filter",
         "merge": "Merge",
-        "export": "Export"
+        "export": "Export",
+        "like": "Like",
+        "unlike": "Remove likes"
     },
 
     "preferences": {
@@ -3375,7 +3410,9 @@
         "book-nums": "Books",
         "issue-nums": "Issues",
         "chapter-nums": "Chapters",
-        "volume-nums": "Volumes"
+        "volume-nums": "Volumes",
+        "roles": "Roles",
+        "libraries": "Libraries"
     }
 
 }

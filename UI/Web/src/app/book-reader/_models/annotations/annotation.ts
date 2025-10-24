@@ -1,3 +1,4 @@
+import {AgeRating} from "../../../_models/metadata/age-rating";
 
 export interface Annotation {
   id: number;
@@ -12,6 +13,7 @@ export interface Annotation {
   selectedSlotIndex: number;
   chapterTitle: string | null;
   highlightCount: number;
+  likes: number[];
   ownerUserId: number;
   ownerUsername: string;
   createdUtc: string;
@@ -25,4 +27,7 @@ export interface Annotation {
   volumeId: number;
   seriesId: number;
 
+  seriesName: string;
+  libraryName: string;
+  ageRating: AgeRating;
 }

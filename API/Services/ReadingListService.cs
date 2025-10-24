@@ -245,7 +245,7 @@ public class ReadingListService : IReadingListService
         // Collect all Ids to remove
         var itemIdsToRemove = items.Where(item => item.PagesRead == item.PagesTotal).Select(item => item.Id).ToList();
 
-        if (!itemIdsToRemove.Any()) return true;
+        if (itemIdsToRemove.Count == 0) return true;
         try
         {
             var listItems =
@@ -361,8 +361,7 @@ public class ReadingListService : IReadingListService
     private async Task CalculateReadingListAgeRating(ReadingList readingList, IEnumerable<int> seriesIds)
     {
         var ageRating = await _unitOfWork.SeriesRepository.GetMaxAgeRatingFromSeriesAsync(seriesIds);
-        if (ageRating == null) readingList.AgeRating = AgeRating.Unknown;
-        else readingList.AgeRating = (AgeRating) ageRating;
+        readingList.AgeRating = ageRating;
     }
 
     /// <summary>

@@ -242,6 +242,7 @@ public class OidcService(ILogger<OidcService> logger, UserManager<AppUser> userM
             .Where(s => PolicyConstants.ValidRoles.Contains(s)).ToList();
         if (settings.SyncUserSettings && accessRoles.Count == 0)
         {
+            logger.LogDebug("No valid roles where found under {Claim} with prefix {Prefix}", settings.RolesClaim, settings.RolesPrefix);
             throw new KavitaException("errors.oidc.role-not-assigned");
         }
 
@@ -265,6 +266,7 @@ public class OidcService(ILogger<OidcService> logger, UserManager<AppUser> userM
         var roles = await userManager.GetRolesAsync(user);
         if (roles.Count == 0 || (!roles.Contains(PolicyConstants.LoginRole) && !roles.Contains(PolicyConstants.AdminRole)))
         {
+            logger.LogDebug("User does not have Login or AdminRole assigned. Has: {Roles}", string.Join(",", roles));
             throw new KavitaException("errors.oidc.disabled-account");
         }
 
@@ -360,9 +362,17 @@ public class OidcService(ILogger<OidcService> logger, UserManager<AppUser> userM
         // Assign libraries
         await accountService.UpdateLibrariesForUser(user, settings.DefaultLibraries, settings.DefaultRoles.Contains(PolicyConstants.AdminRole));
 
-        // Assign age rating
-        user.AgeRestriction = settings.DefaultAgeRestriction;
-        user.AgeRestrictionIncludeUnknowns = settings.DefaultIncludeUnknowns;
+        // Assign age rating, or bypass if admin
+        if (await userManager.IsInRoleAsync(user, PolicyConstants.AdminRole))
+        {
+            user.AgeRestriction = AgeRating.NotApplicable;
+            user.AgeRestrictionIncludeUnknowns = true;
+        }
+        else
+        {
+            user.AgeRestriction = settings.DefaultAgeRestriction;
+            user.AgeRestrictionIncludeUnknowns = settings.DefaultIncludeUnknowns;
+        }
 
         await unitOfWork.CommitAsync();
     }

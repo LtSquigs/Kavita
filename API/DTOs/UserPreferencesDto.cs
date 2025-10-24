@@ -31,15 +31,15 @@ public sealed record UserPreferencesDto
     /// <inheritdoc cref="API.Entities.AppUserPreferences.CollapseSeriesRelationships"/>
     [Required]
     public bool CollapseSeriesRelationships { get; set; } = false;
-    /// <inheritdoc cref="API.Entities.AppUserPreferences.ShareReviews"/>
-    [Required]
-    public bool ShareReviews { get; set; } = false;
     /// <inheritdoc cref="API.Entities.AppUserPreferences.Locale"/>
     [Required]
     public string Locale { get; set; }
     /// <inheritdoc cref="API.Entities.AppUserPreferences.ColorScapeEnabled"/>
     [Required]
     public bool ColorScapeEnabled { get; set; } = true;
+    /// <inheritdoc cref="API.Entities.AppUserPreferences.DataSaver"/>
+    [Required]
+    public bool DataSaver { get; set; } = false;
 
     /// <inheritdoc cref="API.Entities.AppUserPreferences.AniListScrobblingEnabled"/>
     public bool AniListScrobblingEnabled { get; set; }
@@ -48,4 +48,11 @@ public sealed record UserPreferencesDto
     /// <inheritdoc cref="API.Entities.AppUserPreferences.BookReaderHighlightSlots"/>
     [Required]
     public List<HighlightSlot> BookReaderHighlightSlots { get; set; }
+
+    #region Social
+
+    /// <inheritdoc cref="AppUserPreferences.SocialPreferences"/>
+    public AppUserSocialPreferences SocialPreferences { get; set; } = new();
+
+    #endregion
 }

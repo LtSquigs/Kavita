@@ -26,6 +26,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.AspNetCore.SignalR.Extensions;
 using Log = Serilog.Log;
+using MessageTemplateTextFormatter = Serilog.Formatting.Display.MessageTemplateTextFormatter;
 
 namespace API;
 #nullable enable
@@ -42,7 +43,7 @@ public class Program
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
+            .WriteTo.Console(new MessageTemplateTextFormatter(LogLevelOptions.OutputTemplate))
             .MinimumLevel
             .Information()
             .CreateBootstrapLogger();

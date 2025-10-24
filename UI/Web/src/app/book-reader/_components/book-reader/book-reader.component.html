@@ -19,29 +19,29 @@
       }
     </div>
 
+    @if (clickToPaginate() && !hidePagination()) {
+      <div class="tap-to-paginate">
+        <div class="left {{clickOverlayClass('left')}} no-observe"
+            (click)="movePage(isLeftToRight ? PAGING_DIRECTION.BACKWARDS : PAGING_DIRECTION.FORWARD)"
+            [ngClass]="{'immersive' : immersiveMode()}"
+            tabindex="-1"></div>
+        <div class="{{scrollbarNeeded() ? 'right-with-scrollbar' : 'right'}} {{clickOverlayClass('right')}} no-observe"
+            (click)="movePage(isLeftToRight ? PAGING_DIRECTION.FORWARD : PAGING_DIRECTION.BACKWARDS)"
+            [ngClass]="{'immersive' : immersiveMode()}"
+            tabindex="-1"></div>
+      </div>
+    }
     <div #readingSection class="reading-section {{layoutMode() | columnLayoutClass}} {{writingStyle() | writingStyleClass}}"
          [ngStyle]="{'width': pageWidthForPagination()}"
          [ngClass]="{'immersive' : immersiveMode() || !actionBarVisible()}" [@isLoading]="isLoading()" (click)="handleReaderClick($event)">
 
-      @if (clickToPaginate() && !hidePagination()) {
-        <div class="left {{clickOverlayClass('left')}} no-observe"
-             (click)="movePage(isLeftToRight ? PAGING_DIRECTION.BACKWARDS : PAGING_DIRECTION.FORWARD)"
-             [ngClass]="{'immersive' : immersiveMode()}"
-             tabindex="-1"
-             [ngStyle]="{height: PageHeightForPagination}"></div>
-        <div class="{{scrollbarNeeded() ? 'right-with-scrollbar' : 'right'}} {{clickOverlayClass('right')}} no-observe"
-             (click)="movePage(isLeftToRight ? PAGING_DIRECTION.FORWARD : PAGING_DIRECTION.BACKWARDS)"
-             [ngClass]="{'immersive' : immersiveMode()}"
-             tabindex="-1"
-             [ngStyle]="{height: PageHeightForPagination}"></div>
-      }
 
       <div #bookContainer class="book-container {{writingStyle() | writingStyleClass}}"
-        [ngClass]="{'immersive' : immersiveMode()}"
-           (mousedown)="mouseDown($event)" >
+            [ngClass]="{'immersive' : immersiveMode()}"
+            (mousedown)="mouseDown($event)" >
 
         <div #readingHtml class="book-content {{layoutMode() | columnLayoutClass}} {{writingStyle() | writingStyleClass}}"
-             [ngStyle]="{'max-height': columnHeight(), 'max-width': verticalBookContentWidth(), 'width': verticalBookContentWidth(), 'column-width': columnWidth()}"
+             [ngStyle]="{'max-height': columnHeight(), 'max-width': verticalBookContentWidth(), 'width': verticalBookContentWidth(), 'column-width': columnWidth(), 'padding-bottom': bookContentPaddingBottom()}"
              [ngClass]="{'immersive': immersiveMode() && actionBarVisible, 'debug': debugMode()}"
              [innerHtml]="page()" (click)="toggleMenu($event)" (mousedown)="mouseDown($event)" (wheel)="onWheel($event)"></div>
 
@@ -63,7 +63,7 @@
               </button>
             </div>
 
-            <div class="text-center d-none d-md-block center-group">
+            <div class="text-center center-group">
               @if (isLoading()) {
                 <div class="spinner-border spinner-border-sm text-primary" style="border-radius: 50%;" role="status">
                   <span class="visually-hidden">{{ t('loading-book') }}</span>
@@ -87,7 +87,7 @@
 
             <div class="d-flex align-items-center right-group">
               @if (!this.adhocPageHistory.isEmpty()) {
-                <button class="btn btn-outline-secondary btn-icon me-1" (click)="goBack()" [title]="t('go-back')">
+                <button class="btn btn-secondary btn-icon me-1" (click)="goBack()" [title]="t('go-back')">
                   <i class="fa fa-reply" aria-hidden="true"></i>
                 </button>
               }
@@ -107,7 +107,7 @@
               <button class="btn btn-secondary btn-icon me-1" (click)="viewAnnotations()">
                 <i class="fa-solid fa-highlighter" aria-hidden="true"></i>
               </button>
-              <button class="btn btn-secondary btn-icon" (click)="viewToCDrawer()">
+              <button class="btn btn-secondary btn-icon me-1" (click)="viewToCDrawer()">
                 <i class="fa-regular fa-rectangle-list" aria-hidden="true"></i>
               </button>
               <button class="btn btn-secondary btn-icon me-1" (click)="closeReader()">

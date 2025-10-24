@@ -32,7 +32,9 @@
         "out-of-sync": "Cet utilisateur a été créé via OIDC. Si le paramètre SyncUsers est activé, les modifications apportées à ce compte peuvent être écrasées.",
         "oidc-managed": "Cet utilisateur est géré par OIDC. Veuillez contacter votre administrateur OIDC pour demander des modifications.",
         "identity-provider": "Fournisseur d'identité",
-        "identity-provider-tooltip": "Les utilisateurs de Kavita ne sont jamais synchronisés avec les comptes OIDC."
+        "identity-provider-tooltip": "Les utilisateurs de Kavita ne sont jamais synchronisés avec les comptes OIDC.",
+        "libraries-label": "{{common.libraries}}",
+        "roles-label": "{{common.roles}}"
     },
     "user-scrobble-history": {
         "title": "Historique de scrobble",
@@ -130,7 +132,22 @@
         "want-to-read-sync-tooltip": "Permettre à Kavita d'ajouter des éléments à votre liste \"À lire\" en fonction des séries AniList et MAL de la liste \"En attente de lecture\"",
         "highlight-bar-label": "Couleur de surlignage des annotations",
         "highlight-bar-tooltip": "Tous les livres partagent ces couleurs",
-        "social-settings-title": "Paramètres sociaux"
+        "social-settings-title": "Paramètres sociaux",
+        "font-tab": "Police",
+        "colorscape-label": "Utiliser ColorScape",
+        "colorscape-tooltip": "Interrupteur général pour activer/désactiver la fonctionnalité de gradient dynamique. Prend le dessus des options des thèmes",
+        "data-saver-label": "Economiseur de données",
+        "data-saver-tooltip": "Minimise l'utilisation des données en limitant la récupération automatique (pour les PDFs par exemple)",
+        "share-annotations-label": "Partager les Annotations",
+        "share-annotations-tooltip": "Autoriser la visibilité de vos annotations par les autres utilisateurs du serveur",
+        "view-other-annotations-label": "Voir les Annotations partagées",
+        "view-other-annotations-tooltip": "Voir les annotations des autres utilisateurs pendant la lecture",
+        "social-libraries-label": "Bibliothèques avec fonctionnalités Sociales",
+        "social-libraries-tooltip": "Les bibliothèques sur lesquelles les fonctionnalités sociales doivent être activées. Par défaut les fonctionnalités sociales sont activées partout. Désactiver des caractéristiques spécifiques si vous souhaitez les utiliser nulle part.",
+        "social-max-age-rating-label": "Notation maximum d'âge",
+        "social-max-age-rating-tooltip": "Notation maximum d'âge pour lesquelles les fonctionnalités sociales seront activées",
+        "social-include-unknowns-label": "Y compris pour les inconnus",
+        "social-include-unknowns-tooltip": "Activer les fonctionnalité sociales pou les séries et chapitres pour lesquels la notation d'âge est inconnue"
     },
     "user-holds": {
         "title": "Enregistrement du suivi d'activité",
@@ -142,7 +159,7 @@
     },
     "theme-manager": {
         "title": "Gestionnaire de thème",
-        "description": "Kavita est disponible dans mes couleurs, trouvez une combinaison de couleurs qui réponde à vos besoins ou créez-en une vous-même et partagez-la. Les thèmes peuvent être appliqués à votre compte ou à tous les comptes.",
+        "description": "Kavita est disponible en plusieurs coloris. Trouvez la combinaison qui vous convient ou créez-en une et partagez-la. Les thèmes peuvent être appliqués à votre compte ou à tous vos comptes.",
         "site-themes": "Site des thèmes",
         "set-default": "Réinitialisation des paramètres par défaut",
         "default-theme": "Défaut",
@@ -195,7 +212,8 @@
         "delete": "{{common.delete}}",
         "edit": "{{common.edit}}",
         "no-data": "{{typeahead.no-data}}",
-        "actions-header": "{{manage-users.actions-header}}"
+        "actions-header": "{{manage-users.actions-header}}",
+        "warning": "Attention"
     },
     "edit-device-modal": {
         "title": "Modifier l'appareil",
@@ -336,7 +354,7 @@
         "all-time": "{{time-periods.all-time}}"
     },
     "role-selector": {
-        "title": "Rôles",
+        "title": "{{common.roles}}",
         "deselect-all": "{{common.deselect-all}}",
         "select-all": "{{common.select-all}}"
     },
@@ -469,7 +487,7 @@
     },
     "library-type-pipe": {
         "book": "Livre",
-        "comic": "Bande dessinée (Legacy)",
+        "comic": "Bande dessinée (Flexible)",
         "manga": "Manga",
         "comicVine": "Bande dessinée",
         "image": "Image",
@@ -550,10 +568,12 @@
         "inviting": "Invitation en cours…",
         "cancel": "{{common.cancel}}",
         "email-not-sent": "{{toasts.email-not-sent}}",
-        "notice": "{{manage-settings.notice}}"
+        "notice": "{{manage-settings.notice}}",
+        "libraries-label": "{{common.libraries}}",
+        "roles-label": "{{common.roles}}"
     },
     "library-selector": {
-        "title": "Bibliothèques",
+        "title": "{{common.libraries}}",
         "select-all": "{{common.select-all}}",
         "deselect-all": "{{common.deselect-all}}",
         "no-data": "Aucune bibliothèque configurée."
@@ -608,9 +628,12 @@
         "k+-unlocked": "Kavita+ débloquée !",
         "k+-unlocked-description": "Bienvenue sur Kavita+ ! Kavita générera des événements de scrobbling à partir de votre progression, de vos évaluations et de vos envies de lecture une fois que vous aurez enregistré vos fournisseurs de scrobbling sur votre compte. Prenez le temps de vous assurer que vous mettez en attente de scrobbling, toutes les séries que vous ne voulez pas scrobbler.",
         "delete-tooltip": "Cela supprimera la licence de Kavita pour empêcher Kavita de parler à Kavita+. Cela ne vous désinscrit pas. Utilisez d'abord \"gérer\" pour annuler l'abonnement.",
-        "kavita+-warning": "Kavita+ est distinct de Kavita. Si vous désinstallez Kavita sans vous désabonner, vous serez facturé.",
+        "kavita+-warning": "Kavita+ est distinct de Kavita. Si vous désinstallez Kavita sans vous désabonner avant, vous continuerez à être facturés.",
         "cancel-label": "Annuler l'abonnement",
-        "cancel-tooltip": "Annulez votre abonnement et supprimez la licence dans Kavita."
+        "cancel-tooltip": "Annulez votre abonnement et supprimez la licence dans Kavita.",
+        "resend-license-email": "Envoyer la licence par courriel",
+        "resend-license-email-tooltip": "Envoyer à nouveau la licence Kavita+ par courriel. La licence doit être liée à ce serveur pour fonctionner.",
+        "supportId-label": "Identifiant de support"
     },
     "book-line-overlay": {
         "copy": "Copier",
@@ -644,11 +667,12 @@
         "incognito-mode-label": "Navigation privée",
         "next": "Suivant",
         "previous": "Précédent",
-        "go-to-page-prompt": "Il y a {{totalPages}} pages. À quelle page souhaitez-vous accéder ?",
+        "go-to-page-prompt": "Il y a {{totalPages}} pages. À quelle page souhaitez-vous accéder ? Les pages commencent à 1.",
         "go-to-first-page": "Aller à la première page",
         "page-num-label": "Page {{page}}",
         "completion-label": "{{percent}} terminé",
-        "force-selected-one-column": "Le mode de mise en page est passé à une seule colonne en raison d'un espace insuffisant pour afficher deux colonnes"
+        "force-selected-one-column": "Le mode de mise en page est passé à une seule colonne en raison d'un espace insuffisant pour afficher deux colonnes",
+        "forced-vertical-switch": "Le mode d'affichage en 2 colonnes ne fonctionne pas avec le style d'écriture Vertical"
     },
     "personal-table-of-contents": {
         "no-data": "Rien n'a encore été mis en marque-page",
@@ -755,7 +779,8 @@
         "publication-status-tooltip": "État de la publication",
         "on": "{{reader-settings.on}}",
         "off": "{{reader-settings.off}}",
-        "annotations-tab": "{{tabs.annotations-tab}}"
+        "annotations-tab": "{{tabs.annotations-tab}}",
+        "loading": "{{common.loading}}"
     },
     "metadata-fields": {
         "collections-title": "{{side-nav.collections}}",
@@ -850,7 +875,7 @@
         "help-us-part-3": "pour nommer et organiser vos médias.",
         "naming-conventions-part-1": "Kavita a ",
         "naming-conventions-part-2": "dossier requis.",
-        "naming-conventions-part-3": "Vérifiez ce lien pour vous assurer que vous respectez les prérequis, sinon certains fichiers ne s'afficheront pas lors du scan.",
+        "naming-conventions-part-3": "Vérifiez ce lien pour vous assurer que vous suivez, sinon les fichiers risquent de ne pas apparaître dans l'analyse.",
         "cover-description": "Les icônes des bibliothèques personnalisées sont optionnelles",
         "cover-description-extra": "L'image de la librairie ne doit pas être trop grande. Utilisez une petit image de 32x32 pixels. Kavita ne vérifie pas la taille.",
         "manage-collection-label": "Gérer les collections",
@@ -985,7 +1010,8 @@
         "format-title": "{{metadata-filter.format-label}}",
         "read-time-title": "{{edit-chapter-modal.reading-time-label}}",
         "length-title": "{{edit-chapter-modal.words-label}}",
-        "age-rating-title": "{{metadata-fields.age-rating-title}}"
+        "age-rating-title": "{{metadata-fields.age-rating-title}}",
+        "file-path-title": "Chemin du dossier"
     },
     "related-tab": {
         "reading-lists-title": "{{reading-lists.title}}",
@@ -1086,7 +1112,7 @@
         "save": "{{common.save}}"
     },
     "manage-library": {
-        "title": "Bibliothèques",
+        "title": "{{common.libraries}}",
         "add-library": "Ajouter une bibliothèque",
         "no-data": "Il n'y a pas de bibliothèque. Essayez d'en créer une.",
         "loading": "{{common.loading}}",
@@ -1297,7 +1323,7 @@
         "resend": "Renvoyer",
         "setup": "Configurer",
         "last-active-header": "Dernier actif",
-        "roles-header": "Rôles",
+        "roles-header": "{{common.roles}}",
         "name-header": "Nom",
         "none": "Aucun",
         "never": "Jamais",
@@ -1353,7 +1379,7 @@
         "kavitaplus-section-title": "Kavita+",
         "admin-general": "Général",
         "admin-users": "Utilisateurs",
-        "admin-libraries": "Bibliothèques",
+        "admin-libraries": "{{common.libraries}}",
         "admin-media": "Média",
         "admin-media-issues": "Problèmes liés aux médias",
         "admin-logs": "Logs",
@@ -1380,7 +1406,8 @@
         "reading-profiles": "Profils de lecture",
         "admin-oidc": "OpenID Connect",
         "admin-mappings-import": "Paramètres des métadonnées",
-        "admin-public-metadata": "Gérer les métadonnées"
+        "admin-public-metadata": "Gérer les métadonnées",
+        "font": "Polices Epub"
     },
     "collection-detail": {
         "no-data": "Il n'y a pas d'éléments. Essayez d'ajouter une série.",
@@ -1484,7 +1511,7 @@
         "tags": "Tags",
         "genres": "{{metadata-fields.genres-title}}",
         "bookmarks": "{{side-nav.bookmarks}}",
-        "libraries": "Bibliothèques",
+        "libraries": "{{common.libraries}}",
         "reading-lists": "Listes de lecture",
         "collections": "Collections",
         "close": "{{common.close}}",
@@ -1508,7 +1535,8 @@
         "close": "{{common.close}}",
         "person-aka-status": "Correspond à un alias",
         "browse-genres": "Parcourir les genres",
-        "browse-tags": "Parcourir les Tags"
+        "browse-tags": "Parcourir les Tags",
+        "all-annotations": "Parcourir les Annotations"
     },
     "promoted-icon": {
         "promoted": "{{common.promoted}}"
@@ -1673,7 +1701,7 @@
         "save": "{{common.save}}",
         "limit-label": "Limiter à",
         "format-label": "Format",
-        "libraries-label": "Bibliothèques",
+        "libraries-label": "{{common.libraries}}",
         "collections-label": "Collections",
         "genres-label": "{{metadata-fields.genres-title}}",
         "tags-label": "{{metadata-fields.tags-title}}",
@@ -1706,7 +1734,10 @@
         "unit-average-rating": "Notation externe de Kavita+, en pourcentage",
         "unit-reading-progress": "Pourcentage",
         "unit-user-rating": "0,0 - 5,0 étoiles",
-        "unit-read-last": "Jours à partir d'AUJOURD'HUI"
+        "unit-read-last": "Jours à partir d'AUJOURD'HUI",
+        "disclaimer-highlight-slots": "Lorsque vous utilisez ce champ, seulement vos propres annotations seront visibles",
+        "unit-file-size": "GB, MB, KB, B",
+        "disclaimer-file-size": "La taille du fichier doit inclure l'unité"
     },
     "sort-field-pipe": {
         "sort-name": "Nom",
@@ -1720,7 +1751,10 @@
         "random": "Aléatoire",
         "person-name": "Nom",
         "person-series-count": "Nombre de séries",
-        "person-chapter-count": "Nombre de chapitres"
+        "person-chapter-count": "Nombre de chapitres",
+        "annotation-owner": "Propriétaire",
+        "annotation-series": "Nom de la série",
+        "annotation-color": "Couleur"
     },
     "edit-series-modal": {
         "title": "{{seriesName}} Détails",
@@ -2008,7 +2042,11 @@
             "failed-to-update-username": "Échec de la mise à jour du nom d'utilisateur",
             "email-in-use": "Email déjà utilisé par un autre compte",
             "syncing-user": "Échec de la synchronisation de votre compte à partir de l'OIDC, veuillez contacter un administrateur"
-        }
+        },
+        "delete-font-in-use": "Cette police est utilisée par au moins un autre utilisateur, impossible de la supprimer",
+        "font-manual-upload": "Il y a eu un problème lors de la création de la Police à partir du téléchargement manuel",
+        "font-already-in-use": "Une police existe déjà avec ce nom",
+        "upload-too-large": "Le fichier est trop volumineux pour être téléchargé, sélectionnez une image plus petite et réessayez."
     },
     "metadata-builder": {
         "or": "Correspondre à l'un des éléments suivants",
@@ -2111,7 +2149,7 @@
         "team": "Équipe",
         "location": "Lieu",
         "languages": "Langues",
-        "libraries": "Bibliothèques",
+        "libraries": "{{common.libraries}}",
         "letterer": "Lettreur",
         "publication-status": "État de la publication",
         "penciller": "Crayonneur",
@@ -2130,8 +2168,9 @@
         "file-path": "Chemin du fichier",
         "want-to-read": "À Lire",
         "read-date": "Date de lecture",
-        "average-rating": "Note moyenne",
-        "read-last": "Dernièrement lu"
+        "average-rating": "Note Moyenne",
+        "read-last": "Dernièrement lu",
+        "file-size": "Taille du fichier"
     },
     "filter-comparison-pipe": {
         "begins-with": "Commence par",
@@ -2259,7 +2298,7 @@
         "volume-deleted": "Volume supprimé",
         "pdf-book-mode-screen-size": "Ecran trop petit pour le mode Livre",
         "stack-imported": "Pile importée",
-        "confirm-delete-theme": "Supprimer ce thème l'effacera du disque. Vous pouvez le récupérer du dossier temp avant suppression",
+        "confirm-delete-theme": "Supprimer ce thème l'effacera du disque. Vous pouvez le récupérer du dossier temp avant suppression.",
         "mal-token-required": "Le jeton MAL est requis, il est défini dans les paramètres de l'utilisateur",
         "confirm-reset-server-settings": "Cette opération réinitialisera vos paramètres aux valeurs de la première installation. Êtes-vous sûr de vouloir continuer ?",
         "bulk-scan": "Balayer plusieurs bibliothèques sera réalisé l'une après l'autre. En fonction de la taille de la bibliothèque cela peut prendre beaucoup de temps ou même échouer.",
@@ -2277,7 +2316,12 @@
         "library-bound-to-reading-profile": "Bibliothèque liée au Profil de lecture {{nom}}",
         "external-match-rate-error": "Kavita a pris trop de temps en cherchant {{seriesName}}. Réessayez dans 5 minutes.",
         "confirm-delete-bookmark": "Êtes-vous sûr de vouloir supprimer ce signet ?",
-        "confirm-delete-annotation": "Êtes-vous sûr de vouloir supprimer cette annotation ?"
+        "confirm-delete-annotation": "Êtes-vous sûr de vouloir supprimer cette annotation ?",
+        "confirm-delete-font": "Supprimer cette police l'effacera du disque. Vous pouvez la récupérer du dossier temp avant suppression.",
+        "confirm-force-delete-font": "Cette police est actuellement utilisée. Vous voulez forcer la suppression ? Cela obligera les utilisateurs à retourner à la police Par défaut.",
+        "font-in-use": "Ne peut pas supprimer car la police est utilisée par un ou plusieurs utilisateurs.",
+        "k+-resend-welcome-email-success": "Un email a été envoyé à votre email Kavita+",
+        "k+-resend-welcome-email-error": "Il y a eu une erreur envoyant votre licence Kavita+. Cela peut être dû à l'absence d'un compte actif. Contactez nous pour obtenir de l'aide."
     },
     "read-time-pipe": {
         "less-than-hour": "<1 Heure",
@@ -2361,7 +2405,10 @@
         "cleared-profile": "Profil de lecture effacé",
         "rename": "Renommer",
         "rename-tooltip": "Renommer le filtre intelligent",
-        "merge": "Fusionner"
+        "merge": "Fusionner",
+        "export": "Exporter",
+        "like": "Aimer",
+        "unlike": "Retirer les \"J'aime\""
     },
     "preferences": {
         "left-to-right": "De gauche à droite",
@@ -2485,7 +2532,9 @@
         "chapter-count": "{{num}} chapitres",
         "no-data": "Aucune donnée",
         "issue-count": "{{num}} Numéros",
-        "unknown": "Inconnu"
+        "unknown": "Inconnu",
+        "roles": "Roles",
+        "libraries": "Bibliothèques"
     },
     "confirm": {
         "alert": "Alerte",
@@ -2496,7 +2545,7 @@
         "prompt": "Question"
     },
     "person-detail": {
-        "all-roles": "Roles",
+        "all-roles": "{{common.roles}}",
         "browse-person-by-role-title": "Toutes les œuvres de {{name}} en tant que {{role}}",
         "known-for-title": "Connu pour",
         "individual-role-title": "En tant que {{role}}",
@@ -2617,7 +2666,7 @@
         "enable-people-label": "Personnes",
         "enable-cover-image-label": "Image de couverture",
         "field-mapping-description": "Définir des règles pour certaines chaînes de caractères trouvées dans le champ Genre/Tag et les faire correspondre à une nouvelle chaîne de caractères dans Genre/Tag et, éventuellement, les supprimer de la liste Source. La correspondance est normalisée et insensible à la casse, la première valeur correspondante est utilisée. Applicable uniquement lorsque l'écriture de Genre/Tag est activée.",
-        "person-roles-label": "Rôles",
+        "person-roles-label": "{{common.roles}}",
         "overrides-description": "Autoriser Kavita à écrire sur les champs verrouillés.",
         "enable-genres-label": "Genres",
         "enable-tags-label": "Tags",
@@ -2704,7 +2753,7 @@
     },
     "role-localized-pipe": {
         "admin": "Admin",
-        "download": "Ttéléchargement",
+        "download": "Téléchargement",
         "change-password": "Modifier le mot de passe",
         "read-only": "Lecture seule",
         "bookmark": "Marque-page",
@@ -2738,7 +2787,7 @@
         "cover-image-description": "{{edit-series-modal.cover-image-description}}",
         "issue-count": "{{common.issue-count}}",
         "series-count": "{{common.series-count}}",
-        "roles-label": "Rôles",
+        "roles-label": "{{common.roles}}",
         "sort-label": "Trier",
         "name-label": "Nom",
         "issue-count-label": "Nombre de numéros",
@@ -2802,7 +2851,15 @@
         "person-role": "Rôle",
         "person-name": "Nom",
         "person-series-count": "Nombre de séries",
-        "person-chapter-count": "Nombre de chapitres"
+        "person-chapter-count": "Nombre de chapitres",
+        "average-rating": "Note Moyenne",
+        "annotation-owner": "Propriétaire",
+        "annotation-series": "Nom de la série",
+        "annotation-spoiler": "Révélation (Spoiler)",
+        "annotation-highlights": "Couleur de surlignage",
+        "annotation-comment": "Texte d'annotation",
+        "annotation-selection": "Texte Surligné",
+        "series": "{{tabs.series-tab}}"
     },
     "breakpoint-pipe": {
         "never": "Jamais",
@@ -2880,7 +2937,9 @@
         "pdf-theme-tooltip": "Couleur du thème du lecteur",
         "reading-profile-series-settings-title": "Série",
         "reading-profile-library-settings-title": "Bibliothèque",
-        "delete": "{{common.delete}}"
+        "delete": "{{common.delete}}",
+        "page-calc-method-label": "{{reader-settings.page-calc-method-label}}",
+        "page-calc-method-tooltip": "{{reader-settings.page-calc-method-tooltip}}"
     },
     "oidc": {
         "title": "OIDC Callback",
@@ -2892,7 +2951,7 @@
         "save": "{{common.save}}",
         "save-success": "La mise à jour des paramètres OIDC a été effectuée avec succès",
         "notice": "Notification",
-        "restart-required": "La modification de l'autorité ou de l'identifiant du client nécessite un redémarrage manuel de Kavita pour prendre effet.",
+        "restart-required": "Changer le fournisseur ou les paramètres avancés nécessite un redémarrage manuel de Kavita pour prendre effet.",
         "provider-title": "Fournisseur",
         "provider-tooltip": "Les paramètres du fournisseur nécessitent de cliquer manuellement sur \"Enregistrer\". Kavita doit être configuré comme client confidentiel et nécessite une URL de redirection. Consultez le <a href='https://wiki.kavitareader.com/guides/admin-settings/open-id-connect/' target='_blank' rel='noreferrer noopener'>wiki</a> pour plus de détails.",
         "behavior-title": "Comportement",
@@ -2902,7 +2961,7 @@
         "client-id-label": "ID du client",
         "client-id-tooltip": "L'ID du client défini dans votre fournisseur OIDC, peut être n'importe quoi",
         "secret-label": "Secret du client",
-        "secret-tooltip": "Le secret tel qu'il est généré par votre fournisseur OIDC",
+        "secret-tooltip": "Le secret tel qu'il est généré par votre fournisseur OIDC, ne sera pas affiché après configuration",
         "provision-accounts-tooltip": "Création automatique d'un nouveau compte lors de la connexion via l'OIDC s'il n'est pas possible de le faire correspondre à un compte existant",
         "other-field-required": "{{validation.other-field-required}}",
         "invalid-uri": "{{validation.invalid-uri}}",
@@ -2918,7 +2977,7 @@
         "provider-name-label": "Nom du fournisseur",
         "provider-name-tooltip": "Nom affiché sur l'écran de connexion",
         "defaults-title": "Valeurs par défaut",
-        "defaults-requirement": "Les paramètres suivants sont utilisés lorsqu'un utilisateur est enregistré via OIDC alors que SyncUserSettings est désactivé",
+        "defaults-requirement": "Les paramètres suivants sont utilisés lorsqu'un utilisateur est enregistré via OIDC alors que Sync-User-Settings est désactivé",
         "default-include-unknowns-label": "Inclure les inconnus",
         "default-include-unknowns-tooltip": "Inclure les classes d'âge inconnues",
         "default-age-restriction-label": "Classement par âge",
@@ -2931,7 +2990,10 @@
         "roles-claim-label": "Demande de rôles",
         "roles-claim-tooltip": "La revendication utilisée par Kavita pour extraire les rôles. Laisser vide pour utiliser la valeur par défaut.",
         "custom-scopes-label": "Portées personnalisées",
-        "custom-scopes-tooltip": "Portées supplémentaires à demander à votre fournisseur OIDC lors de la connexion. Séparez les champs d'application multiples par des virgules. Des valeurs incorrectes peuvent empêcher la connexion."
+        "custom-scopes-tooltip": "Portées supplémentaires à demander à votre fournisseur OIDC lors de la connexion. Séparez les champs d'application multiples par des virgules. Des valeurs incorrectes peuvent empêcher la connexion.",
+        "default-roles-label": "{{common.roles}}",
+        "default-libraries-label": "{{common.libraries}}",
+        "tls-required": "Le fournisseur OIDC doit utiliser des tls (https)"
     },
     "import-mappings": {
         "import-step": "Importer",
@@ -2972,7 +3034,10 @@
     "annotation-card": {
         "contains-spoilers-label": "Spoilers",
         "view-in-reader-label": "Afficher dans le lecteur",
-        "page-num": "{{book-reader.page-num-label}}"
+        "page-num": "{{book-reader.page-num-label}}",
+        "location-tooltip": "{{library}} - {{series}}",
+        "liked": "Aimé par {{amount}} personne(s), vous y compris",
+        "not-liked": "Aimé par {{amount}} personne(s), mais pas vous !"
     },
     "view-annotations-drawer": {
         "filter-label": "Filtrer les annotations",
@@ -2986,7 +3051,9 @@
         "create-title": "Créer une annotation",
         "create": "Créer",
         "close": "{{common.close}}",
-        "contains-spoilers-label": "{{annotation-card.contains-spoilers-label}}"
+        "contains-spoilers-label": "{{annotation-card.contains-spoilers-label}}",
+        "edit": "Modifier",
+        "delete": "Supprimer"
     },
     "view-bookmark-drawer": {
         "title": "Marque-pages",
@@ -3013,9 +3080,56 @@
     },
     "highlight-bar": {
         "add-new-color-alt": "Ajouter une couleur personnalisée",
-        "slot-label": "Mettre en évidence l'emplacement {{slot}}"
+        "slot-label": "Mettre en évidence l'emplacement {{slot}}",
+        "edit": "{{common.edit}}",
+        "close": "{{common.close}}"
     },
     "annotations-tab": {
         "title": "{{tabs.annotations-tab}}"
+    },
+    "font-manager": {
+        "add": "{{common.add}}",
+        "drag-n-drop": "{{cover-image-chooser.drag-n-drop}}",
+        "upload": "{{cover-image-chooser.upload}}",
+        "upload-continued": "un fichier de police",
+        "preview-default": "Envoyez votre propre police par fichier ou url Google Font",
+        "delete": "{{common.delete}}",
+        "url-label": "Url",
+        "back": "Retour",
+        "load": "Charger",
+        "no-preview": "Cette police ne peut pas être prévisualisée. Le style par défaut du livre sera appliqué.",
+        "brown-fox": "Portez ce vieux whisky au juge blond qui fume",
+        "filter-system-fonts-label": "Filtrer les Polices Systèmes",
+        "description": "Le lecteur Epub de Kavita est livré avec quelques polices par défaut, ajoutez vos propres polices ici. Téléversez un fichier ou indiquez l'url d'une police Google Fonts. Voir le <a href='{{wikiLink}}' target='_blank' rel='noreferrer noopener'>wiki</a> pour plus d'informations.",
+        "enter-an-url-pre-title": "Entrez une {{url}}",
+        "url": "url"
+    },
+    "library-type-subtitle-pipe": {
+        "book": "Bibliothèque générique de livres.",
+        "comic": "Bibliothèque de Comics avec regroupement de volumes et recueils au sein d'une seule Série. Ne supporte pas plusieurs versions dans une même Série.",
+        "manga": "Manga Japonais avec support de regoupement de volumes. Supporte aussi les images éparpillées.",
+        "comicVine": "Implémentation stricte des Comics basée sur les metadonnées Comic Vine avec intégration des outils spécialisés.",
+        "image": "Fichiers image éparpillés avec support limité. Doit globalement suivre la documentation wiki.",
+        "lightNovel": "Bibliothèque de livres avec fonctionnement particulier optimisé pour les romans légers"
+    },
+    "multi-check-box-form": {
+        "select-all": "Sélectionnez tout",
+        "deselect-all": "Déselectionner tout"
+    },
+    "quill-wrapper": {
+        "clean-tooltip": "Supprimer tous les styles"
+    },
+    "all-annotations": {
+        "title": "Toutes les Annotations",
+        "filter": {
+            "true": "Vrai",
+            "false": "Faux"
+        },
+        "annotations-count": "{{num}} Annotations",
+        "export": "Exporter"
+    },
+    "epub-page-calc-method-pipe": {
+        "default": "Valeur par défaut",
+        "calc1": "Calc 1"
     }
 }
