@@ -25,6 +25,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 using Xunit.Abstractions;
+using API.Structs;
 
 namespace API.Tests.Services;
 
@@ -83,10 +84,10 @@ public class OpdsServiceTests(ITestOutputHelper testOutputHelper) : AbstractDbTe
                     .WithChapter(new ChapterBuilder("1")
                         .WithSortOrder(counter)
                         .WithPages(10)
-                        .WithFile(new MangaFileBuilder(_testFilePath, MangaFormat.Archive, 10).Build())
+                        .WithFile(new MangaFileBuilder(new FileMetadata(_testFilePath), MangaFormat.Archive, 10).Build())
                         .Build())
                     .WithChapter(new ChapterBuilder("2")
-                        .WithFile(new MangaFileBuilder(_testFilePath, MangaFormat.Archive, 10).Build())
+                        .WithFile(new MangaFileBuilder(new FileMetadata(_testFilePath), MangaFormat.Archive, 10).Build())
                         .WithSortOrder(counter + 1)
                         .WithPages(10)
                         .Build())
