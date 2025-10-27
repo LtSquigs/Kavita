@@ -13,7 +13,7 @@ public interface IReadingItemService
     int GetNumberOfPages(FileMetadata fileMetadata, MangaFormat format);
     string GetCoverImage(FileMetadata fileMetadata, string fileName, MangaFormat format, EncodeFormat encodeFormat, CoverImageSize size = CoverImageSize.Default);
     void Extract(FileMetadata fileMetadata, string targetDirectory, MangaFormat format, int imageCount = 1);
-    ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata);
+    ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata, bool parseVolumeChapters);
 }
 
 public class ReadingItemService : IReadingItemService
@@ -75,11 +75,11 @@ public class ReadingItemService : IReadingItemService
     /// <param name="path">Path of a file</param>
     /// <param name="rootPath"></param>
     /// <param name="type">Library type to determine parsing to perform</param>
-    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata)
+    public ParserInfo[] ParseFile(string path, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata, bool parseVolumeChapters)
     {
         try
         {
-            var infos = Parse(path, rootPath, libraryRoot, type, parseVolumeChapters, enableMetadata);
+            var infos = Parse(path, rootPath, libraryRoot, type, enableMetadata, parseVolumeChapters);
             if (infos.Length == 0)
             {
                 _logger.LogError("Unable to parse any meaningful information out of file {FilePath}", path);
@@ -180,7 +180,7 @@ public class ReadingItemService : IReadingItemService
     /// <param name="type"></param>
     /// <param name="enableMetadata"></param>
     /// <returns></returns>
-    private ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool parseVolumeChapters, bool enableMetadata)
+    private ParserInfo[] Parse(string path, string rootPath, string libraryRoot, LibraryType type, bool enableMetadata, bool parseVolumeChapters)
     {
         var fileMetadata = new FileMetadata(path);
         if (_comicVineParser.IsApplicable(path, type))
