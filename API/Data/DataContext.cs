@@ -4,16 +4,22 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using API.DTOs.Progress;
 using API.Entities;
 using API.Entities.Enums;
+using API.Entities.Enums.User;
 using API.Entities.Enums.UserPreferences;
 using API.Entities.History;
 using API.Entities.Interfaces;
 using API.Entities.Metadata;
 using API.Entities.MetadataMatching;
 using API.Entities.Person;
+using API.Entities.Progress;
 using API.Entities.Scrobble;
+using API.Entities.User;
 using API.Extensions;
+using Hangfire.Storage.SQLite.Entities;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +29,7 @@ namespace API.Data;
 
 public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     IdentityUserClaim<int>, AppUserRole, IdentityUserLogin<int>,
-    IdentityRoleClaim<int>, IdentityUserToken<int>>
+    IdentityRoleClaim<int>, IdentityUserToken<int>>, IDataProtectionKeyContext
 {
     public DataContext(DbContextOptions options) : base(options)
     {
@@ -42,6 +48,8 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<ServerSetting> ServerSetting { get; set; } = null!;
     public DbSet<AppUserPreferences> AppUserPreferences { get; set; } = null!;
     public DbSet<SeriesMetadata> SeriesMetadata { get; set; } = null!;
+    public DbSet<SeriesMetadataTag> SeriesMetadataTag { get; set; } = null;
+    public DbSet<GenreSeriesMetadata> GenreSeriesMetadata { get; set; } = null;
     [Obsolete("Use AppUserCollection")]
     public DbSet<CollectionTag> CollectionTag { get; set; } = null!;
     public DbSet<AppUserBookmark> AppUserBookmark { get; set; } = null!;
@@ -83,24 +91,20 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<AppUserReadingProfile> AppUserReadingProfiles { get; set; } = null!;
     public DbSet<AppUserAnnotation> AppUserAnnotation { get; set; } = null!;
     public DbSet<EpubFont> EpubFont { get; set; } = null!;
+    public DbSet<AppUserReadingSession> AppUserReadingSession { get; set; } = null!;
+    public DbSet<AppUserReadingSessionActivityData> AppUserReadingSessionActivityData { get; set; } = null!;
+    public DbSet<AppUserReadingHistory> AppUserReadingHistory { get; set; } = null!;
+    public DbSet<ClientDevice> ClientDevice { get; set; } = null!;
+    public DbSet<ClientDeviceHistory> ClientDeviceHistory { get; set; } = null!;
+    public DbSet<AppUserAuthKey> AppUserAuthKey { get; set; } = null!;
+
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-
-        builder.Entity<AppUser>()
-            .HasMany(ur => ur.UserRoles)
-            .WithOne(u => u.User)
-            .HasForeignKey(ur => ur.UserId)
-            .IsRequired();
-
-        builder.Entity<AppRole>()
-            .HasMany(ur => ur.UserRoles)
-            .WithOne(u => u.Role)
-            .HasForeignKey(ur => ur.RoleId)
-            .IsRequired();
 
         builder.Entity<SeriesRelation>()
             .HasOne(pt => pt.Series)
@@ -116,6 +120,79 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
             .OnDelete(DeleteBehavior.Cascade);
 
 
+
+        builder.Entity<ExternalSeriesMetadata>()
+            .HasOne(em => em.Series)
+            .WithOne(s => s.ExternalSeriesMetadata)
+            .HasForeignKey<ExternalSeriesMetadata>(em => em.SeriesId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<AppUserCollection>()
+            .Property(b => b.AgeRating)
+            .HasDefaultValue(AgeRating.Unknown);
+
+        #region Library
+
+        builder.Entity<Library>()
+            .Property(b => b.AllowScrobbling)
+            .HasDefaultValue(true);
+        builder.Entity<Library>()
+            .Property(b => b.AllowMetadataMatching)
+            .HasDefaultValue(true);
+        builder.Entity<Library>()
+            .Property(b => b.EnableMetadata)
+            .HasDefaultValue(true);
+        builder.Entity<Library>()
+            .Property(l => l.DefaultLanguage)
+            .HasDefaultValue(string.Empty);
+
+        #endregion
+
+        #region Chapter
+        builder.Entity<Chapter>()
+            .Property(b => b.WebLinks)
+            .HasDefaultValue(string.Empty);
+
+
+        builder.Entity<Chapter>()
+            .Property(b => b.ISBN)
+            .HasDefaultValue(string.Empty);
+
+        // Configure the many-to-many relationship for Chapter and Person
+        builder.Entity<ChapterPeople>()
+            .HasKey(cp => new { cp.ChapterId, cp.PersonId, cp.Role });
+
+        builder.Entity<ChapterPeople>()
+            .HasOne(cp => cp.Chapter)
+            .WithMany(c => c.People)
+            .HasForeignKey(cp => cp.ChapterId);
+
+        builder.Entity<ChapterPeople>()
+            .HasOne(cp => cp.Person)
+            .WithMany(p => p.ChapterPeople)
+            .HasForeignKey(cp => cp.PersonId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+
+        builder.Entity<Chapter>()
+            .Property(sm => sm.KPlusOverrides)
+            .HasJsonConversion([])
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new List<MetadataSettingField>());
+        #endregion
+
+        #region User & Preferences
+        builder.Entity<AppUser>()
+            .HasMany(ur => ur.UserRoles)
+            .WithOne(u => u.User)
+            .HasForeignKey(ur => ur.UserId)
+            .IsRequired();
+
+        builder.Entity<AppRole>()
+            .HasMany(ur => ur.UserRoles)
+            .WithOne(u => u.Role)
+            .HasForeignKey(ur => ur.RoleId)
+            .IsRequired();
 
         builder.Entity<AppUserPreferences>()
             .Property(b => b.BookThemeName)
@@ -145,27 +222,65 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
         builder.Entity<AppUserPreferences>()
             .Property(b => b.ColorScapeEnabled)
             .HasDefaultValue(true);
+        builder.Entity<AppUserPreferences>()
+            .Property(b => b.PromptForRereadsAfter)
+            .HasDefaultValue(30);
 
-        builder.Entity<Library>()
-            .Property(b => b.AllowScrobbling)
-            .HasDefaultValue(true);
-        builder.Entity<Library>()
-            .Property(b => b.AllowMetadataMatching)
-            .HasDefaultValue(true);
-        builder.Entity<Library>()
-            .Property(b => b.EnableMetadata)
+        builder.Entity<AppUserPreferences>()
+            .Property(a => a.BookReaderHighlightSlots)
+            .HasJsonConversion([])
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new List<HighlightSlot>());
+
+        builder.Entity<AppUserPreferences>()
+            .Property(p => p.CustomKeyBinds)
+            .HasJsonConversion([])
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new Dictionary<KeyBindTarget, IList<KeyBind>>());
+
+        builder.Entity<AppUser>()
+            .Property(user => user.IdentityProvider)
+            .HasDefaultValue(IdentityProvider.Kavita);
+
+        builder.Entity<AppUserPreferences>()
+            .Property(a => a.SocialPreferences)
+            .HasJsonConversion(new AppUserSocialPreferences())
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new AppUserSocialPreferences());
+
+        builder.Entity<AppUserPreferences>()
+            .Property(a => a.OpdsPreferences)
+            .HasJsonConversion(new AppUserOpdsPreferences())
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new AppUserOpdsPreferences());
+        #endregion
+
+        #region AppUserReadingProfile
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.BookThemeName)
+            .HasDefaultValue("Dark");
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.BackgroundColor)
+            .HasDefaultValue("#000000");
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.BookReaderWritingStyle)
+            .HasDefaultValue(WritingStyle.Horizontal);
+        builder.Entity<AppUserReadingProfile>()
+            .Property(b => b.AllowAutomaticWebtoonReaderDetection)
             .HasDefaultValue(true);
 
-        builder.Entity<Chapter>()
-            .Property(b => b.WebLinks)
-            .HasDefaultValue(string.Empty);
-        builder.Entity<SeriesMetadata>()
-            .Property(b => b.WebLinks)
-            .HasDefaultValue(string.Empty);
+        builder.Entity<AppUserReadingProfile>()
+            .PrimitiveCollection(p => p.LibraryIds)
+            .HasDefaultValue(new List<int>());
+        builder.Entity<AppUserReadingProfile>()
+            .PrimitiveCollection(p => p.SeriesIds)
+            .HasDefaultValue(new List<int>());
+        builder.Entity<AppUserReadingProfile>()
+            .PrimitiveCollection(p => p.DeviceIds)
+            .HasDefaultValue(new List<int>());
+        #endregion
 
-        builder.Entity<Chapter>()
-            .Property(b => b.ISBN)
-            .HasDefaultValue(string.Empty);
+        #region AppUser Streams
 
         builder.Entity<AppUserDashboardStream>()
             .Property(b => b.StreamType)
@@ -181,33 +296,76 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
             .HasIndex(e => e.Visible)
             .IsUnique(false);
 
-        builder.Entity<ExternalSeriesMetadata>()
-            .HasOne(em => em.Series)
-            .WithOne(s => s.ExternalSeriesMetadata)
-            .HasForeignKey<ExternalSeriesMetadata>(em => em.SeriesId)
+        #endregion
+
+        #region Annoations
+
+        builder.Entity<AppUserAnnotation>()
+            .PrimitiveCollection(a => a.Likes)
+            .HasDefaultValue(new List<int>());
+
+        #endregion
+
+
+        #region Reading Sessions & History
+        builder.Entity<AppUserReadingSession>()
+            .Property(b => b.IsActive)
+            .HasDefaultValue(true);
+
+        builder.Entity<AppUserReadingSession>()
+            .HasMany(x => x.ActivityData)
+            .WithOne(a => a.ReadingSession)
+            .HasForeignKey(a => a.AppUserReadingSessionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<AppUserCollection>()
-            .Property(b => b.AgeRating)
-            .HasDefaultValue(AgeRating.Unknown);
+        builder.Entity<AppUserReadingSessionActivityData>(e
+            => e.ComplexProperty(d=> d.ClientInfo, b => b.ToJson()));
 
         builder.Entity<MangaFile>()
             .ComplexProperty(c => c.FileMetadata, c => { c.IsRequired(); });
-        // Configure the many-to-many relationship for Movie and Person
-        builder.Entity<ChapterPeople>()
-            .HasKey(cp => new { cp.ChapterId, cp.PersonId, cp.Role });
+        builder.Entity<AppUserReadingHistory>()
+            .Property(sm => sm.Data)
+            .HasJsonConversion(new DailyReadingDataDto())
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new DailyReadingDataDto());
+        builder.Entity<AppUserReadingHistory>()
+            .Property(sm => sm.ClientInfoUsed)
+            .HasJsonConversion([])
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new List<ClientInfoData>());
+        #endregion
 
-        builder.Entity<ChapterPeople>()
-            .HasOne(cp => cp.Chapter)
-            .WithMany(c => c.People)
-            .HasForeignKey(cp => cp.ChapterId);
+        #region Client Device
+        builder.Entity<ClientDevice>()
+            .Property(sm => sm.CurrentClientInfo)
+            .HasJsonConversion(new ClientInfoData())
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new ClientInfoData());
 
-        builder.Entity<ChapterPeople>()
-            .HasOne(cp => cp.Person)
-            .WithMany(p => p.ChapterPeople)
-            .HasForeignKey(cp => cp.PersonId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<ClientDeviceHistory>()
+            .Property(sm => sm.ClientInfo)
+            .HasJsonConversion(new ClientInfoData())
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new ClientInfoData());
+        #endregion
 
+        #region SeriesMetadata
+
+        builder.Entity<SeriesMetadata>()
+            .HasMany(sm => sm.Tags)
+            .WithMany(t => t.SeriesMetadatas)
+            .UsingEntity<SeriesMetadataTag>();
+
+        builder.Entity<SeriesMetadata>()
+            .HasMany(sm => sm.Genres)
+            .WithMany(t => t.SeriesMetadatas)
+            .UsingEntity<GenreSeriesMetadata>();
+
+        builder.Entity<SeriesMetadata>()
+            .Property(sm => sm.KPlusOverrides)
+            .HasJsonConversion([])
+            .HasColumnType("TEXT")
+            .HasDefaultValue(new List<MetadataSettingField>());
 
         builder.Entity<SeriesMetadataPeople>()
             .HasKey(smp => new { smp.SeriesMetadataId, smp.PersonId, smp.Role });
@@ -230,6 +388,10 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
         builder.Entity<MetadataSettings>()
             .Property(x => x.AgeRatingMappings)
             .HasJsonConversion([]);
+
+        builder.Entity<SeriesMetadata>()
+            .Property(b => b.WebLinks)
+            .HasDefaultValue(string.Empty);
 
         // Ensure blacklist is stored as a JSON array
         builder.Entity<MetadataSettings>()
@@ -256,60 +418,87 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
             .Property(b => b.EnableCoverImage)
             .HasDefaultValue(true);
 
-        builder.Entity<AppUserReadingProfile>()
-            .Property(b => b.BookThemeName)
-            .HasDefaultValue("Dark");
-        builder.Entity<AppUserReadingProfile>()
-            .Property(b => b.BackgroundColor)
-            .HasDefaultValue("#000000");
-        builder.Entity<AppUserReadingProfile>()
-            .Property(b => b.BookReaderWritingStyle)
-            .HasDefaultValue(WritingStyle.Horizontal);
-        builder.Entity<AppUserReadingProfile>()
-            .Property(b => b.AllowAutomaticWebtoonReaderDetection)
-            .HasDefaultValue(true);
+        #endregion
 
-        builder.Entity<AppUserReadingProfile>()
-            .Property(rp => rp.LibraryIds)
-            .HasJsonConversion([])
-            .HasColumnType("TEXT");
-        builder.Entity<AppUserReadingProfile>()
-            .Property(rp => rp.SeriesIds)
-            .HasJsonConversion([])
-            .HasColumnType("TEXT");
+        #region AppUserAuthKey
+        builder.Entity<AppUserAuthKey>()
+            .Property(a => a.Provider)
+            .HasDefaultValue(AuthKeyProvider.User);
+        #endregion
 
-        builder.Entity<SeriesMetadata>()
-            .Property(sm => sm.KPlusOverrides)
-            .HasJsonConversion([])
-            .HasColumnType("TEXT")
-            .HasDefaultValue(new List<MetadataSettingField>());
-        builder.Entity<Chapter>()
-            .Property(sm => sm.KPlusOverrides)
-            .HasJsonConversion([])
-            .HasColumnType("TEXT")
-            .HasDefaultValue(new List<MetadataSettingField>());
+        #region AppUserBookmark
+        builder.Entity<AppUserBookmark>(entity =>
+        {
+            entity.HasOne(b => b.Series)
+                .WithMany()
+                .HasForeignKey(b => b.SeriesId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<AppUserPreferences>()
-            .Property(a => a.BookReaderHighlightSlots)
-            .HasJsonConversion([])
-            .HasColumnType("TEXT")
-            .HasDefaultValue(new List<HighlightSlot>());
+            entity.HasOne(b => b.Volume)
+                .WithMany()
+                .HasForeignKey(b => b.VolumeId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<AppUser>()
-            .Property(user => user.IdentityProvider)
-            .HasDefaultValue(IdentityProvider.Kavita);
+            entity.HasOne(b => b.Chapter)
+                .WithMany()
+                .HasForeignKey(b => b.ChapterId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Entity<AppUserPreferences>()
-            .Property(a => a.SocialPreferences)
-            .HasJsonConversion(new AppUserSocialPreferences())
-            .HasColumnType("TEXT")
-            .HasDefaultValue(new AppUserSocialPreferences());
+            entity.HasOne(b => b.AppUser)
+                .WithMany(u => u.Bookmarks)
+                .HasForeignKey(b => b.AppUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        #endregion
 
-        builder.Entity<AppUserAnnotation>()
-            .Property(a => a.Likes)
-            .HasJsonConversion(new HashSet<int>())
-            .HasColumnType("TEXT")
-            .HasDefaultValue(new HashSet<int>());
+        #region Search Indexes
+        // Series indexes for search
+        builder.Entity<Series>(entity =>
+        {
+            entity.HasIndex(s => s.NormalizedName)
+                .HasDatabaseName("IX_Series_NormalizedName");
+
+            entity.HasIndex(s => s.LibraryId)
+                .HasDatabaseName("IX_Series_LibraryId");
+        });
+
+        builder.Entity<SeriesMetadata>(entity =>
+        {
+            entity.HasIndex(sm => sm.AgeRating)
+                .HasDatabaseName("IX_SeriesMetadata_AgeRating");
+
+            // This composite helps age-restricted queries
+            entity.HasIndex(sm => new { sm.SeriesId, sm.AgeRating })
+                .HasDatabaseName("IX_SeriesMetadata_SeriesId_AgeRating");
+        });
+
+        // Chapter indexes
+        builder.Entity<Chapter>(entity =>
+        {
+            entity.HasIndex(c => c.TitleName)
+                .HasDatabaseName("IX_Chapter_TitleName");
+        });
+
+        // MangaFile indexes (admin search)
+        builder.Entity<MangaFile>(entity =>
+        {
+            entity.HasIndex(f => f.FilePath)
+                .HasDatabaseName("IX_MangaFile_FilePath");
+        });
+
+        // AppUserBookmark composite for user lookups
+        builder.Entity<AppUserBookmark>(entity =>
+        {
+            entity.HasIndex(b => new { b.AppUserId, b.SeriesId })
+                .HasDatabaseName("IX_AppUserBookmark_AppUserId_SeriesId");
+        });
+
+        // Cover the date range + library filter on ActivityData
+        builder.Entity<AppUserReadingSessionActivityData>()
+            .HasIndex(a => new { a.StartTimeUtc, a.LibraryId })
+            .HasDatabaseName("IX_ActivityData_StartTimeUtc_LibraryId");
+
+        #endregion
     }
 
     #nullable enable

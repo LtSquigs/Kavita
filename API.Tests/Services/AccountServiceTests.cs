@@ -6,7 +6,6 @@ using API.Data;
 using API.Data.Repositories;
 using API.Entities;
 using API.Entities.Enums;
-using API.Extensions;
 using API.Helpers.Builders;
 using API.Services;
 using API.Services.Tasks.Scanner;
@@ -47,7 +46,7 @@ public class AccountServiceTests(ITestOutputHelper outputHelper): AbstractDbTest
         var defaultAdmin = await unitOfWork.UserRepository.GetDefaultAdminUser();
 
         await Assert.ThrowsAsync<KavitaException>(() =>
-            accountService.ChangeIdentityProvider(defaultAdmin.Id, defaultAdmin, IdentityProvider.Kavita));
+            accountService.ChangeIdentityProvider(defaultAdmin.Id, defaultAdmin, IdentityProvider.OpenIdConnect));
     }
 
     [Fact]

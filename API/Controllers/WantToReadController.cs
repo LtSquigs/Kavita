@@ -10,6 +10,7 @@ using API.DTOs.WantToRead;
 using API.Entities;
 using API.Extensions;
 using API.Helpers;
+using API.Middleware;
 using API.Services;
 using API.Services.Plus;
 using Hangfire;
@@ -28,33 +29,15 @@ public class WantToReadController : BaseApiController
     private readonly IUnitOfWork _unitOfWork;
     private readonly IScrobblingService _scrobblingService;
     private readonly ILocalizationService _localizationService;
+    private readonly ISeriesService _seriesService;
 
     public WantToReadController(IUnitOfWork unitOfWork, IScrobblingService scrobblingService,
-        ILocalizationService localizationService)
+        ILocalizationService localizationService, ISeriesService seriesService)
     {
         _unitOfWork = unitOfWork;
         _scrobblingService = scrobblingService;
         _localizationService = localizationService;
-    }
-
-    /// <summary>
-    /// Return all Series that are in the current logged in user's Want to Read list, filtered (deprecated, use v2)
-    /// </summary>
-    /// <remarks>This will be removed in v0.8.x</remarks>
-    /// <param name="userParams"></param>
-    /// <param name="filterDto"></param>
-    /// <returns></returns>
-    [HttpPost]
-    [Obsolete("use v2 instead")]
-    public async Task<ActionResult<PagedList<SeriesDto>>> GetWantToRead([FromQuery] UserParams? userParams, FilterDto filterDto)
-    {
-        userParams ??= new UserParams();
-        var pagedList = await _unitOfWork.SeriesRepository.GetWantToReadForUserAsync(User.GetUserId(), userParams, filterDto);
-        Response.AddPaginationHeader(pagedList.CurrentPage, pagedList.PageSize, pagedList.TotalCount, pagedList.TotalPages);
-
-        await _unitOfWork.SeriesRepository.AddSeriesModifiers(User.GetUserId(), pagedList);
-
-        return Ok(pagedList);
+        _seriesService = seriesService;
     }
 
     /// <summary>
@@ -62,15 +45,22 @@ public class WantToReadController : BaseApiController
     /// </summary>
     /// <param name="userParams"></param>
     /// <param name="filterDto"></param>
+    /// <param name="userId">Optional user id to request the OnDeck for someone else. They must have profile sharing enabled when doing so</param>
     /// <returns></returns>
     [HttpPost("v2")]
-    public async Task<ActionResult<PagedList<SeriesDto>>> GetWantToReadV2([FromQuery] UserParams? userParams, FilterV2Dto filterDto)
+    [ProfilePrivacy(allowMissingUserId: true)]
+    public async Task<ActionResult<PagedList<SeriesDto>>> GetWantToReadV2([FromQuery] UserParams? userParams, FilterV2Dto filterDto, [FromQuery] int? userId = null)
     {
+        var wantToReadForUser = userId ?? UserId;
         userParams ??= new UserParams();
-        var pagedList = await _unitOfWork.SeriesRepository.GetWantToReadForUserV2Async(User.GetUserId(), userParams, filterDto);
+
+        // Add profile privacy filter
+        filterDto.Statements.AddRange(await _seriesService.GetProfilePrivacyStatements(wantToReadForUser, UserId));
+
+        var pagedList = await _unitOfWork.SeriesRepository.GetWantToReadForUserV2Async(wantToReadForUser, userParams, filterDto);
         Response.AddPaginationHeader(pagedList.CurrentPage, pagedList.PageSize, pagedList.TotalCount, pagedList.TotalPages);
 
-        await _unitOfWork.SeriesRepository.AddSeriesModifiers(User.GetUserId(), pagedList);
+        await _unitOfWork.SeriesRepository.AddSeriesModifiers(wantToReadForUser, pagedList);
 
         return Ok(pagedList);
     }
@@ -78,7 +68,7 @@ public class WantToReadController : BaseApiController
     [HttpGet]
     public async Task<ActionResult<bool>> IsSeriesInWantToRead([FromQuery] int seriesId)
     {
-        return Ok(await _unitOfWork.SeriesRepository.IsSeriesInWantToRead(User.GetUserId(), seriesId));
+        return Ok(await _unitOfWork.SeriesRepository.IsSeriesInWantToRead(UserId, seriesId));
     }
 
     /// <summary>
@@ -89,7 +79,7 @@ public class WantToReadController : BaseApiController
     [HttpPost("add-series")]
     public async Task<ActionResult> AddSeries(UpdateWantToReadDto dto)
     {
-        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUsername(),
+        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(Username!,
             AppUserIncludes.WantToRead);
         if (user == null) return Unauthorized();
 
@@ -114,7 +104,7 @@ public class WantToReadController : BaseApiController
             return Ok();
         }
 
-        return BadRequest(await _localizationService.Translate(User.GetUserId(), "generic-reading-list-update"));
+        return BadRequest(await _localizationService.Translate(UserId, "generic-reading-list-update"));
     }
 
     /// <summary>
@@ -125,7 +115,7 @@ public class WantToReadController : BaseApiController
     [HttpPost("remove-series")]
     public async Task<ActionResult> RemoveSeries(UpdateWantToReadDto dto)
     {
-        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUsername(),
+        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(Username!,
             AppUserIncludes.WantToRead);
         if (user == null) return Unauthorized();
 
@@ -144,6 +134,6 @@ public class WantToReadController : BaseApiController
             return Ok();
         }
 
-        return BadRequest(await _localizationService.Translate(User.GetUserId(), "generic-reading-list-update"));
+        return BadRequest(await _localizationService.Translate(UserId, "generic-reading-list-update"));
     }
 }

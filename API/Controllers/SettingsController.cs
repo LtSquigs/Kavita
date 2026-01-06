@@ -1,31 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
+using API.Constants;
 using API.Data;
 using API.DTOs;
 using API.DTOs.Email;
 using API.DTOs.KavitaPlus.Metadata;
 using API.DTOs.Settings;
-using API.Entities;
 using API.Entities.Enums;
 using API.Extensions;
 using API.Helpers.Converters;
-using API.Logging;
 using API.Services;
-using API.Services.Tasks.Scanner;
 using AutoMapper;
-using Cronos;
-using Hangfire;
 using Kavita.Common;
-using Kavita.Common.EnvironmentInfo;
 using Kavita.Common.Extensions;
 using Kavita.Common.Helpers;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Swashbuckle.AspNetCore.Annotations;
 
 namespace API.Controllers;
 
@@ -39,9 +33,12 @@ public class SettingsController : BaseApiController
     private readonly IEmailService _emailService;
     private readonly ILocalizationService _localizationService;
     private readonly ISettingsService _settingsService;
+    private readonly IAuthenticationSchemeProvider _authenticationSchemeProvider;
+    private readonly IOidcService _oidcService;
 
     public SettingsController(ILogger<SettingsController> logger, IUnitOfWork unitOfWork, IMapper mapper,
-        IEmailService emailService, ILocalizationService localizationService, ISettingsService settingsService)
+        IEmailService emailService, ILocalizationService localizationService, ISettingsService settingsService,
+        IAuthenticationSchemeProvider authenticationSchemeProvider, IOidcService oidcService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
@@ -49,6 +46,8 @@ public class SettingsController : BaseApiController
         _emailService = emailService;
         _localizationService = localizationService;
         _settingsService = settingsService;
+        _authenticationSchemeProvider = authenticationSchemeProvider;
+        _oidcService = oidcService;
     }
 
     /// <summary>
@@ -66,7 +65,7 @@ public class SettingsController : BaseApiController
     /// Returns the server settings
     /// </summary>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpGet]
     public async Task<ActionResult<ServerSettingDto>> GetSettings()
     {
@@ -77,11 +76,11 @@ public class SettingsController : BaseApiController
         return Ok(settingsDto);
     }
 
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpPost("reset")]
     public async Task<ActionResult<ServerSettingDto>> ResetSettings()
     {
-        _logger.LogInformation("{UserName} is resetting Server Settings", User.GetUsername());
+        _logger.LogInformation("{UserName} is resetting Server Settings", Username!);
 
         return await UpdateSettings(_mapper.Map<ServerSettingDto>(Seed.DefaultSettings));
     }
@@ -90,11 +89,11 @@ public class SettingsController : BaseApiController
     /// Resets the IP Addresses
     /// </summary>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpPost("reset-ip-addresses")]
     public async Task<ActionResult<ServerSettingDto>> ResetIpAddressesSettings()
     {
-        _logger.LogInformation("{UserName} is resetting IP Addresses Setting", User.GetUsername());
+        _logger.LogInformation("{UserName} is resetting IP Addresses Setting", Username!);
         var ipAddresses = await _unitOfWork.SettingsRepository.GetSettingAsync(ServerSettingKey.IpAddresses);
         ipAddresses.Value = Configuration.DefaultIpAddresses;
         _unitOfWork.SettingsRepository.Update(ipAddresses);
@@ -111,11 +110,11 @@ public class SettingsController : BaseApiController
     /// Resets the Base url
     /// </summary>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpPost("reset-base-url")]
     public async Task<ActionResult<ServerSettingDto>> ResetBaseUrlSettings()
     {
-        _logger.LogInformation("{UserName} is resetting Base Url Setting", User.GetUsername());
+        _logger.LogInformation("{UserName} is resetting Base Url Setting", Username!);
         var baseUrl = await _unitOfWork.SettingsRepository.GetSettingAsync(ServerSettingKey.BaseUrl);
         baseUrl.Value = Configuration.DefaultBaseUrl;
         _unitOfWork.SettingsRepository.Update(baseUrl);
@@ -146,11 +145,11 @@ public class SettingsController : BaseApiController
     /// </summary>
     /// <param name="updateSettingsDto"></param>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpPost]
     public async Task<ActionResult<ServerSettingDto>> UpdateSettings(ServerSettingDto updateSettingsDto)
     {
-        _logger.LogInformation("{UserName} is updating Server Settings", User.GetUsername());
+        _logger.LogInformation("{UserName} is updating Server Settings", Username!);
 
         try
         {
@@ -159,12 +158,12 @@ public class SettingsController : BaseApiController
         }
         catch (KavitaException ex)
         {
-            return BadRequest(await _localizationService.Translate(User.GetUserId(), ex.Message));
+            return BadRequest(await _localizationService.Translate(UserId, ex.Message));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "There was an exception when updating server settings");
-            return BadRequest(await _localizationService.Translate(User.GetUserId(), "generic-error"));
+            return BadRequest(await _localizationService.Translate(UserId, "generic-error"));
         }
     }
 
@@ -172,21 +171,21 @@ public class SettingsController : BaseApiController
     /// All values allowed for Task Scheduling APIs. A custom cron job is not included. Disabled is not applicable for Cleanup.
     /// </summary>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpGet("task-frequencies")]
     public ActionResult<IEnumerable<string>> GetTaskFrequencies()
     {
         return Ok(CronConverter.Options);
     }
 
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpGet("library-types")]
     public ActionResult<IEnumerable<string>> GetLibraryTypes()
     {
         return Ok(Enum.GetValues<LibraryType>().Select(t => t.ToDescription()));
     }
 
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpGet("log-levels")]
     public ActionResult<IEnumerable<string>> GetLogLevels()
     {
@@ -216,11 +215,11 @@ public class SettingsController : BaseApiController
     /// Sends a test email to see if email settings are hooked up correctly
     /// </summary>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpPost("test-email-url")]
     public async Task<ActionResult<EmailTestResultDto>> TestEmailServiceUrl()
     {
-        var user = await _unitOfWork.UserRepository.GetUserByIdAsync(User.GetUserId());
+        var user = await _unitOfWork.UserRepository.GetUserByIdAsync(UserId);
         if (string.IsNullOrEmpty(user?.Email)) return BadRequest("Your account has no email on record. Cannot email.");
         return Ok(await _emailService.SendTestEmail(user!.Email));
     }
@@ -229,7 +228,7 @@ public class SettingsController : BaseApiController
     /// Get the metadata settings for Kavita+ users.
     /// </summary>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpGet("metadata-settings")]
     public async Task<ActionResult<MetadataSettingsDto>> GetMetadataSettings()
     {
@@ -242,7 +241,7 @@ public class SettingsController : BaseApiController
     /// </summary>
     /// <param name="dto"></param>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpPost("metadata-settings")]
     public async Task<ActionResult<MetadataSettingsDto>> UpdateMetadataSettings(MetadataSettingsDto dto)
     {
@@ -261,7 +260,7 @@ public class SettingsController : BaseApiController
     /// Import field mappings
     /// </summary>
     /// <returns></returns>
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
     [HttpPost("import-field-mappings")]
     public async Task<ActionResult<FieldMappingsImportResultDto>> ImportFieldMappings([FromBody] ImportFieldMappingsDto dto)
     {
@@ -285,13 +284,25 @@ public class SettingsController : BaseApiController
     [HttpGet("oidc")]
     public async Task<ActionResult<OidcPublicConfigDto>> GetOidcConfig()
     {
+        var oidcScheme = await _authenticationSchemeProvider.GetSchemeAsync(IdentityServiceExtensions.OpenIdConnect);
+
         var settings = (await _unitOfWork.SettingsRepository.GetSettingsDtoAsync()).OidcConfig;
         var publicConfig = _mapper.Map<OidcPublicConfigDto>(settings);
-        publicConfig.Enabled = !string.IsNullOrEmpty(settings.Authority) &&
+        publicConfig.Enabled = oidcScheme != null &&
+                               !string.IsNullOrEmpty(settings.Authority) &&
                                !string.IsNullOrEmpty(settings.ClientId) &&
                                !string.IsNullOrEmpty(settings.Secret);
 
         return Ok(publicConfig);
+    }
+
+    [Authorize(PolicyGroups.AdminPolicy)]
+    [HttpPost("reset-external-ids")]
+    public async Task<IActionResult> ResetExternalIds()
+    {
+        await _oidcService.ClearOidcIds();
+
+        return Ok();
     }
 
     /// <summary>
@@ -299,7 +310,7 @@ public class SettingsController : BaseApiController
     /// </summary>
     /// <param name="authority"></param>
     /// <returns></returns>
-    [Authorize("RequireAdminRole")]
+    [Authorize(PolicyGroups.AdminPolicy)]
     [HttpPost("is-valid-authority")]
     public async Task<ActionResult<bool>> IsValidAuthority([FromBody] AuthorityValidationDto authority)
     {

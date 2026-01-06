@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using API.Constants;
 using API.Data;
+using API.Data.Metadata;
 using API.Data.Repositories;
 using API.DTOs;
-using API.DTOs.Filtering.v2;
 using API.DTOs.Metadata.Browse;
 using API.DTOs.Metadata.Browse.Requests;
 using API.DTOs.Person;
@@ -12,7 +14,9 @@ using API.Entities.Enums;
 using API.Extensions;
 using API.Helpers;
 using API.Services;
+using API.Services.Plus;
 using API.Services.Tasks.Metadata;
+using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -48,7 +52,45 @@ public class PersonController : BaseApiController
     [HttpGet]
     public async Task<ActionResult<PersonDto>> GetPersonByName(string name)
     {
-        return Ok(await _unitOfWork.PersonRepository.GetPersonDtoByName(name, User.GetUserId()));
+        var person = await _unitOfWork.PersonRepository.GetPersonDtoByName(name, UserId);
+        if (person == null) return NotFound();
+
+        person.Roles = (await _unitOfWork.PersonRepository.GetRolesForPersonByName(person.Id, UserId)).ToList();
+
+        EnrichWithWebLinks(person);
+
+        return Ok(person);
+    }
+
+    /// <summary>
+    /// Populate <see cref="PersonDto.WebLinks"/> from set ids
+    /// </summary>
+    /// <param name="personDto"></param>
+    /// <remarks><see cref="PersonDto.Roles"/> must be set for this to work</remarks>
+    private static void EnrichWithWebLinks(PersonDto personDto)
+    {
+        if (personDto.Roles == null) return;
+
+        var isCharacter = personDto.Roles.Count == 1 && personDto.Roles.Contains(PersonRole.Character);
+        personDto.WebLinks = [];
+
+        if (personDto.AniListId != 0)
+        {
+            var urlPrefix = isCharacter ? ScrobblingService.AniListCharacterWebsite : ScrobblingService.AniListStaffWebsite;
+            personDto.WebLinks.Add($"{urlPrefix}{personDto.AniListId}");
+        }
+
+        if (personDto.MalId != 0)
+        {
+            var urlPrefix = isCharacter ? ScrobblingService.MalCharacterWebsite : ScrobblingService.MalStaffWebsite;
+            personDto.WebLinks.Add($"{urlPrefix}{personDto.MalId}");
+        }
+
+        // Hardcover currently does not seem to have characters
+        if (!string.IsNullOrEmpty(personDto.HardcoverId) && !isCharacter)
+        {
+            personDto.WebLinks.Add($"{ScrobblingService.HardcoverStaffWebsite}{personDto.HardcoverId}");
+        }
     }
 
     /// <summary>
@@ -70,7 +112,7 @@ public class PersonController : BaseApiController
     [HttpGet("roles")]
     public async Task<ActionResult<IEnumerable<PersonRole>>> GetRolesForPersonByName(int personId)
     {
-        return Ok(await _unitOfWork.PersonRepository.GetRolesForPersonByName(personId, User.GetUserId()));
+        return Ok(await _unitOfWork.PersonRepository.GetRolesForPersonByName(personId, UserId));
     }
 
 
@@ -84,7 +126,7 @@ public class PersonController : BaseApiController
     {
         userParams ??= UserParams.Default;
 
-        var list = await _unitOfWork.PersonRepository.GetBrowsePersonDtos(User.GetUserId(), filter, userParams);
+        var list = await _unitOfWork.PersonRepository.GetBrowsePersonDtos(UserId, filter, userParams);
         Response.AddPaginationHeader(list.CurrentPage, list.PageSize, list.TotalCount, list.TotalPages);
 
         return Ok(list);
@@ -95,29 +137,31 @@ public class PersonController : BaseApiController
     /// </summary>
     /// <param name="dto"></param>
     /// <returns></returns>
-    [Authorize("RequireAdminRole")]
+    [Authorize(PolicyGroups.AdminPolicy)]
     [HttpPost("update")]
     public async Task<ActionResult<PersonDto>> UpdatePerson(UpdatePersonDto dto)
     {
         // This needs to get all people and update them equally
         var person = await _unitOfWork.PersonRepository.GetPersonById(dto.Id, PersonIncludes.Aliases);
-        if (person == null) return BadRequest(_localizationService.Translate(User.GetUserId(), "person-doesnt-exist"));
+        if (person == null) return BadRequest(_localizationService.Translate(UserId, "person-doesnt-exist"));
 
-        if (string.IsNullOrEmpty(dto.Name)) return BadRequest(await _localizationService.Translate(User.GetUserId(), "person-name-required"));
+        if (string.IsNullOrEmpty(dto.Name)) return BadRequest(await _localizationService.Translate(UserId, "person-name-required"));
 
 
         // Validate the name is unique
         if (dto.Name != person.Name && !(await _unitOfWork.PersonRepository.IsNameUnique(dto.Name)))
         {
-            return BadRequest(await _localizationService.Translate(User.GetUserId(), "person-name-unique"));
+            return BadRequest(await _localizationService.Translate(UserId, "person-name-unique"));
         }
 
-        var success = await _personService.UpdatePersonAliasesAsync(person, dto.Aliases);
-        if (!success) return BadRequest(await _localizationService.Translate(User.GetUserId(), "aliases-have-overlap"));
-
-
-        person.Name = dto.Name?.Trim();
+        // Update name first, in case it got moved to aliases
+        person.Name = dto.Name.Trim();
         person.NormalizedName = person.Name.ToNormalized();
+
+        var success = await _personService.UpdatePersonAliasesAsync(person, dto.Aliases);
+        if (!success) return BadRequest(await _localizationService.Translate(UserId, "aliases-have-overlap"));
+
+
         person.Description = dto.Description ?? string.Empty;
         person.CoverImageLocked = dto.CoverImageLocked;
 
@@ -136,8 +180,7 @@ public class PersonController : BaseApiController
         }
 
         var asin = dto.Asin?.Trim();
-        if (!string.IsNullOrEmpty(asin) &&
-            (ArticleNumberHelper.IsValidIsbn10(asin) || ArticleNumberHelper.IsValidIsbn13(asin)))
+        if (!string.IsNullOrEmpty(asin) && Parser.IsLikelyValidAsin(asin))
         {
             person.Asin = asin;
         }
@@ -146,18 +189,6 @@ public class PersonController : BaseApiController
         await _unitOfWork.CommitAsync();
 
         return Ok(_mapper.Map<PersonDto>(person));
-    }
-
-    /// <summary>
-    /// Validates if the ASIN (10/13) is valid
-    /// </summary>
-    /// <param name="asin"></param>
-    /// <returns></returns>
-    [HttpGet("valid-asin")]
-    public ActionResult<bool> ValidateAsin(string asin)
-    {
-        return Ok(!string.IsNullOrEmpty(asin) &&
-                  (ArticleNumberHelper.IsValidIsbn10(asin) || ArticleNumberHelper.IsValidIsbn13(asin)));
     }
 
     /// <summary>
@@ -170,14 +201,14 @@ public class PersonController : BaseApiController
     {
         var settings = await _unitOfWork.SettingsRepository.GetSettingsDtoAsync();
         var person = await _unitOfWork.PersonRepository.GetPersonById(personId);
-        if (person == null) return BadRequest(_localizationService.Translate(User.GetUserId(), "person-doesnt-exist"));
+        if (person == null) return BadRequest(_localizationService.Translate(UserId, "person-doesnt-exist"));
 
         var personImage = await _coverDbService.DownloadPersonImageAsync(person, settings.EncodeMediaAs);
 
         if (string.IsNullOrEmpty(personImage))
         {
 
-            return BadRequest(await _localizationService.Translate(User.GetUserId(), "person-image-doesnt-exist"));
+            return BadRequest(await _localizationService.Translate(UserId, "person-image-doesnt-exist"));
         }
 
         person.CoverImage = personImage;
@@ -197,7 +228,7 @@ public class PersonController : BaseApiController
     [HttpGet("series-known-for")]
     public async Task<ActionResult<IEnumerable<SeriesDto>>> GetKnownSeries(int personId)
     {
-        return Ok(await _unitOfWork.PersonRepository.GetSeriesKnownFor(personId, User.GetUserId()));
+        return Ok(await _unitOfWork.PersonRepository.GetSeriesKnownFor(personId, UserId));
     }
 
     /// <summary>
@@ -209,7 +240,7 @@ public class PersonController : BaseApiController
     [HttpGet("chapters-by-role")]
     public async Task<ActionResult<IEnumerable<StandaloneChapterDto>>> GetChaptersByRole(int personId, PersonRole role)
     {
-        return Ok(await _unitOfWork.PersonRepository.GetChaptersForPersonByRole(personId, User.GetUserId(), role));
+        return Ok(await _unitOfWork.PersonRepository.GetChaptersForPersonByRole(personId, UserId, role));
     }
 
     /// <summary>
@@ -218,7 +249,7 @@ public class PersonController : BaseApiController
     /// <param name="dto"></param>
     /// <returns></returns>
     [HttpPost("merge")]
-    [Authorize("RequireAdminRole")]
+    [Authorize(PolicyGroups.AdminPolicy)]
     public async Task<ActionResult<PersonDto>> MergePeople(PersonMergeDto dto)
     {
         var dst = await _unitOfWork.PersonRepository.GetPersonById(dto.DestId, PersonIncludes.All);
@@ -236,17 +267,18 @@ public class PersonController : BaseApiController
     /// <summary>
     /// Ensure the alias is valid to be added. For example, the alias cannot be on another person or be the same as the current person name/alias.
     /// </summary>
-    /// <param name="personId"></param>
-    /// <param name="alias"></param>
+    /// <param name="dto">alias check request</param>
     /// <returns></returns>
-    [HttpGet("valid-alias")]
-    public async Task<ActionResult<bool>> IsValidAlias(int personId, string alias)
+    [HttpPost("valid-alias")]
+    public async Task<ActionResult<bool>> IsValidAlias(PersonAliasCheckDto dto)
     {
-        var person = await _unitOfWork.PersonRepository.GetPersonById(personId, PersonIncludes.Aliases);
+        var person = await _unitOfWork.PersonRepository.GetPersonById(dto.PersonId, PersonIncludes.Aliases);
         if (person == null) return NotFound();
 
-        var existingAlias = await _unitOfWork.PersonRepository.AnyAliasExist(alias);
-        return Ok(!existingAlias && person.NormalizedName != alias.ToNormalized());
+        var aliasIsName = dto.Name.ToNormalized() == dto.Alias.ToNormalized();
+        var existingAlias = await _unitOfWork.PersonRepository.AnyAliasExist(dto.Alias);
+
+        return Ok(!existingAlias && !aliasIsName);
     }
 
 

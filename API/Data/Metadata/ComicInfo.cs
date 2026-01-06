@@ -4,8 +4,10 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Xml.Serialization;
+using System.Collections.Generic;
 using API.Entities;
 using API.Entities.Enums;
+using API.Helpers;
 using API.Services;
 using Kavita.Common.Extensions;
 using Nager.ArticleNumber;
@@ -174,6 +176,25 @@ public class ComicInfo
     public string Locations { get; set; } = string.Empty;
     public Page[] Pages { get; set; } = [];
 
+    public IList<string> GetPeopleForRole(PersonRole role) => role switch
+    {
+        PersonRole.Other => [],
+        PersonRole.Writer => TagHelper.GetTagValues(Writer),
+        PersonRole.Penciller => TagHelper.GetTagValues(Penciller),
+        PersonRole.Inker => TagHelper.GetTagValues(Inker),
+        PersonRole.Colorist => TagHelper.GetTagValues(Colorist),
+        PersonRole.Letterer => TagHelper.GetTagValues(Letterer),
+        PersonRole.CoverArtist => TagHelper.GetTagValues(CoverArtist),
+        PersonRole.Editor => TagHelper.GetTagValues(Editor),
+        PersonRole.Publisher => TagHelper.GetTagValues(Publisher),
+        PersonRole.Character => TagHelper.GetTagValues(Characters),
+        PersonRole.Translator => TagHelper.GetTagValues(Translator),
+        PersonRole.Imprint => TagHelper.GetTagValues(Imprint),
+        PersonRole.Team => TagHelper.GetTagValues(Teams),
+        PersonRole.Location => TagHelper.GetTagValues(Locations),
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
+    };
+
     public static AgeRating ConvertAgeRatingToEnum(string value)
     {
         if (string.IsNullOrEmpty(value)) return Entities.Enums.AgeRating.Unknown;
@@ -204,21 +225,7 @@ public class ComicInfo
         info.Locations = Services.Tasks.Scanner.Parser.Parser.CleanAuthor(info.Locations);
 
         // We need to convert GTIN to ISBN
-        if (!string.IsNullOrEmpty(info.GTIN))
-        {
-            // This is likely a valid ISBN
-            if (info.GTIN[0] == '0')
-            {
-                var potentialISBN = info.GTIN.Substring(1, info.GTIN.Length - 1);
-                if (ArticleNumberHelper.IsValidIsbn13(potentialISBN))
-                {
-                    info.Isbn = potentialISBN;
-                }
-            } else if (ArticleNumberHelper.IsValidIsbn10(info.GTIN) || ArticleNumberHelper.IsValidIsbn13(info.GTIN))
-            {
-                info.Isbn = info.GTIN;
-            }
-        }
+        info.Isbn = ParseGtin(info.GTIN);
 
         if (!string.IsNullOrEmpty(info.Number))
         {
@@ -262,4 +269,34 @@ public class ComicInfo
         var clone = MemberwiseClone() as ComicInfo;
         return clone;
     }
+    /// <summary>
+    /// For a given GTIN, attempts to parse out an ISBN and set the Isbn property.
+    /// </summary>
+    /// <param name="gtin"></param>
+    /// <returns></returns>
+    public static string ParseGtin(string? gtin)
+    {
+        if (string.IsNullOrEmpty(gtin)) return string.Empty;
+
+
+        // This is likely a valid ISBN
+        if (gtin[0] == '0')
+        {
+            var offset = gtin[1] == '-'  ? 0 : 1;
+            var potentialIsbn = gtin[offset..];
+            if (ArticleNumberHelper.IsValidIsbn13(potentialIsbn))
+            {
+                return potentialIsbn;
+            }
+        }
+
+        if (ArticleNumberHelper.IsValidIsbn10(gtin) || ArticleNumberHelper.IsValidIsbn13(gtin))
+        {
+            return gtin;
+        }
+
+        return string.Empty;
+    }
+
+
 }

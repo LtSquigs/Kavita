@@ -3,15 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using API.Data;
-using API.Data.Repositories;
 using API.DTOs.Koreader;
-using API.Entities;
 using API.Extensions;
 using API.Services;
 using Kavita.Common;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using static System.Net.WebRequestMethods;
 
 namespace API.Controllers;
 #nullable enable
@@ -23,41 +19,21 @@ namespace API.Controllers;
 /// Koreader uses a different form of authentication. It stores the username and password in headers.
 /// https://github.com/koreader/koreader/blob/master/plugins/kosync.koplugin/KOSyncClient.lua
 /// </remarks>
-[AllowAnonymous]
 public class KoreaderController : BaseApiController
 {
-
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILocalizationService _localizationService;
     private readonly IKoreaderService _koreaderService;
     private readonly ILogger<KoreaderController> _logger;
 
-    public KoreaderController(IUnitOfWork unitOfWork, ILocalizationService localizationService,
-            IKoreaderService koreaderService, ILogger<KoreaderController> logger)
+    public KoreaderController(IKoreaderService koreaderService, ILogger<KoreaderController> logger)
     {
-        _unitOfWork = unitOfWork;
-        _localizationService = localizationService;
         _koreaderService = koreaderService;
         _logger = logger;
     }
 
-    // We won't allow users to be created from Koreader. Rather, they
-    // must already have an account.
-    /*
-    [HttpPost("/users/create")]
-    public IActionResult CreateUser(CreateUserRequest request)
-    {
-    }
-    */
-
     [HttpGet("{apiKey}/users/auth")]
-    public async Task<IActionResult> Authenticate(string apiKey)
+    public IActionResult Authenticate(string apiKey)
     {
-        var userId = await GetUserId(apiKey);
-        var user = await _unitOfWork.UserRepository.GetUserByIdAsync(userId);
-        if (user == null) return Unauthorized();
-
-        return Ok(new { username = user.UserName });
+        return Ok(new { username = Username });
     }
 
     /// <summary>
@@ -71,8 +47,7 @@ public class KoreaderController : BaseApiController
     {
         try
         {
-            var userId = await GetUserId(apiKey);
-            await _koreaderService.SaveProgress(request, userId);
+            await _koreaderService.SaveProgress(request, UserId);
 
             return Ok(new KoreaderProgressUpdateDto{ Document = request.document, Timestamp = DateTime.UtcNow });
         }
@@ -93,9 +68,8 @@ public class KoreaderController : BaseApiController
     {
         try
         {
-            var userId = await GetUserId(apiKey);
-            var response = await _koreaderService.GetProgress(ebookHash, userId);
-            _logger.LogDebug("Koreader response progress for User ({UserId}): {Progress}", userId, response.progress.Sanitize());
+            var response = await _koreaderService.GetProgress(ebookHash, UserId);
+            _logger.LogDebug("Koreader response progress for User ({UserName}): {Progress}", Username, response.progress.Sanitize());
 
 
             // We must pack this manually for Koreader due to a bug in their code: https://github.com/koreader/koreader/issues/13629
@@ -111,18 +85,6 @@ public class KoreaderController : BaseApiController
         catch (KavitaException ex)
         {
             return BadRequest(ex.Message);
-        }
-    }
-
-    private async Task<int> GetUserId(string apiKey)
-    {
-        try
-        {
-            return await _unitOfWork.UserRepository.GetUserIdByApiKeyAsync(apiKey);
-        }
-        catch
-        {
-            throw new KavitaException(await _localizationService.Get("en", "user-doesnt-exist"));
         }
     }
 }

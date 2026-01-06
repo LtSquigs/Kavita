@@ -34,9 +34,14 @@ export class SeriesService {
   paginatedResults: PaginatedResult<Series[]> = new PaginatedResult<Series[]>();
   paginatedSeriesForTagsResults: PaginatedResult<Series[]> = new PaginatedResult<Series[]>();
 
-  getAllSeriesV2(pageNum?: number, itemsPerPage?: number, filter?: FilterV2<FilterField>, context: QueryContext = QueryContext.None) {
+  getAllSeriesV2(pageNum?: number, itemsPerPage?: number, filter?: FilterV2<FilterField>, context: QueryContext = QueryContext.None, userId?: number) {
     let params = new HttpParams();
     params = this.utilityService.addPaginationIfExists(params, pageNum, itemsPerPage);
+
+    if (userId) {
+      params = params.set('userId', userId);
+    }
+
     const data = filter || {};
 
     return this.httpClient.post<PaginatedResult<Series[]>>(this.baseUrl + 'series/all-v2?context=' + context, data, {observe: 'response', params}).pipe(
@@ -54,6 +59,18 @@ export class SeriesService {
     return this.httpClient.post<PaginatedResult<Series[]>>(this.baseUrl + 'series/v2', data, {observe: 'response', params}).pipe(
       map((response: any) => {
         return this.utilityService.createPaginatedResult(response, this.paginatedResults);
+      })
+    );
+  }
+
+  getCurrentlyReading(userid: number, pageNum: number, itemsPerPage: number) {
+    let params = new HttpParams().set('userId', userid);
+    params = this.utilityService.addPaginationIfExists(params, pageNum, itemsPerPage);
+
+
+    return this.httpClient.get<PaginatedResult<Series[]>>(this.baseUrl + 'series/currently-reading', {observe: 'response', params }).pipe(
+      map((response: any) => {
+        return this.utilityService.createPaginatedResult(response, new PaginatedResult<Series[]>());
       })
     );
   }
@@ -106,16 +123,24 @@ export class SeriesService {
     );
   }
 
-  getRecentlyUpdatedSeries() {
-    return this.httpClient.post<SeriesGroup[]>(this.baseUrl + 'series/recently-updated-series', {});
+  getRecentlyUpdatedSeries(pageNum?: number, itemsPerPage?: number) {
+    let params = new HttpParams();
+    params = this.utilityService.addPaginationIfExists(params, pageNum, itemsPerPage);
+
+    return this.httpClient.post<SeriesGroup[]>(this.baseUrl + 'series/recently-updated-series', {}, {params});
   }
 
-  getWantToRead(pageNum?: number, itemsPerPage?: number, filter?: FilterV2<FilterField>): Observable<PaginatedResult<Series[]>> {
+  getWantToRead(pageNum?: number, itemsPerPage?: number, filter?: FilterV2<FilterField>, userId: number | null = null): Observable<PaginatedResult<Series[]>> {
     let params = new HttpParams();
     params = this.utilityService.addPaginationIfExists(params, pageNum, itemsPerPage);
     const data = filter || {};
 
-    return this.httpClient.post<Series[]>(this.baseUrl + 'want-to-read/v2', data, {observe: 'response', params}).pipe(
+    let url = this.baseUrl + 'want-to-read/v2';
+    if (userId) {
+      url += "?userId=" + userId
+    }
+
+    return this.httpClient.post<Series[]>(url, data, {observe: 'response', params}).pipe(
       map(response => {
         return this.utilityService.createPaginatedResult(response, new PaginatedResult<Series[]>());
     }));
@@ -128,12 +153,17 @@ export class SeriesService {
     }));
   }
 
-  getOnDeck(libraryId: number = 0, pageNum?: number, itemsPerPage?: number, filter?: FilterV2<FilterField>) {
+  getOnDeck(pageNum?: number, itemsPerPage?: number, filter?: FilterV2<FilterField>, libraryId: number = 0, userId: number | null = null) {
     let params = new HttpParams();
     params = this.utilityService.addPaginationIfExists(params, pageNum, itemsPerPage);
     const data = filter || {};
 
-    return this.httpClient.post<Series[]>(this.baseUrl + 'series/on-deck?libraryId=' + libraryId, data, {observe: 'response', params}).pipe(
+    let url = this.baseUrl + 'series/on-deck?libraryId=' + libraryId;
+    if (userId) {
+      url += "&userId=" + userId;
+    }
+
+    return this.httpClient.post<Series[]>(url, data, {observe: 'response', params}).pipe(
       map(response => {
         return this.utilityService.createPaginatedResult(response, new PaginatedResult<Series[]>());
     }));

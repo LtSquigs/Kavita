@@ -7,11 +7,12 @@ using API.Comparators;
 using API.Data;
 using API.Data.Repositories;
 using API.DTOs;
+using API.DTOs.Filtering;
+using API.DTOs.Filtering.v2;
 using API.DTOs.Person;
 using API.DTOs.SeriesDetail;
 using API.Entities;
 using API.Entities.Enums;
-using API.Entities.Interfaces;
 using API.Entities.Metadata;
 using API.Entities.MetadataMatching;
 using API.Entities.Person;
@@ -21,7 +22,6 @@ using API.Helpers.Builders;
 using API.Services.Plus;
 using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
-using Hangfire;
 using Kavita.Common;
 using Microsoft.Extensions.Logging;
 
@@ -41,7 +41,8 @@ public interface ISeriesService
         bool withHash);
     Task<string> FormatChapterName(int userId, LibraryType libraryType, bool withHash = false);
     Task<NextExpectedChapterDto> GetEstimatedChapterCreationDate(int seriesId, int userId);
-
+    Task<PagedList<SeriesDto>> GetCurrentlyReading(int userId, int requestingUserId, UserParams userParams);
+    Task<List<FilterStatementDto>> GetProfilePrivacyStatements(int userId, int requestingUserId);
 }
 
 public class SeriesService : ISeriesService
@@ -515,7 +516,7 @@ public class SeriesService : ISeriesService
     {
         var series = await _unitOfWork.SeriesRepository.GetSeriesDtoByIdAsync(seriesId, userId);
         if (series == null) throw new KavitaException(await _localizationService.Translate(userId, "series-doesnt-exist"));
-        var libraryIds = _unitOfWork.LibraryRepository.GetLibraryIdsForUserIdAsync(userId);
+        var libraryIds = await _unitOfWork.LibraryRepository.GetLibraryIdsForUserIdAsync(userId);
         if (!libraryIds.Contains(series.LibraryId))
             throw new UnauthorizedAccessException("user-no-access-library-from-series");
 
@@ -570,7 +571,7 @@ public class SeriesService : ISeriesService
         }
 
         // Don't show chapter -100000 (aka single volume chapters) in the Chapters tab or books that are just single numbers (they show as volumes)
-        IEnumerable<ChapterDto> retChapters = bookTreatment ? Array.Empty<ChapterDto>() : chapters.Where(ShouldIncludeChapter);
+        IEnumerable<ChapterDto> retChapters = bookTreatment ? [] : chapters.Where(ShouldIncludeChapter);
 
         var storylineChapters = volumes
             .WhereLooseLeaf()
@@ -626,7 +627,7 @@ public class SeriesService : ISeriesService
             // }
             if (string.IsNullOrEmpty(firstChapter.TitleName))
             {
-                if (firstChapter.Range.Equals(Parser.LooseLeafVolume)) return false;
+                if (Parser.IsLooseLeafVolume(firstChapter.Range)) return false;
                 var title = Path.GetFileNameWithoutExtension(firstChapter.Range);
                 if (string.IsNullOrEmpty(title)) return false;
                 volume.Name += $" - {title}"; // OPDS smart list 7 (just pdfs) triggered this
@@ -955,6 +956,100 @@ public class SeriesService : ISeriesService
 
 
         return result;
+    }
+
+    public async Task<PagedList<SeriesDto>> GetCurrentlyReading(int userId, int requestingUserId, UserParams userParams)
+    {
+        var serverSettings = await _unitOfWork.SettingsRepository.GetSettingsDtoAsync();
+
+        var filter = new FilterV2Dto
+        {
+            Combination = FilterCombination.And,
+            SortOptions = new SortOptions
+            {
+                SortField = SortField.ReadProgress,
+                IsAscending = false,
+            },
+            Statements = [
+                new FilterStatementDto
+                {
+                  Comparison = FilterComparison.GreaterThan,
+                  Field = FilterField.ReadLast,
+                  Value = serverSettings.OnDeckProgressDays.ToString(),
+                },
+                new FilterStatementDto
+                {
+                    Comparison = FilterComparison.LessThan,
+                    Field = FilterField.ReadProgress,
+                    Value = "100",
+                },
+                new FilterStatementDto
+                {
+                    Comparison = FilterComparison.GreaterThan,
+                    Field = FilterField.ReadProgress,
+                    Value = "0",
+                },
+            ],
+        };
+
+        filter.Statements.AddRange(await GetProfilePrivacyStatements(userId, requestingUserId));
+
+        return await _unitOfWork.SeriesRepository.GetSeriesDtoForLibraryIdV2Async(userId, userParams, filter);
+    }
+
+    public async Task<List<FilterStatementDto>> GetProfilePrivacyStatements(int userId, int requestingUserId)
+    {
+        if (userId == requestingUserId) return [];
+
+        var socialPreferences = await _unitOfWork.UserRepository.GetSocialPreferencesForUser(userId);
+        var requestingUser = (await _unitOfWork.UserRepository.GetUserByIdAsync(requestingUserId))!;
+
+        var librariesUser = await _unitOfWork.LibraryRepository.GetLibraryIdsForUserIdAsync(userId);
+        var librariesRequestingUser = await _unitOfWork.LibraryRepository.GetLibraryIdsForUserIdAsync(requestingUserId);
+
+        var libIds = librariesRequestingUser.Intersect(librariesUser);
+        if (socialPreferences.SocialLibraries.Count > 0)
+        {
+            libIds = libIds.Intersect(socialPreferences.SocialLibraries);
+        }
+
+        var libraries = libIds.Select(id => id.ToString());
+
+        var ageRating = socialPreferences.SocialMaxAgeRating < requestingUser.AgeRestriction ? socialPreferences.SocialMaxAgeRating : requestingUser.AgeRestriction;
+        var includeUnknowns = socialPreferences.SocialIncludeUnknowns && requestingUser.AgeRestrictionIncludeUnknowns;
+
+        List<FilterStatementDto> filters =
+        [
+            new()
+            {
+                Comparison = FilterComparison.Contains,
+                Field = FilterField.Libraries,
+                Value = string.Join(",", libraries),
+            }
+
+        ];
+
+        if (!includeUnknowns)
+        {
+            filters.Add(new FilterStatementDto
+            {
+                Comparison = FilterComparison.NotEqual,
+                Field = FilterField.AgeRating,
+                Value = nameof(AgeRating.Unknown),
+            });
+        }
+
+        if (ageRating != AgeRating.NotApplicable)
+        {
+            filters.Add(new FilterStatementDto
+            {
+                Comparison = FilterComparison.LessThanEqual,
+                Field = FilterField.AgeRating,
+                Value = ageRating.ToString(),
+            });
+        }
+
+        return filters;
     }
 
     private static double ExponentialSmoothing(IList<double> data, double alpha)

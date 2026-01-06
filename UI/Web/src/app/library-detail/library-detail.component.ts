@@ -35,7 +35,7 @@ import {DecimalPipe} from '@angular/common';
 import {
   SideNavCompanionBarComponent
 } from '../sidenav/_components/side-nav-companion-bar/side-nav-companion-bar.component';
-import {TranslocoDirective} from "@jsverse/transloco";
+import {TranslocoDirective, TranslocoService} from "@jsverse/transloco";
 import {FilterV2} from "../_models/metadata/v2/filter-v2";
 import {FilterComparison} from "../_models/metadata/v2/filter-comparison";
 import {FilterField} from "../_models/metadata/v2/filter-field";
@@ -44,6 +44,8 @@ import {LoadingComponent} from "../shared/loading/loading.component";
 import {debounceTime, ReplaySubject, tap} from "rxjs";
 import {SeriesFilterSettings} from "../metadata-filter/filter-settings";
 import {MetadataService} from "../_services/metadata.service";
+import {ReadingProfileService} from "../_services/reading-profile.service";
+import {ToastrService} from "ngx-toastr";
 
 @Component({
     selector: 'app-library-detail',
@@ -70,6 +72,9 @@ export class LibraryDetailComponent implements OnInit {
   public readonly navService = inject(NavService);
   public readonly bulkSelectionService = inject(BulkSelectionService);
   public readonly metadataService = inject(MetadataService);
+  private readonly readingProfileService = inject(ReadingProfileService);
+  private readonly toastr = inject(ToastrService);
+  private readonly translocoService = inject(TranslocoService);
 
   libraryId!: number;
   libraryName = '';
@@ -173,7 +178,7 @@ export class LibraryDetailComponent implements OnInit {
     this.actions = this.actionFactoryService.getLibraryActions(this.handleAction.bind(this));
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
     this.libraryId = parseInt(routeId, 10);
-    this.libraryService.getLibraryNames().pipe(take(1)).subscribe(names => {
+    this.libraryService.getLibraryNames().subscribe(names => {
       this.libraryName = names[this.libraryId];
       this.titleService.setTitle('Kavita - ' + this.libraryName);
       this.cdRef.markForCheck();
@@ -248,15 +253,17 @@ export class LibraryDetailComponent implements OnInit {
 
 
   @HostListener('document:keydown.shift', ['$event'])
-  handleKeypress(event: KeyboardEvent) {
-    if (event.key === KEY_CODES.SHIFT) {
+  handleKeypress(event: Event) {
+    const evt = event as KeyboardEvent;
+    if (evt.key === KEY_CODES.SHIFT) {
       this.bulkSelectionService.isShiftDown = true;
     }
   }
 
   @HostListener('document:keyup.shift', ['$event'])
-  handleKeyUp(event: KeyboardEvent) {
-    if (event.key === KEY_CODES.SHIFT) {
+  handleKeyUp(event: Event) {
+    const evt = event as KeyboardEvent;
+    if (evt.key === KEY_CODES.SHIFT) {
       this.bulkSelectionService.isShiftDown = false;
     }
   }
@@ -282,6 +289,14 @@ export class LibraryDetailComponent implements OnInit {
             break;
           case(Action.Edit):
             this.actionService.editLibrary(library);
+            break;
+          case Action.SetReadingProfile:
+            this.actionService.setReadingProfileForLibrary(library);
+            break;
+          case Action.ClearReadingProfile:
+            this.readingProfileService.clearLibraryProfiles(library.id).subscribe(() => {
+              this.toastr.success(this.translocoService.translate('actionable.cleared-profile'));
+            });
             break;
           default:
             break;

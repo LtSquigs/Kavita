@@ -7,7 +7,7 @@ import {TranslocoDirective} from "@jsverse/transloco";
 import {AccountService} from "../../_services/account.service";
 import {Chapter} from "../../_models/chapter";
 import {LibraryType} from "../../_models/library/library";
-import {TypeaheadSettings} from "../../typeahead/_models/typeahead-settings";
+import {setupLanguageSettings, TypeaheadSettings} from "../../typeahead/_models/typeahead-settings";
 import {Tag} from "../../_models/tag";
 import {Language} from "../../_models/metadata/language";
 import {Person, PersonRole} from "../../_models/metadata/person";
@@ -22,11 +22,10 @@ import {DownloadService} from "../../shared/_services/download.service";
 import {SettingItemComponent} from "../../settings/_components/setting-item/setting-item.component";
 import {TypeaheadComponent} from "../../typeahead/_components/typeahead.component";
 import {concat, forkJoin, Observable, of, tap} from "rxjs";
-import {map, switchMap} from "rxjs/operators";
+import {map} from "rxjs/operators";
 import {EntityTitleComponent} from "../../cards/entity-title/entity-title.component";
 import {SettingButtonComponent} from "../../settings/_components/setting-button/setting-button.component";
 import {CoverImageChooserComponent} from "../../cards/cover-image-chooser/cover-image-chooser.component";
-import {EditChapterProgressComponent} from "../../cards/edit-chapter-progress/edit-chapter-progress.component";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {CompactNumberPipe} from "../../_pipes/compact-number.pipe";
 import {MangaFormat} from "../../_models/manga-format";
@@ -38,7 +37,7 @@ import {SafeHtmlPipe} from "../../_pipes/safe-html.pipe";
 import {ReadTimePipe} from "../../_pipes/read-time.pipe";
 import {ChapterService} from "../../_services/chapter.service";
 import {AgeRating} from "../../_models/metadata/age-rating";
-import {User} from "../../_models/user";
+import {User} from "../../_models/user/user";
 
 enum TabID {
   General = 'general-tab',
@@ -46,8 +45,8 @@ enum TabID {
   Info = 'info-tab',
   People = 'people-tab',
   Tasks = 'tasks-tab',
-  Progress = 'progress-tab',
-  Tags = 'tags-tab'
+  Tags = 'tags-tab',
+  Weblinks = 'weblinks-tab', // TODO: Weblinks are not implemented
 }
 
 export interface EditChapterModalCloseResult {
@@ -62,33 +61,32 @@ const blackList = [Action.Edit, Action.IncognitoRead, Action.AddToReadingList];
 
 @Component({
     selector: 'app-edit-chapter-modal',
-    imports: [
-        FormsModule,
-        NgbNav,
-        NgbNavContent,
-        NgbNavLink,
-        TranslocoDirective,
-        AsyncPipe,
-        NgbNavOutlet,
-        ReactiveFormsModule,
-        NgbNavItem,
-        SettingItemComponent,
-        NgTemplateOutlet,
-        NgClass,
-        TypeaheadComponent,
-        EntityTitleComponent,
-        TitleCasePipe,
-        SettingButtonComponent,
-        CoverImageChooserComponent,
-        EditChapterProgressComponent,
-        CompactNumberPipe,
-        DefaultDatePipe,
-        UtcToLocalTimePipe,
-        BytesPipe,
-        ImageComponent,
-        SafeHtmlPipe,
-        ReadTimePipe,
-    ],
+  imports: [
+    FormsModule,
+    NgbNav,
+    NgbNavContent,
+    NgbNavLink,
+    TranslocoDirective,
+    AsyncPipe,
+    NgbNavOutlet,
+    ReactiveFormsModule,
+    NgbNavItem,
+    SettingItemComponent,
+    NgTemplateOutlet,
+    NgClass,
+    TypeaheadComponent,
+    EntityTitleComponent,
+    TitleCasePipe,
+    SettingButtonComponent,
+    CoverImageChooserComponent,
+    CompactNumberPipe,
+    DefaultDatePipe,
+    UtcToLocalTimePipe,
+    BytesPipe,
+    ImageComponent,
+    SafeHtmlPipe,
+    ReadTimePipe,
+  ],
     templateUrl: './edit-chapter-modal.component.html',
     styleUrl: './edit-chapter-modal.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -125,14 +123,13 @@ export class EditChapterModalComponent implements OnInit {
   coverImageReset = false;
 
   tagsSettings: TypeaheadSettings<Tag> = new TypeaheadSettings();
-  languageSettings: TypeaheadSettings<Language> = new TypeaheadSettings();
+  languageSettings: TypeaheadSettings<Language> | null = null;
   peopleSettings: {[PersonRole: string]: TypeaheadSettings<Person>} = {};
   genreSettings: TypeaheadSettings<Genre> = new TypeaheadSettings();
 
   tags: Tag[] = [];
   genres: Genre[] = [];
   ageRatings: Array<AgeRatingDto> = [];
-  validLanguages: Array<Language> = [];
 
   tasks = this.actionFactoryService.getActionablesForSettingsPage(this.actionFactoryService.getChapterActions(this.runTask.bind(this)), blackList);
   /**
@@ -189,10 +186,9 @@ export class EditChapterModalComponent implements OnInit {
 
     this.metadataService.getAllValidLanguages().pipe(
       tap(validLanguages => {
-        this.validLanguages = validLanguages;
+        this.languageSettings = setupLanguageSettings(true, this.utilityService, validLanguages, this.chapter.language);
         this.cdRef.markForCheck();
       }),
-      switchMap(_ => this.setupLanguageTypeahead())
     ).subscribe();
 
     this.metadataService.getAllAgeRatings().subscribe(ratings => {
@@ -313,7 +309,6 @@ export class EditChapterModalComponent implements OnInit {
       this.setupTagSettings(),
       this.setupGenreTypeahead(),
       this.setupPersonTypeahead(),
-      this.setupLanguageTypeahead()
     ]).subscribe(results => {
       this.cdRef.markForCheck();
     });
@@ -379,34 +374,6 @@ export class EditChapterModalComponent implements OnInit {
 
     if (this.chapter.genres) {
       this.genreSettings.savedData = this.chapter.genres;
-    }
-    return of(true);
-  }
-
-  setupLanguageTypeahead() {
-    this.languageSettings.minCharacters = 0;
-    this.languageSettings.multiple = false;
-    this.languageSettings.id = 'language';
-    this.languageSettings.unique = true;
-    this.languageSettings.showLocked = true;
-    this.languageSettings.addIfNonExisting = false;
-    this.languageSettings.compareFn = (options: Language[], filter: string) => {
-      return options.filter(m => this.utilityService.filter(m.title, filter));
-    }
-    this.languageSettings.compareFnForAdd = (options: Language[], filter: string) => {
-      return options.filter(m => this.utilityService.filterMatches(m.title, filter));
-    }
-    this.languageSettings.fetchFn = (filter: string) => of(this.validLanguages)
-      .pipe(map(items => this.languageSettings.compareFn(items, filter)));
-
-    this.languageSettings.selectionCompareFn = (a: Language, b: Language) => {
-      return a.isoCode == b.isoCode;
-    }
-    this.languageSettings.trackByIdentityFn = (index, value) => value.isoCode;
-
-    const l = this.validLanguages.find(l => l.isoCode === this.chapter.language);
-    if (l !== undefined) {
-      this.languageSettings.savedData = l;
     }
     return of(true);
   }

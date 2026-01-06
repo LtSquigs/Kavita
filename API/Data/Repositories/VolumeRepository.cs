@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using API.DTOs;
@@ -8,10 +7,8 @@ using API.Entities;
 using API.Entities.Enums;
 using API.Extensions;
 using API.Extensions.QueryExtensions;
-using API.Services;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Kavita.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Data.Repositories;
@@ -40,12 +37,11 @@ public interface IVolumeRepository
     Task<string?> GetVolumeCoverImageAsync(int volumeId);
     Task<IList<int>> GetChapterIdsByVolumeIds(IReadOnlyList<int> volumeIds);
     Task<IList<VolumeDto>> GetVolumesDtoAsync(int seriesId, int userId, VolumeIncludes includes = VolumeIncludes.Chapters);
-    Task<Volume?> GetVolumeAsync(int volumeId, VolumeIncludes includes = VolumeIncludes.Files);
+    Task<Volume?> GetVolumeByIdAsync(int volumeId, VolumeIncludes includes = VolumeIncludes.Files);
     Task<VolumeDto?> GetVolumeDtoAsync(int volumeId, int userId);
     Task<IEnumerable<Volume>> GetVolumesForSeriesAsync(IList<int> seriesIds, bool includeChapters = false);
     Task<IEnumerable<Volume>> GetVolumes(int seriesId);
     Task<IList<Volume>> GetVolumesById(IList<int> volumeIds, VolumeIncludes includes = VolumeIncludes.None);
-    Task<Volume?> GetVolumeByIdAsync(int volumeId);
     Task<IList<Volume>> GetAllWithCoversInDifferentEncoding(EncodeFormat encodeFormat);
     Task<IEnumerable<string>> GetCoverImagesForLockedVolumesAsync();
 }
@@ -201,7 +197,7 @@ public class VolumeRepository : IVolumeRepository
     /// </summary>
     /// <param name="volumeId"></param>
     /// <returns></returns>
-    public async Task<Volume?> GetVolumeAsync(int volumeId, VolumeIncludes includes = VolumeIncludes.Files)
+    public async Task<Volume?> GetVolumeByIdAsync(int volumeId, VolumeIncludes includes = VolumeIncludes.Files)
     {
         return await _context.Volume
             .Includes(includes)
@@ -231,11 +227,6 @@ public class VolumeRepository : IVolumeRepository
         return volumes;
     }
 
-    public async Task<Volume?> GetVolumeByIdAsync(int volumeId)
-    {
-        return await _context.Volume.FirstOrDefaultAsync(x => x.Id == volumeId);
-    }
-
     public async Task<IList<Volume>> GetAllWithCoversInDifferentEncoding(EncodeFormat encodeFormat)
     {
         var extension = encodeFormat.GetExtension();
@@ -262,6 +253,7 @@ public class VolumeRepository : IVolumeRepository
                 var progresses = userProgress.Where(p => p.ChapterId == c.Id).ToList();
                 if (progresses.Count == 0) continue;
                 c.PagesRead = progresses.Sum(p => p.PagesRead);
+                c.TotalReads = progresses.Min(p => p.TotalReads);
                 c.LastReadingProgressUtc = progresses.Max(p => p.LastModifiedUtc);
                 c.LastReadingProgress = progresses.Max(p => p.LastModified);
             }

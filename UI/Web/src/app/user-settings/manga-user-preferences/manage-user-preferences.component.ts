@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  computed,
-  DestroyRef, effect,
-  inject,
-  OnInit,
-  signal
-} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
 import {TranslocoDirective} from "@jsverse/transloco";
 import {Preferences} from "../../_models/preferences/preferences";
 import {AccountService} from "../../_services/account.service";
@@ -15,7 +6,7 @@ import {Title} from "@angular/platform-browser";
 import {Router} from "@angular/router";
 import {LocalizationService} from "../../_services/localization.service";
 import {FormArray, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule} from "@angular/forms";
-import {User} from "../../_models/user";
+import {User} from "../../_models/user/user";
 import {KavitaLocale} from "../../_models/metadata/language";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {debounceTime, distinctUntilChanged, filter, forkJoin, of, switchMap, tap} from "rxjs";
@@ -48,6 +39,7 @@ type UserPreferencesForm = FormGroup<{
   bookReaderHighlightSlots: FormArray<FormControl<HighlightSlot>>,
   colorScapeEnabled: FormControl<boolean>,
   dataSaver: FormControl<boolean>,
+  promptForRereadsAfter: FormControl<number>,
 
   aniListScrobblingEnabled: FormControl<boolean>,
   wantToReadSync: FormControl<boolean>,
@@ -59,7 +51,13 @@ type UserPreferencesForm = FormGroup<{
     socialLibraries: FormControl<number[]>,
     socialMaxAgeRating: FormControl<AgeRating>,
     socialIncludeUnknowns: FormControl<boolean>,
+    shareProfile: FormControl<boolean>,
   }>,
+
+  opdsPreferences: FormGroup<{
+    embedProgressIndicator: FormControl<boolean>,
+    includeContinueFrom: FormControl<boolean>,
+  }>
 }>
 
 @Component({
@@ -164,6 +162,7 @@ export class ManageUserPreferencesComponent implements OnInit {
         bookReaderHighlightSlots: this.fb.array(pref.bookReaderHighlightSlots.map(s => this.fb.control(s))),
         colorScapeEnabled: this.fb.control<boolean>(pref.colorScapeEnabled),
         dataSaver: this.fb.control<boolean>(pref.dataSaver),
+        promptForRereadsAfter: this.fb.control<number>(pref.promptForRereadsAfter),
 
         aniListScrobblingEnabled: this.fb.control<boolean>(pref.aniListScrobblingEnabled),
         wantToReadSync: this.fb.control<boolean>(pref.wantToReadSync),
@@ -175,7 +174,13 @@ export class ManageUserPreferencesComponent implements OnInit {
           socialLibraries: this.fb.control<number[]>(pref.socialPreferences.socialLibraries),
           socialMaxAgeRating: this.fb.control<AgeRating>(pref.socialPreferences.socialMaxAgeRating),
           socialIncludeUnknowns: this.fb.control<boolean>(pref.socialPreferences.socialIncludeUnknowns),
+          shareProfile: this.fb.control<boolean>(pref.socialPreferences.shareProfile),
         }),
+
+        opdsPreferences: this.fb.group({
+          embedProgressIndicator: this.fb.control<boolean>(pref.opdsPreferences.embedProgressIndicator),
+          includeContinueFrom: this.fb.control<boolean>(pref.opdsPreferences.includeContinueFrom),
+        })
       });
 
       // Automatically save settings as we edit them
@@ -223,6 +228,10 @@ export class ManageUserPreferencesComponent implements OnInit {
   }
 
   packSettings(): Preferences {
-    return this.settingsForm.getRawValue();
+    const customKeyBinds = this.accountService.currentUserSignal()!.preferences.customKeyBinds;
+    return {
+      customKeyBinds,
+      ...this.settingsForm.getRawValue(),
+    };
   }
 }

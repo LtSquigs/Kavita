@@ -2,17 +2,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   effect,
   EventEmitter,
   inject,
   input,
   model,
   Output,
+  signal,
   Signal
 } from '@angular/core';
 import {Annotation} from "../../../_models/annotations/annotation";
-import {UtcToLocaleDatePipe} from "../../../../_pipes/utc-to-locale-date.pipe";
+import {UtcToLocalDatePipe} from "../../../../_pipes/utc-to-locale-date.pipe";
 import {QuillViewComponent} from "ngx-quill";
 import {DatePipe, NgClass, NgStyle} from "@angular/common";
 import {translate, TranslocoDirective} from "@jsverse/transloco";
@@ -28,11 +28,12 @@ import {AccountService} from "../../../../_services/account.service";
 import {EVENTS, MessageHubService} from "../../../../_services/message-hub.service";
 import {AnnotationUpdateEvent} from "../../../../_models/events/annotation-update-event";
 import {AnnotationLikesComponent} from "../annotation-likes/annotation-likes.component";
+import {ProfileIconComponent} from "../../../../_single-module/profile-icon/profile-icon.component";
 
 @Component({
   selector: 'app-annotation-card',
   imports: [
-    UtcToLocaleDatePipe,
+    UtcToLocalDatePipe,
     QuillViewComponent,
     DatePipe,
     TranslocoDirective,
@@ -41,7 +42,8 @@ import {AnnotationLikesComponent} from "../annotation-likes/annotation-likes.com
     RouterLink,
     NgClass,
     NgbTooltip,
-    AnnotationLikesComponent
+    AnnotationLikesComponent,
+    ProfileIconComponent
   ],
   templateUrl: './annotation-card.component.html',
   styleUrl: './annotation-card.component.scss',
@@ -58,7 +60,6 @@ export class AnnotationCardComponent {
   private readonly highlightSlotPipe = new SlotColorPipe();
   protected readonly accountService = inject(AccountService);
   private readonly messageHub = inject(MessageHubService);
-  private readonly destroyRef = inject(DestroyRef);
 
   annotation = model.required<Annotation>();
   allowEdit = input<boolean>(true);
@@ -88,7 +89,7 @@ export class AnnotationCardComponent {
   /**
    * If enabled, listens to annotation updates
    */
-  listedToUpdates = input<boolean>(false);
+  listenToUpdates = input<boolean>(false);
   /**
    * If the card is rendered inside the book reader. Used for styling the confirm button
    */
@@ -103,12 +104,12 @@ export class AnnotationCardComponent {
   @Output() selection = new EventEmitter<boolean>();
 
   titleColor: Signal<string>;
-  hasClicked = model<boolean>(false);
+  hasClicked = signal<boolean>(false);
 
   constructor() {
 
     effect(() => {
-      const enabled = this.listedToUpdates();
+      const enabled = this.listenToUpdates();
       const event = this.messageHub.messageSignal();
       if (!enabled || event?.event !== EVENTS.AnnotationUpdate) return;
 

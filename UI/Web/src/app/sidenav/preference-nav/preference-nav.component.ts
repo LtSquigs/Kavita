@@ -18,16 +18,19 @@ import {SettingFragmentPipe} from "../../_pipes/setting-fragment.pipe";
 import {map, Observable, of, shareReplay, switchMap, take, tap} from "rxjs";
 import {ServerService} from "../../_services/server.service";
 import {ScrobblingService} from "../../_services/scrobbling.service";
-import {User} from "../../_models/user";
+import {User} from "../../_models/user/user";
 import {filter} from "rxjs/operators";
 import {Breakpoint, UtilityService} from "../../shared/_services/utility.service";
 import {LicenseService} from "../../_services/license.service";
 import {ManageService} from "../../_services/manage.service";
 import {MatchStateOption} from "../../_models/kavitaplus/match-state-option";
+import {KeyBindService} from "../../_services/key-bind.service";
+import {KeyBindTarget} from "../../_models/preferences/preferences";
 
 export enum SettingsTabId {
 
   // Admin
+  Activity = 'admin-activity',
   General = 'admin-general',
   OpenIDConnect = 'admin-oidc',
   Email = 'admin-email',
@@ -40,6 +43,7 @@ export enum SettingsTabId {
   MediaIssues = 'admin-media-issues',
   EmailHistory = 'admin-email-history',
   ManageMetadata = 'admin-public-metadata',
+  AdminDevices = 'admin-device',
 
   // Kavita+
   KavitaPlusLicense = 'admin-kavitaplus',
@@ -52,12 +56,12 @@ export enum SettingsTabId {
   // Non-Admin
   Account = 'account',
   Preferences = 'preferences',
+  CustomKeyBinds = 'custom-key-binds',
   ReadingProfiles = 'reading-profiles',
   Font = 'font',
   Clients = 'clients',
   Theme = 'theme',
   Devices = 'devices',
-  UserStats = 'user-stats',
   Scrobbling = 'scrobbling',
   ScrobblingHolds = 'scrobble-holds',
   Customize = 'customize',
@@ -67,6 +71,7 @@ export enum SettingsTabId {
 export enum SettingSectionId {
   AccountSection = 'account-section-title',
   ServerSection = 'server-section-title',
+  InsightsSection = 'insights-section-title',
   ImportSection = 'import-section-title',
   InfoSection = 'info-section-title',
   KavitaPlusSection = 'kavitaplus-section-title',
@@ -135,6 +140,7 @@ export class PreferenceNavComponent implements AfterViewInit {
   protected readonly utilityService = inject(UtilityService);
   private readonly manageService = inject(ManageService);
   private readonly document = inject(DOCUMENT);
+  private readonly keyBindService = inject(KeyBindService);
 
   /**
    * This links to settings.component.html which has triggers on what underlying component to render out.
@@ -150,7 +156,7 @@ export class PreferenceNavComponent implements AfterViewInit {
     switchMap(() => this.navService.sideNavCollapsed$),
     take(1),
     filter(collapsed => !collapsed),
-    tap(c => {
+    tap(_ => {
       this.navService.collapseSideNav(true);
     }),
   );
@@ -219,15 +225,23 @@ export class PreferenceNavComponent implements AfterViewInit {
       {
         title: SettingSectionId.AccountSection,
         children: [
-          new SideNavItem(SettingsTabId.Account, []),
+          new SideNavItem(SettingsTabId.Account),
           new SideNavItem(SettingsTabId.Preferences),
+          new SideNavItem(SettingsTabId.CustomKeyBinds),
           new SideNavItem(SettingsTabId.ReadingProfiles),
           new SideNavItem(SettingsTabId.Customize, [], undefined, [Role.ReadOnly]),
           new SideNavItem(SettingsTabId.Clients),
           new SideNavItem(SettingsTabId.Theme),
           new SideNavItem(SettingsTabId.Font),
           new SideNavItem(SettingsTabId.Devices),
-          new SideNavItem(SettingsTabId.UserStats),
+        ]
+      },
+      {
+        title: SettingSectionId.InsightsSection,
+        children: [
+          new SideNavItem(SettingsTabId.Activity, [Role.Admin]),
+          new SideNavItem(SettingsTabId.AdminDevices, [Role.Admin]),
+          new SideNavItem(SettingsTabId.Statistics, [Role.Admin]),
         ]
       },
       {
@@ -255,7 +269,6 @@ export class PreferenceNavComponent implements AfterViewInit {
         title: SettingSectionId.InfoSection,
         children: [
           new SideNavItem(SettingsTabId.System, [Role.Admin]),
-          new SideNavItem(SettingsTabId.Statistics, [Role.Admin]),
           new SideNavItem(SettingsTabId.MediaIssues, [Role.Admin], this.mediaIssuesBadgeCount$),
           new SideNavItem(SettingsTabId.EmailHistory, [Role.Admin]),
         ]
@@ -281,6 +294,14 @@ export class PreferenceNavComponent implements AfterViewInit {
       this.licenseService.hasValidLicenseSignal();
       this.cdRef.markForCheck();
     });
+
+    this.keyBindService.registerListener(
+      this.destroyRef,
+      () => this.router.navigate(['/settings'], { fragment: SettingsTabId.Scrobbling})
+        .then(() => this.scrollToActiveItem()),
+      [KeyBindTarget.NavigateToScrobbling],
+      {condition$: this.licenseService.hasValidLicense$},
+    );
   }
 
   ngAfterViewInit() {

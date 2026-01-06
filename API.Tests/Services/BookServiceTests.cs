@@ -1,12 +1,12 @@
 ﻿using System.IO;
 using System.IO.Abstractions;
 using System.Threading.Tasks;
+using API.Data;
 using API.Entities.Enums;
 using API.Services;
 using API.Services.Tasks.Scanner.Parser;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using VersOne.Epub;
 using Xunit;
 
 namespace API.Tests.Services;
@@ -21,7 +21,7 @@ public class BookServiceTests
         var directoryService = new DirectoryService(Substitute.For<ILogger<DirectoryService>>(), new FileSystem());
         _bookService = new BookService(_logger, directoryService,
             new ImageService(Substitute.For<ILogger<ImageService>>(), directoryService)
-            , Substitute.For<IMediaErrorService>());
+            , Substitute.For<IMediaErrorService>(), Substitute.For<IUnitOfWork>());
     }
 
     [Theory]

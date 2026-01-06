@@ -6,15 +6,18 @@ using System.Threading.Tasks;
 using API.Data;
 using API.Data.Repositories;
 using API.Entities.Enums;
-using API.Extensions;
+using API.Entities.Enums.User;
 using API.Helpers;
 using API.Helpers.Converters;
+using API.Services.Caching;
 using API.Services.Plus;
+using API.Services.Reading;
 using API.Services.Tasks;
 using API.Services.Tasks.Metadata;
 using API.SignalR;
 using Hangfire;
 using Kavita.Common.Helpers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
@@ -28,12 +31,12 @@ public interface ITaskScheduler
     void ScheduleUpdaterTasks();
     Task ScheduleKavitaPlusTasks();
     void ScanFolder(string folderPath, string originalPath, TimeSpan delay);
-    void ScanFolder(string folderPath);
+    void ScanFolder(string folderPath, bool abortOnNoSeriesMatch = false);
     Task ScanLibrary(int libraryId, bool force = false);
     Task ScanLibraries(bool force = false);
     void CleanupChapters(int[] chapterIds);
     void RefreshMetadata(int libraryId, bool forceUpdate = true, bool forceColorscape = true);
-    void RefreshSeriesMetadata(int libraryId, int seriesId, bool forceUpdate = false, bool forceColorscape = false);
+    Task RefreshSeriesMetadata(int libraryId, int seriesId, bool forceUpdate = false, bool forceColorscape = false);
     Task ScanSeries(int libraryId, int seriesId, bool forceUpdate = false);
     void AnalyzeFilesForSeries(int libraryId, int seriesId, bool forceUpdate = false);
     void CancelStatsTasks();
@@ -65,6 +68,8 @@ public class TaskScheduler : ITaskScheduler
     private readonly ISmartCollectionSyncService _smartCollectionSyncService;
     private readonly IWantToReadSyncService _wantToReadSyncService;
     private readonly IEventHub _eventHub;
+    private readonly IEmailService _emailService;
+    private readonly IAuthKeyCacheInvalidator _authKeyCacheInvalidator;
 
     public static BackgroundJobServer Client => new ();
     public const string ScanQueue = "scan";
@@ -85,6 +90,8 @@ public class TaskScheduler : ITaskScheduler
     public const string KavitaPlusDataRefreshId = "kavita+-data-refresh";
     public const string KavitaPlusStackSyncId = "kavita+-stack-sync";
     public const string KavitaPlusWantToReadSyncId = "kavita+-want-to-read-sync";
+    public const string ReadingHistoryAggregationId = "reading-history-aggregation";
+    public const string AuthKeyExpirationId = "auth-key-expiration";
 
     private const int BaseRetryDelay = 60; // 1-minute
 
@@ -110,7 +117,8 @@ public class TaskScheduler : ITaskScheduler
         IThemeService themeService, IWordCountAnalyzerService wordCountAnalyzerService, IStatisticService statisticService,
         IMediaConversionService mediaConversionService, IScrobblingService scrobblingService, ILicenseService licenseService,
         IExternalMetadataService externalMetadataService, ISmartCollectionSyncService smartCollectionSyncService,
-        IWantToReadSyncService wantToReadSyncService, IEventHub eventHub)
+        IWantToReadSyncService wantToReadSyncService, IEventHub eventHub, IEmailService emailService,
+        IAuthKeyCacheInvalidator authKeyCacheInvalidator)
     {
         _cacheService = cacheService;
         _logger = logger;
@@ -131,6 +139,8 @@ public class TaskScheduler : ITaskScheduler
         _smartCollectionSyncService = smartCollectionSyncService;
         _wantToReadSyncService = wantToReadSyncService;
         _eventHub = eventHub;
+        _emailService = emailService;
+        _authKeyCacheInvalidator = authKeyCacheInvalidator;
 
         _defaultRetryPolicy = Policy
             .Handle<Exception>()
@@ -215,6 +225,13 @@ public class TaskScheduler : ITaskScheduler
         RecurringJob.AddOrUpdate(SyncThemesTaskId, () => SyncThemes(),
             Cron.Daily, RecurringJobOptions);
 
+        RecurringJob.AddOrUpdate(AuthKeyExpirationId, () => CheckExpiredOrExpiringAuthKeys(),
+            Cron.Daily, RecurringJobOptions);
+
+
+        RecurringJob.AddOrUpdate<IReadingHistoryService>(ReadingHistoryAggregationId, service => service.AggregateYesterdaysActivity(),
+            "5 0 * * *", RecurringJobOptions); // 12:05 AM daily
+
         await ScheduleKavitaPlusTasks();
     }
 
@@ -227,7 +244,7 @@ public class TaskScheduler : ITaskScheduler
     {
         // KavitaPlus based (needs license check)
         var license = (await _unitOfWork.SettingsRepository.GetSettingAsync(ServerSettingKey.LicenseKey)).Value;
-        if (string.IsNullOrEmpty(license) || !await _licenseService.HasActiveSubscription(license))
+        if (string.IsNullOrEmpty(license) || !await _licenseService.HasActiveSubscription(license)) // TODO: Need to convert this to a non-blocking request
         {
             return;
         }
@@ -237,30 +254,34 @@ public class TaskScheduler : ITaskScheduler
         BackgroundJob.Enqueue(() => _scrobblingService.CheckExternalAccessTokens()); // We also kick off an immediate check on startup
 
         // Get the License Info (and cache it) on first load. This will internally cache the Github releases for the Version Service
-        await _licenseService.GetLicenseInfo(true); // Kick this off first to cache it then let it refresh every 9 hours (8 hour cache)
+        BackgroundJob.Enqueue(() => _licenseService.GetLicenseInfo(true));  // Kick this off first to cache it then let it refresh every 9 hours (8 hour cache)
         RecurringJob.AddOrUpdate(LicenseCheckId, () => _licenseService.GetLicenseInfo(false),
             LicenseService.Cron, RecurringJobOptions);
 
         // KavitaPlus Scrobbling (every hour) - randomise minutes to spread requests out for K+
+        var randomMinute = Rnd.Next(0, 60);
         RecurringJob.AddOrUpdate(ProcessScrobblingEventsId, () => _scrobblingService.ProcessUpdatesSinceLastSync(),
-            Cron.Hourly(Rnd.Next(0, 60)), RecurringJobOptions);
+            Cron.Hourly(randomMinute), RecurringJobOptions);
         RecurringJob.AddOrUpdate(ProcessProcessedScrobblingEventsId, () => _scrobblingService.ClearProcessedEvents(),
             Cron.Daily, RecurringJobOptions);
 
         // Backfilling/Freshening Reviews/Rating/Recommendations
+        var randomKPlusBackfill = Rnd.Next(1, 5);
         RecurringJob.AddOrUpdate(KavitaPlusDataRefreshId,
-            () => _externalMetadataService.FetchExternalDataTask(), Cron.Daily(Rnd.Next(1, 5)),
+            () => _externalMetadataService.FetchExternalDataTask(), Cron.Daily(randomKPlusBackfill),
             RecurringJobOptions);
 
         // This shouldn't be so close to fetching data due to Rate limit concerns
+        var randomKPlusStackSync = Rnd.Next(6, 10);
         RecurringJob.AddOrUpdate(KavitaPlusStackSyncId,
-            () => _smartCollectionSyncService.Sync(), Cron.Daily(Rnd.Next(6, 10)),
+            () => _smartCollectionSyncService.Sync(), Cron.Daily(randomKPlusStackSync),
             RecurringJobOptions);
 
         RecurringJob.AddOrUpdate(KavitaPlusWantToReadSyncId,
             () => _wantToReadSyncService.Sync(), Cron.Weekly(DayOfWeekHelper.Random()),
             RecurringJobOptions);
     }
+
 
     /// <summary>
     /// Removes any Kavita+ Recurring Jobs
@@ -285,11 +306,14 @@ public class TaskScheduler : ITaskScheduler
         if (!allowStatCollection)
         {
             _logger.LogDebug("User has opted out of stat collection, not registering tasks");
+            RecurringJob.RemoveIfExists(ReportStatsTaskId);
             return;
         }
 
-        _logger.LogDebug("Scheduling stat collection daily");
-        RecurringJob.AddOrUpdate(ReportStatsTaskId, () => _statsService.Send(), Cron.Daily(Rnd.Next(0, 22)), RecurringJobOptions);
+        var hour = Rnd.Next(0, 22);
+        _logger.LogDebug("Scheduling stat collection daily at {Hour}:00", hour);
+
+        RecurringJob.AddOrUpdate(ReportStatsTaskId, () => _statsService.Send(), Cron.Daily(hour), RecurringJobOptions);
     }
 
 
@@ -367,7 +391,7 @@ public class TaskScheduler : ITaskScheduler
         BackgroundJob.Schedule(() => _scannerService.ScanFolder(normalizedFolder, normalizedOriginal), delay);
     }
 
-    public void ScanFolder(string folderPath)
+    public void ScanFolder(string folderPath, bool abortOnNoSeriesMatch = false)
     {
         var normalizedFolder = Tasks.Scanner.Parser.Parser.NormalizePath(folderPath);
         if (HasAlreadyEnqueuedTask(ScannerService.Name, "ScanFolder", [normalizedFolder, string.Empty]))
@@ -378,7 +402,7 @@ public class TaskScheduler : ITaskScheduler
         }
 
         _logger.LogInformation("Scheduling ScanFolder for {Folder}", normalizedFolder);
-        _scannerService.ScanFolder(normalizedFolder, string.Empty);
+        _scannerService.ScanFolder(normalizedFolder, string.Empty, abortOnNoSeriesMatch);
     }
 
     #endregion
@@ -455,7 +479,7 @@ public class TaskScheduler : ITaskScheduler
         BackgroundJob.Enqueue(() => _metadataService.GenerateCoversForLibrary(libraryId, forceUpdate, forceColorscape));
     }
 
-    public void RefreshSeriesMetadata(int libraryId, int seriesId, bool forceUpdate = false, bool forceColorscape = false)
+    public async Task RefreshSeriesMetadata(int libraryId, int seriesId, bool forceUpdate = false, bool forceColorscape = false)
     {
         if (HasAlreadyEnqueuedTask(MetadataService.Name,"GenerateCoversForSeries", [libraryId, seriesId, forceUpdate, forceColorscape]))
         {
@@ -463,8 +487,10 @@ public class TaskScheduler : ITaskScheduler
             return;
         }
 
+        var serverSettings = await _unitOfWork.SettingsRepository.GetSettingsDtoAsync();
+
         _logger.LogInformation("Enqueuing series metadata refresh for: {SeriesId}", seriesId);
-        BackgroundJob.Enqueue(() => _metadataService.GenerateCoversForSeries(libraryId, seriesId, forceUpdate, forceColorscape));
+        BackgroundJob.Enqueue(() => _metadataService.GenerateCoversForSeries(serverSettings, libraryId, seriesId, forceUpdate, forceColorscape));
     }
 
     public async Task ScanSeries(int libraryId, int seriesId, bool forceUpdate = false)
@@ -528,6 +554,68 @@ public class TaskScheduler : ITaskScheduler
     }
 
     /// <summary>
+    /// Checks for soon to be expired and expired Auth keys and attempts to email the users
+    /// </summary>
+    public async Task CheckExpiredOrExpiringAuthKeys()
+    {
+        var settings = await _unitOfWork.SettingsRepository.GetSettingsDtoAsync();
+        if (!settings.IsEmailSetup()) return;
+
+        _logger.LogInformation("Checking for Expired or Expiring Auth Keys");
+        var users = await _unitOfWork.UserRepository.GetAllUsersAsync(AppUserIncludes.AuthKeys);
+        foreach (var user in users)
+        {
+            // Implies only the default keys
+            if (user.AuthKeys.Count == 2) continue;
+
+            // Check if key is expired
+            var expiredKeys = user.AuthKeys
+                .Where(k => k is {Provider: AuthKeyProvider.User, ExpiresAtUtc: not null} && k.ExpiresAtUtc <= DateTime.UtcNow)
+                .ToList();
+            var expiringSoonKeys = user.AuthKeys
+                .Where(k => k is {Provider: AuthKeyProvider.User, ExpiresAtUtc: not null} && k.ExpiresAtUtc <= DateTime.UtcNow.Subtract(TimeSpan.FromDays(7)))
+                .ToList();
+
+            if (expiringSoonKeys.Count != 0)
+            {
+                var expiringSoonLatestDate = expiringSoonKeys.Max(k => k.ExpiresAtUtc);
+                if (await ShouldSendAuthKeyExpirationReminder(user.Id, expiringSoonLatestDate!.Value, EmailService.AuthKeyExpiringSoonTemplate))
+                {
+                    await _emailService.SendAuthKeyExpiringSoonEmail(user.Id, expiringSoonKeys);
+                }
+
+            }
+
+            if (expiredKeys.Count != 0)
+            {
+                var expiredLatestDate = expiredKeys.Max(k => k.ExpiresAtUtc);
+                if (await ShouldSendAuthKeyExpirationReminder(user.Id, expiredLatestDate!.Value,
+                        EmailService.AuthKeyExpiredTemplate))
+                {
+                    await _emailService.SendAuthKeyExpiredEmail(user.Id, expiredKeys);
+                }
+
+                foreach (var expiredKey in expiredKeys)
+                {
+                    await _authKeyCacheInvalidator.InvalidateAsync(expiredKey.Key);
+                }
+            }
+        }
+    }
+
+    private async Task<bool> ShouldSendAuthKeyExpirationReminder(int userId, DateTime tokenExpiry, string emailTemplate)
+    {
+        if (tokenExpiry > DateTime.UtcNow) return false;
+
+        var hasAlreadySentExpirationEmail = await _unitOfWork.DataContext.EmailHistory
+            .AnyAsync(h => h.AppUserId == userId && h.Sent &&
+                           h.EmailTemplate == emailTemplate &&
+                           h.SendDate >= tokenExpiry);
+
+        return !hasAlreadySentExpirationEmail;
+    }
+
+    /// <summary>
     /// If there is an enqueued or scheduled task for <see cref="ScannerService.ScanLibrary"/> method
     /// </summary>
     /// <param name="libraryId"></param>
@@ -588,16 +676,13 @@ public class TaskScheduler : ITaskScheduler
 
         if (ret) return true;
 
-        if (checkRunningJobs)
-        {
-            var runningJobs = JobStorage.Current.GetMonitoringApi().ProcessingJobs(0, int.MaxValue);
-            return runningJobs.Exists(j =>
-                j.Value.Job.Method.DeclaringType != null && j.Value.Job.Args.SequenceEqual(args) &&
-                j.Value.Job.Method.Name.Equals(methodName) &&
-                j.Value.Job.Method.DeclaringType.Name.Equals(className));
-        }
+        if (!checkRunningJobs) return false;
 
-        return false;
+        var runningJobs = JobStorage.Current.GetMonitoringApi().ProcessingJobs(0, int.MaxValue);
+        return runningJobs.Exists(j =>
+            j.Value.Job.Method.DeclaringType != null && j.Value.Job.Args.SequenceEqual(args) &&
+            j.Value.Job.Method.Name.Equals(methodName) &&
+            j.Value.Job.Method.DeclaringType.Name.Equals(className));
     }
 
 

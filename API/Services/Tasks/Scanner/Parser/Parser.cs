@@ -154,6 +154,12 @@ public static partial class Parser
     public static readonly Regex CssImageUrlRegex = new(@"(url\((?!data:).(?!data:))" + "(?<Filename>(?!data:)[^\"']*)" + @"(.\))",
         MatchOptions, RegexTimeout);
 
+    /// <summary>
+    /// An Appropriate guess at an ASIN being valid
+    /// </summary>
+    public static readonly Regex AsinRegex = new(@"^(B0|BT)[0-9A-Z]{8}$",
+        MatchOptions, RegexTimeout);
+
 
     private static readonly Regex ImageRegex = new(ImageFileExtensions,
         MatchOptions, RegexTimeout);
@@ -1209,10 +1215,10 @@ public static partial class Parser
     /// Responsible for preparing special title for rendering to the UI. Replaces _ with ' ' and strips out SP\d+
     /// </summary>
     /// <param name="name"></param>
-    /// <returns></returns>
-    public static string CleanSpecialTitle(string name)
+    /// <returns>Always returns a non-null string</returns>
+    public static string CleanSpecialTitle(string? name)
     {
-        if (string.IsNullOrEmpty(name)) return name;
+        if (string.IsNullOrEmpty(name)) return string.Empty;
         var cleaned = SpecialTokenRegex.Replace(name.Replace('_', ' '), string.Empty).Trim();
 
         return string.IsNullOrEmpty(cleaned) ? name : cleaned;
@@ -1432,9 +1438,31 @@ public static partial class Parser
         return filename;
     }
 
+    /// <summary>
+    /// Checks if code is an Amazon ASIN
+    /// </summary>
+    /// <param name="asin"></param>
+    /// <returns></returns>
+    public static bool IsLikelyValidAsin(string? asin)
+    {
+        if (string.IsNullOrEmpty(asin)) return false;
+        return AsinRegex.Match(asin).Success;
+    }
+
 
     [GeneratedRegex(SupportedExtensions)]
     private static partial Regex SupportedExtensionsRegex();
     [GeneratedRegex(@"\d-{1}\d")]
     private static partial Regex NumberRangeRegex();
+
+    public static bool IsDefaultChapter(string? chapterNumber)
+    {
+        // Note: If chapterNumber is using minNumber, it will have a .0 at the end.
+        return !string.IsNullOrEmpty(chapterNumber) && (chapterNumber.Equals(DefaultChapter) || chapterNumber.Equals(DefaultChapter + ".0"));
+    }
+
+    public static bool IsLooseLeafVolume(string? volumeNumber)
+    {
+        return !string.IsNullOrEmpty(volumeNumber) && (volumeNumber.Equals(LooseLeafVolume) || volumeNumber.Equals(LooseLeafVolume + ".0"));
+    }
 }

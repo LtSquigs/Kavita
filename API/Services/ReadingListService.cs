@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
-using API.Comparators;
 using API.Data;
 using API.Data.Repositories;
 using API.DTOs.ReadingLists;
@@ -16,6 +15,7 @@ using API.Entities.Enums;
 using API.Extensions;
 using API.Helpers;
 using API.Helpers.Builders;
+using API.Services.Reading;
 using API.Services.Tasks.Scanner.Parser;
 using API.SignalR;
 using API.Structs;
@@ -89,13 +89,13 @@ public class ReadingListService : IReadingListService
     public static string FormatTitle(ReadingListItemDto item)
     {
         var title = string.Empty;
-        if (item.ChapterNumber == Parser.DefaultChapter && item.VolumeNumber != Parser.LooseLeafVolume) {
+        if (Parser.IsDefaultChapter(item.ChapterNumber) && !Parser.IsLooseLeafVolume(item.VolumeNumber)) {
             title = $"Volume {item.VolumeNumber}";
         }
 
         if (item.SeriesFormat == MangaFormat.Epub) {
             var specialTitle = Parser.CleanSpecialTitle(item.ChapterNumber);
-            if (specialTitle == Parser.DefaultChapter)
+            if (Parser.IsDefaultChapter(specialTitle))
             {
                 if (!string.IsNullOrEmpty(item.ChapterTitleName))
                 {
@@ -124,7 +124,7 @@ public class ReadingListService : IReadingListService
         if (title != string.Empty) return title;
 
         // item.ChapterNumber is Range
-        if (item.ChapterNumber == Parser.DefaultChapter &&
+        if (Parser.IsDefaultChapter(item.ChapterNumber) &&
             !string.IsNullOrEmpty(item.ChapterTitleName))
         {
             title = item.ChapterTitleName;
@@ -580,7 +580,7 @@ public class ReadingListService : IReadingListService
             CblName = cblReading.Name,
             Success = CblImportResult.Success,
             Results = [],
-            SuccessfulInserts = new List<CblBookResult>()
+            SuccessfulInserts = []
         };
 
         if (IsCblEmpty(cblReading, importSummary, out var readingListFromCbl)) return readingListFromCbl;

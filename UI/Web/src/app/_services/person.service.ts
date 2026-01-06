@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpParams} from "@angular/common/http";
 import {environment} from "../../environments/environment";
 import {Person, PersonRole} from "../_models/metadata/person";
@@ -73,14 +73,9 @@ export class PersonService {
     return this.httpClient.post<string>(this.baseUrl + 'person/fetch-cover?personId=' + personId, {}, TextResonse);
   }
 
-  isValidAlias(personId: number, alias: string) {
-    return this.httpClient.get<boolean>(this.baseUrl + `person/valid-alias?personId=${personId}&alias=${alias}`, TextResonse).pipe(
-      map(valid => valid + '' === 'true')
-    );
-  }
-
-  isValidAsin(asin: string) {
-    return this.httpClient.get<boolean>(this.baseUrl + `person/valid-asin?asin=${asin}`, TextResonse).pipe(
+  isValidAlias(personId: number, alias: string, name: string) {
+    const req = {personId, name, alias}
+    return this.httpClient.post<boolean>(this.baseUrl + `person/valid-alias`, req, TextResonse).pipe(
       map(valid => valid + '' === 'true')
     );
   }

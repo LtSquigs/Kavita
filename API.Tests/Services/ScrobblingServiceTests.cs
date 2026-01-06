@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using API.Data;
 using API.Data.Repositories;
@@ -11,12 +10,11 @@ using API.Entities.Scrobble;
 using API.Helpers.Builders;
 using API.Services;
 using API.Services.Plus;
+using API.Services.Reading;
 using API.SignalR;
-using Hangfire.Storage.SQLite.Entities;
 using Kavita.Common;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Polly;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -60,14 +58,16 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
             Substitute.For<IEventHub>(),
             Substitute.For<IImageService>(),
             Substitute.For<IDirectoryService>(),
-            Substitute.For<IScrobblingService>()); // Do not use the actual one
+            Substitute.For<IScrobblingService>(), Substitute.For<IReadingSessionService>(),
+            Substitute.For<IClientInfoAccessor>(), Substitute.For<ISeriesService>(), Substitute.For<IEntityDisplayService>()); // Do not use the actual one
 
         var hookedUpReaderService = new ReaderService(unitOfWork,
             Substitute.For<ILogger<ReaderService>>(),
             Substitute.For<IEventHub>(),
             Substitute.For<IImageService>(),
             Substitute.For<IDirectoryService>(),
-            service);
+            service, Substitute.For<IReadingSessionService>(),
+            Substitute.For<IClientInfoAccessor>(), Substitute.For<ISeriesService>(), Substitute.For<IEntityDisplayService>());
 
         await SeedData(unitOfWork, context);
 
@@ -124,11 +124,11 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
         await unitOfWork.CommitAsync();
     }
 
-    private async Task<ScrobbleEvent> CreateScrobbleEvent(int? seriesId = null)
+    private async Task<ScrobbleEvent> CreateScrobbleEvent(IUnitOfWork unitOfWork, int? seriesId = null)
     {
-        var (unitOfWork, context, _) = await CreateDatabase();
-        await Setup(unitOfWork, context);
-
+        // var (unitOfWork, context, _) = await CreateDatabase();
+        // await Setup(unitOfWork, context);
+        //
 
         var evt = new ScrobbleEvent
         {
@@ -163,7 +163,7 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
                 ErrorMessage = "Unauthorized"
             });
 
-        var evt = await CreateScrobbleEvent();
+        var evt = await CreateScrobbleEvent(unitOfWork);
         await Assert.ThrowsAsync<KavitaException>(async () =>
         {
             await service.PostScrobbleUpdate(new ScrobbleDto(), "", evt);
@@ -184,9 +184,9 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
                 ErrorMessage = "Unknown Series"
             });
 
-        var evt = await CreateScrobbleEvent(1);
+        var evt = await CreateScrobbleEvent(unitOfWork, 1);
 
-        await service.PostScrobbleUpdate(new ScrobbleDto(), "", evt);
+        await service.PostScrobbleUpdate(new ScrobbleDto(), string.Empty, evt);
         await unitOfWork.CommitAsync();
         Assert.True(evt.IsErrored);
 
@@ -212,7 +212,7 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
                 ErrorMessage = "Access token is invalid"
             });
 
-        var evt = await CreateScrobbleEvent();
+        var evt = await CreateScrobbleEvent(unitOfWork);
 
         await Assert.ThrowsAsync<KavitaException>(async () =>
         {
@@ -249,7 +249,7 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
         var chapter = await unitOfWork.ChapterRepository.GetChapterAsync(4);
         Assert.NotNull(chapter);
 
-        var volume = await unitOfWork.VolumeRepository.GetVolumeAsync(1, VolumeIncludes.Chapters);
+        var volume = await unitOfWork.VolumeRepository.GetVolumeByIdAsync(1, VolumeIncludes.Chapters);
         Assert.NotNull(volume);
 
         // Call Scrobble without having any progress
@@ -280,7 +280,7 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
         var chapter = await unitOfWork.ChapterRepository.GetChapterAsync(4);
         Assert.NotNull(chapter);
 
-        var volume = await unitOfWork.VolumeRepository.GetVolumeAsync(1, VolumeIncludes.Chapters);
+        var volume = await unitOfWork.VolumeRepository.GetVolumeByIdAsync(1, VolumeIncludes.Chapters);
         Assert.NotNull(volume);
 
         // Mark something as read to trigger event creation
@@ -335,7 +335,7 @@ public class ScrobblingServiceTests(ITestOutputHelper outputHelper): AbstractDbT
         var user = await unitOfWork.UserRepository.GetUserByIdAsync(1);
         Assert.NotNull(user);
 
-        var volume = await unitOfWork.VolumeRepository.GetVolumeAsync(1, VolumeIncludes.Chapters);
+        var volume = await unitOfWork.VolumeRepository.GetVolumeByIdAsync(1, VolumeIncludes.Chapters);
         Assert.NotNull(volume);
 
         await readerService.MarkChaptersAsRead(user, 1, new List<Chapter>() {volume.Chapters[0]});

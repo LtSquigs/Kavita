@@ -1,13 +1,7 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component, DestroyRef,
-  inject,
-  OnInit
-} from '@angular/core';
-import { Device } from 'src/app/_models/device/device';
-import { DeviceService } from 'src/app/_services/device.service';
-import { DevicePlatformPipe } from '../../_pipes/device-platform.pipe';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal} from '@angular/core';
+import {Device} from 'src/app/_models/device/device';
+import {DeviceService} from 'src/app/_services/device.service';
+import {DevicePlatformPipe} from '../../_pipes/device-platform.pipe';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {translate, TranslocoDirective} from "@jsverse/transloco";
 import {SettingsService} from "../../admin/settings.service";
@@ -18,15 +12,19 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {map} from "rxjs";
 import {shareReplay} from "rxjs/operators";
 import {AccountService} from "../../_services/account.service";
-import {ColumnMode, NgxDatatableModule} from "@siemens/ngx-datatable";
+import {NgxDatatableModule} from "@siemens/ngx-datatable";
 import {AsyncPipe} from "@angular/common";
+import {ClientDevice} from "../../_models/client-device";
+import {ClientDeviceCardComponent} from "../../_single-module/client-device-card/client-device-card.component";
+import {LoadingComponent} from "../../shared/loading/loading.component";
+import {ResponsiveTableComponent} from "../../shared/_components/responsive-table/responsive-table.component";
 
 @Component({
     selector: 'app-manage-devices',
     templateUrl: './manage-devices.component.html',
     styleUrls: ['./manage-devices.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DevicePlatformPipe, TranslocoDirective, AsyncPipe, NgxDatatableModule]
+  imports: [DevicePlatformPipe, TranslocoDirective, AsyncPipe, NgxDatatableModule, ClientDeviceCardComponent, LoadingComponent, ResponsiveTableComponent]
 })
 export class ManageDevicesComponent implements OnInit {
 
@@ -38,10 +36,13 @@ export class ManageDevicesComponent implements OnInit {
   private readonly modalService = inject(NgbModal);
   private readonly accountService = inject(AccountService);
 
-  devices: Array<Device> = [];
-  isEditingDevice: boolean = false;
-  device: Device | undefined;
-  hasEmailSetup = false;
+  //devices: Array<Device> = [];
+  devices = signal<Device[]>([]);
+  hasEmailSetup = signal<boolean>(false);
+  trackBy = (idx: number, item: Device) => `${item.name}_${item.emailAddress}_${item.platform}_${item.lastUsed}`;
+
+  clientDevices = signal<ClientDevice[]>([]);
+
 
   isReadOnly$ = this.accountService.currentUser$.pipe(
     takeUntilDestroyed(this.destroyRef),
@@ -49,31 +50,37 @@ export class ManageDevicesComponent implements OnInit {
     shareReplay({refCount: true, bufferSize: 1}),
   );
 
+  constructor() {
+    this.loadClientDevices();
+  }
+
   ngOnInit(): void {
     this.settingsService.isEmailSetup().subscribe(res => {
-      this.hasEmailSetup = res;
-      this.cdRef.markForCheck();
+      this.hasEmailSetup.set(res);
     });
     this.loadDevices();
   }
 
+  loadClientDevices() {
+    this.deviceService.getMyClientDevices().subscribe(devices => {
+      this.clientDevices.set([...devices]);
+    });
+  }
 
   loadDevices() {
-    this.isEditingDevice = false;
-    this.device = undefined;
-    this.cdRef.markForCheck();
-    this.deviceService.getDevices().subscribe(devices => {
-      this.devices = devices;
-      this.cdRef.markForCheck();
+    this.deviceService.getEmailDevices().subscribe(devices => {
+      this.devices.set([...devices]);
     });
   }
 
   async deleteDevice(device: Device) {
     if (!await this.confirmService.confirm(translate('toasts.delete-device'))) return;
-    this.deviceService.deleteDevice(device.id).subscribe(() => {
-      const index = this.devices.indexOf(device);
-      this.devices.splice(index, 1);
-      this.cdRef.markForCheck();
+    this.deviceService.deleteEmailDevice(device.id).subscribe(() => {
+      const oldDevices = this.devices();
+      const index = oldDevices.indexOf(device);
+
+      oldDevices.splice(index, 1);
+      this.devices.set([...oldDevices]);
     });
   }
 
@@ -99,6 +106,4 @@ export class ManageDevicesComponent implements OnInit {
       this.cdRef.markForCheck();
     });
   }
-
-    protected readonly ColumnMode = ColumnMode;
 }

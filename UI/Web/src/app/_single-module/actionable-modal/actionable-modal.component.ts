@@ -12,10 +12,10 @@ import {
 import {translate, TranslocoDirective} from "@jsverse/transloco";
 import {Breakpoint, UtilityService} from "../../shared/_services/utility.service";
 import {NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
-import {ActionableEntity, ActionItem} from "../../_services/action-factory.service";
+import {Action, ActionableEntity, ActionItem} from "../../_services/action-factory.service";
 import {AccountService} from "../../_services/account.service";
 import {tap} from "rxjs";
-import {User} from "../../_models/user";
+import {User} from "../../_models/user/user";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 @Component({
@@ -47,7 +47,27 @@ export class ActionableModalComponent implements OnInit {
   user!: User | undefined;
 
   ngOnInit() {
-    this.currentItems = this.translateOptions(this.actions);
+    // Copy as the list may be shared between entities
+    const actionItems = this.actions.map(action => this.utilityService.copyActionItem(action));
+
+    // On Mobile, surface download
+    const otherActionIndex = actionItems.findIndex(i => i.action === Action.Submenu && i.title === 'others')
+    if (otherActionIndex >= 0) {
+      const downloadActionIndex = actionItems[otherActionIndex].children.findIndex(a => a.action === Action.Download);
+
+      if (downloadActionIndex >= 0) {
+        const downloadAction = actionItems[otherActionIndex].children.splice(downloadActionIndex, 1)[0];
+        actionItems.push(downloadAction);
+
+        // Check if Other has any other children, else remove
+        if (actionItems[otherActionIndex].children.length === 0) {
+          actionItems.splice(otherActionIndex, 1);
+        }
+      }
+    }
+
+    this.actions = actionItems;
+    this.currentItems = this.translateOptions(this.actions)
 
     this.accountService.currentUser$.pipe(tap(user => {
       this.user = user;

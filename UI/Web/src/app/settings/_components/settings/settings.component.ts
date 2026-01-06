@@ -1,11 +1,11 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject} from '@angular/core';
 import {
   ChangeAgeRestrictionComponent
 } from "../../../user-settings/change-age-restriction/change-age-restriction.component";
 import {ChangeEmailComponent} from "../../../user-settings/change-email/change-email.component";
 import {ChangePasswordComponent} from "../../../user-settings/change-password/change-password.component";
 import {ManageDevicesComponent} from "../../../user-settings/manage-devices/manage-devices.component";
-import {ManageOpdsComponent} from "../../../user-settings/manage-opds/manage-opds.component";
+import {ManageAuthKeysComponent} from "../../../user-settings/manage-auth-keys/manage-auth-keys.component";
 import {
   ManageScrobblingProvidersComponent
 } from "../../../user-settings/manage-scrobbling-providers/manage-scrobbling-providers.component";
@@ -18,9 +18,7 @@ import {
 } from "../../../sidenav/_components/side-nav-companion-bar/side-nav-companion-bar.component";
 import {ThemeManagerComponent} from "../../../user-settings/theme-manager/theme-manager.component";
 import {TranslocoDirective} from "@jsverse/transloco";
-import {UserStatsComponent} from "../../../statistics/_components/user-stats/user-stats.component";
 import {SettingsTabId} from "../../../sidenav/preference-nav/preference-nav.component";
-import {AsyncPipe} from "@angular/common";
 import {AccountService} from "../../../_services/account.service";
 import {WikiLink} from "../../../_models/wiki";
 import {LicenseComponent} from "../../../admin/license/license.component";
@@ -61,22 +59,22 @@ import {
 import {ImportMappingsComponent} from "../../../admin/import-mappings/import-mappings.component";
 import {ManageOpenIDConnectComponent} from "../../../admin/manage-open-idconnect/manage-open-idconnect.component";
 import {FontManagerComponent} from "../../../user-settings/font-manager/font-manager/font-manager.component";
+import {ServerActivityComponent} from "../../../admin/server-activity/server-activity.component";
+import {ServerDevicesComponent} from "../../../admin/server-devices/server-devices.component";
+import {ManageCustomKeyBindsComponent} from "../../../user-settings/custom-key-binds/manage-custom-key-binds.component";
 
 @Component({
-    selector: 'app-settings',
+  selector: 'app-settings',
   imports: [
     ChangeAgeRestrictionComponent,
     ChangeEmailComponent,
     ChangePasswordComponent,
     ManageDevicesComponent,
-    ManageOpdsComponent,
     ManageScrobblingProvidersComponent,
     ManageUserPreferencesComponent,
     SideNavCompanionBarComponent,
     ThemeManagerComponent,
     TranslocoDirective,
-    UserStatsComponent,
-    AsyncPipe,
     LicenseComponent,
     ManageEmailSettingsComponent,
     ManageLibraryComponent,
@@ -101,11 +99,15 @@ import {FontManagerComponent} from "../../../user-settings/font-manager/font-man
     ManageOpenIDConnectComponent,
     ManagePublicMetadataSettingsComponent,
     ImportMappingsComponent,
-    FontManagerComponent
+    FontManagerComponent,
+    ServerActivityComponent,
+    ServerDevicesComponent,
+    ManageCustomKeyBindsComponent,
+    ManageAuthKeysComponent
   ],
-    templateUrl: './settings.component.html',
-    styleUrl: './settings.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './settings.component.html',
+  styleUrl: './settings.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SettingsComponent {
 
@@ -113,14 +115,11 @@ export class SettingsComponent {
   private readonly cdRef = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly licenseService = inject(LicenseService);
   protected readonly accountService = inject(AccountService);
-  protected readonly licenseService = inject(LicenseService);
-
-  protected readonly SettingsTabId = SettingsTabId;
-  protected readonly WikiLink = WikiLink;
 
   fragment: SettingsTabId = SettingsTabId.Account;
-  hasActiveLicense = false;
+  hasActiveLicense = computed(() => this.licenseService.hasValidLicenseSignal());
 
   constructor() {
     this.route.fragment.pipe(tap(frag => {
@@ -133,16 +132,10 @@ export class SettingsComponent {
       }
       this.fragment = frag as SettingsTabId;
 
-      //this.titleService.setTitle('Kavita - ' + translate('admin-dashboard.title'));
-
       this.cdRef.markForCheck();
     }), takeUntilDestroyed(this.destroyRef)).subscribe();
-
-    this.licenseService.hasValidLicense$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(res => {
-      if (res) {
-        this.hasActiveLicense = true;
-        this.cdRef.markForCheck();
-      }
-    });
   }
+
+  protected readonly SettingsTabId = SettingsTabId;
+  protected readonly WikiLink = WikiLink;
 }

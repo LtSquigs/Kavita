@@ -140,20 +140,10 @@ export class ManageSettingsComponent implements OnInit {
   }
 
   packData() {
-    const modelSettings: ServerSettings = this.settingsForm.value;
-    modelSettings.bookmarksDirectory = this.serverSettings.bookmarksDirectory;
-    modelSettings.smtpConfig = this.serverSettings.smtpConfig;
-    modelSettings.installId = this.serverSettings.installId;
-    modelSettings.installVersion = this.serverSettings.installVersion;
-    modelSettings.oidcConfig = this.serverSettings.oidcConfig;
-
-    // Disabled FormControls are not added to the value
-    if (this.isDocker) {
-      modelSettings.ipAddresses = this.serverSettings.ipAddresses;
-      modelSettings.port = this.serverSettings.port;
-    }
-
-    return modelSettings;
+    return {
+      ...this.serverSettings,
+      ...this.settingsForm.value,
+    };
   }
 
   async resetToDefaults() {
@@ -169,7 +159,7 @@ export class ManageSettingsComponent implements OnInit {
   }
 
   resetIPAddresses() {
-    this.settingsService.resetIPAddressesSettings().pipe(take(1)).subscribe((settings: ServerSettings) => {
+    this.settingsService.resetIPAddressesSettings().subscribe((settings: ServerSettings) => {
       this.serverSettings.ipAddresses = settings.ipAddresses;
       this.settingsForm.get('ipAddresses')?.setValue(this.serverSettings.ipAddresses);
       this.toastr.success(this.translocoService.translate('toasts.reset-ip-address'));
@@ -179,7 +169,7 @@ export class ManageSettingsComponent implements OnInit {
   }
 
   resetBaseUrl() {
-    this.settingsService.resetBaseUrl().pipe(take(1)).subscribe((settings: ServerSettings) => {
+    this.settingsService.resetBaseUrl().subscribe((settings: ServerSettings) => {
       this.serverSettings.baseUrl = settings.baseUrl;
       this.settingsForm.get('baseUrl')?.setValue(this.serverSettings.baseUrl);
       this.toastr.success(this.translocoService.translate('toasts.reset-base-url'));

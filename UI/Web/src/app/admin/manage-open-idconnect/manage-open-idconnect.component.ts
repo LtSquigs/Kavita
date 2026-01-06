@@ -44,6 +44,9 @@ import {
   SettingMultiTextFieldComponent
 } from "../../settings/_components/setting-multi-text-field/setting-multi-text-field.component";
 import {environment} from "../../../environments/environment";
+import {SlicePipe} from "@angular/common";
+import {NgbTooltip} from "@ng-bootstrap/ng-bootstrap";
+import {ConfirmService} from "../../shared/confirm.service";
 
 type OidcFormGroup = FormGroup<{
   autoLogin: FormControl<boolean>;
@@ -75,7 +78,9 @@ type OidcFormGroup = FormGroup<{
     SafeHtmlPipe,
     DefaultValuePipe,
     SettingMultiCheckBox,
-    SettingMultiTextFieldComponent
+    SettingMultiTextFieldComponent,
+    SlicePipe,
+    NgbTooltip
   ],
   templateUrl: './manage-open-idconnect.component.html',
   styleUrl: './manage-open-idconnect.component.scss',
@@ -91,6 +96,7 @@ export class ManageOpenIDConnectComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly accountService = inject(AccountService);
   private readonly libraryService = inject(LibraryService);
+  private readonly confirmService = inject(ConfirmService);
 
   serverSettings!: ServerSettings;
   settingsForm!: OidcFormGroup;
@@ -108,6 +114,7 @@ export class ManageOpenIDConnectComponent implements OnInit {
       return r !== Role.Admin && selected.includes(Role.Admin);
     }}
   });
+  autoSavingBlocked = signal(false);
 
   ngOnInit(): void {
     forkJoin([
@@ -150,7 +157,10 @@ export class ManageOpenIDConnectComponent implements OnInit {
         filter(() => {
           // Do not auto save when provider settings have changed
           const settings: OidcConfig = this.packData().oidcConfig;
-          return settings.authority == this.oidcSettings()?.authority && settings.clientId == this.oidcSettings()?.clientId;
+          const autoSave = settings.authority == this.oidcSettings()?.authority && settings.clientId == this.oidcSettings()?.clientId;
+
+          this.autoSavingBlocked.set(!autoSave);
+          return autoSave;
         }),
         tap(() => this.save())
       ).subscribe();
@@ -166,8 +176,26 @@ export class ManageOpenIDConnectComponent implements OnInit {
     return newSettings;
   }
 
-  save(showConfirmation: boolean = false) {
-    if (!this.settingsForm.valid || !this.serverSettings || !this.oidcSettings()) return;
+  async resetIds() {
+    if (!await this.confirmService.confirm(translate('manage-oidc-connect.reset-confirm'))) {
+      return;
+    }
+
+    this.settingsService.clearExternalIds().subscribe(() => this.toastr.info(translate('manage-oidc-connect.reset-success')))
+
+
+  }
+
+  save(showToasts: boolean = false) {
+    if (!this.settingsForm.valid) {
+      if (showToasts) {
+        this.toastr.error(translate('errors.invalid-form'));
+      }
+
+      return;
+    }
+
+    if (!this.serverSettings || !this.oidcSettings()) return;
 
     const newSettings = this.packData();
     this.settingsService.updateServerSettings(newSettings).subscribe({
@@ -176,7 +204,7 @@ export class ManageOpenIDConnectComponent implements OnInit {
         this.oidcSettings.set(data.oidcConfig);
         this.cdRef.markForCheck();
 
-        if (showConfirmation) {
+        if (showToasts) {
           this.toastr.success(translate('manage-oidc-connect.save-success'))
         }
       },
@@ -219,7 +247,9 @@ export class ManageOpenIDConnectComponent implements OnInit {
       const otherControl = this.settingsForm.get(other);
       if (!otherControl) return null;
 
-      if (otherControl.invalid) return null;
+      if (otherControl.invalid) {
+        return { 'requiredIfOtherInvalid': { 'other': other, 'errors': otherControl.errors } }
+      }
 
       const v = otherControl.value;
       if (!v || v.length === 0) return null;

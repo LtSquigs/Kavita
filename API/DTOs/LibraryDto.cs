@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using API.Entities;
 using API.Entities.Enums;
 
 namespace API.DTOs;
@@ -79,4 +80,8 @@ public sealed record LibraryDto
     /// Should Kavita remove sort articles "The" for the sort name
     /// </summary>
     public bool RemovePrefixForSortName { get; set; } = false;
+    /// <inheritdoc cref="Library.InheritWebLinksFromFirstChapter"/>
+    public bool InheritWebLinksFromFirstChapter { get; init; }
+    /// <inheritdoc cref="Library.DefaultLanguage"/>
+    public string DefaultLanguage { get; init; }
 }

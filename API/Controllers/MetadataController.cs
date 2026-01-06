@@ -6,12 +6,10 @@ using System.Threading.Tasks;
 using API.Constants;
 using API.Data;
 using API.Data.Repositories;
-using API.DTOs;
 using API.DTOs.Filtering;
 using API.DTOs.Metadata;
 using API.DTOs.Metadata.Browse;
 using API.DTOs.Person;
-using API.DTOs.Recommendation;
 using API.DTOs.SeriesDetail;
 using API.Entities.Enums;
 using API.Extensions;
@@ -22,15 +20,10 @@ using Kavita.Common.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
-
 #nullable enable
 
-public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService localizationService,
-    IExternalMetadataService metadataService)
-    : BaseApiController
+public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService metadataService) : BaseApiController
 {
-    public const string CacheKey = "kavitaPlusSeriesDetail_";
-
     /// <summary>
     /// Fetches genres from the instance
     /// </summary>
@@ -45,7 +38,7 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
             .Select(int.Parse)
             .ToList();
 
-        return Ok(await unitOfWork.GenreRepository.GetAllGenreDtosForLibrariesAsync(User.GetUserId(), ids, context));
+        return Ok(await unitOfWork.GenreRepository.GetAllGenreDtosForLibrariesAsync(UserId, ids, context));
     }
 
     /// <summary>
@@ -58,7 +51,7 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
     {
         userParams ??= UserParams.Default;
 
-        var list = await unitOfWork.GenreRepository.GetBrowseableGenre(User.GetUserId(), userParams);
+        var list = await unitOfWork.GenreRepository.GetBrowseableGenre(UserId, userParams);
         Response.AddPaginationHeader(list.CurrentPage, list.PageSize, list.TotalCount, list.TotalPages);
 
         return Ok(list);
@@ -74,8 +67,8 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
     public async Task<ActionResult<IList<PersonDto>>> GetAllPeople(PersonRole? role)
     {
         return role.HasValue ?
-            Ok(await unitOfWork.PersonRepository.GetAllPersonDtosByRoleAsync(User.GetUserId(), role.Value)) :
-            Ok(await unitOfWork.PersonRepository.GetAllPersonDtosAsync(User.GetUserId()));
+            Ok(await unitOfWork.PersonRepository.GetAllPersonDtosByRoleAsync(UserId, role.Value)) :
+            Ok(await unitOfWork.PersonRepository.GetAllPersonDtosAsync(UserId));
     }
 
     /// <summary>
@@ -90,10 +83,10 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
         var ids = libraryIds?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
         if (ids is {Count: > 0})
         {
-            return Ok(await unitOfWork.PersonRepository.GetAllPeopleDtosForLibrariesAsync(User.GetUserId(), ids));
+            return Ok(await unitOfWork.PersonRepository.GetAllPeopleDtosForLibrariesAsync(UserId, ids));
         }
 
-        return Ok(await unitOfWork.PersonRepository.GetAllPeopleDtosForLibrariesAsync(User.GetUserId()));
+        return Ok(await unitOfWork.PersonRepository.GetAllPeopleDtosForLibrariesAsync(UserId));
     }
 
     /// <summary>
@@ -108,9 +101,9 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
         var ids = libraryIds?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
         if (ids is {Count: > 0})
         {
-            return Ok(await unitOfWork.TagRepository.GetAllTagDtosForLibrariesAsync(User.GetUserId(), ids));
+            return Ok(await unitOfWork.TagRepository.GetAllTagDtosForLibrariesAsync(UserId, ids));
         }
-        return Ok(await unitOfWork.TagRepository.GetAllTagDtosForLibrariesAsync(User.GetUserId()));
+        return Ok(await unitOfWork.TagRepository.GetAllTagDtosForLibrariesAsync(UserId));
     }
 
     /// <summary>
@@ -123,7 +116,7 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
     {
         userParams ??= UserParams.Default;
 
-        var list = await unitOfWork.TagRepository.GetBrowseableTag(User.GetUserId(), userParams);
+        var list = await unitOfWork.TagRepository.GetBrowseableTag(UserId, userParams);
         Response.AddPaginationHeader(list.CurrentPage, list.PageSize, list.TotalCount, list.TotalPages);
 
         return Ok(list);
@@ -245,9 +238,9 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
     [HttpGet("series-detail-plus")]
     public async Task<ActionResult<SeriesDetailPlusDto>> GetKavitaPlusSeriesDetailData(int seriesId, LibraryType libraryType)
     {
-        var userReviews = (await unitOfWork.UserRepository.GetUserRatingDtosForSeriesAsync(seriesId, User.GetUserId()))
+        var userReviews = (await unitOfWork.UserRepository.GetUserRatingDtosForSeriesAsync(seriesId, UserId))
             .Where(r => !string.IsNullOrEmpty(r.Body))
-            .OrderByDescending(review => review.Username.Equals(User.GetUsername()) ? 1 : 0)
+            .OrderByDescending(review => review.Username.Equals(Username!) ? 1 : 0)
             .ToList();
 
         var ret = await metadataService.GetSeriesDetailPlus(seriesId, libraryType);
@@ -259,12 +252,15 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
     private async Task PrepareSeriesDetail(List<UserReviewDto> userReviews, SeriesDetailPlusDto? ret)
     {
         var isAdmin = User.IsInRole(PolicyConstants.AdminRole);
-        var user = await unitOfWork.UserRepository.GetUserByIdAsync(User.GetUserId())!;
+        var user = await unitOfWork.UserRepository.GetUserByIdAsync(UserId)!;
 
-        userReviews.AddRange(ReviewHelper.SelectSpectrumOfReviews(ret.Reviews.ToList()));
-        ret.Reviews = userReviews;
+        if (ret != null)
+        {
+            userReviews.AddRange(ReviewHelper.SelectSpectrumOfReviews(ret.Reviews.ToList()));
+            ret.Reviews = userReviews;
+        }
 
-        if (!isAdmin && ret.Recommendations != null && user != null)
+        if (!isAdmin && ret?.Recommendations != null && user != null)
         {
             // Re-obtain owned series and take into account age restriction
             ret.Recommendations.OwnedSeries =
@@ -273,7 +269,7 @@ public class MetadataController(IUnitOfWork unitOfWork, ILocalizationService loc
             ret.Recommendations.ExternalSeries = [];
         }
 
-        if (ret.Recommendations != null && user != null)
+        if (ret?.Recommendations != null && user != null)
         {
             ret.Recommendations.OwnedSeries ??= [];
             await unitOfWork.SeriesRepository.AddSeriesModifiers(user.Id, ret.Recommendations.OwnedSeries);

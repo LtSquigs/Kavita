@@ -1,10 +1,10 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using API.Constants;
 using API.Data;
 using API.Data.Repositories;
 using API.DTOs;
 using API.DTOs.Search;
-using API.Extensions;
 using API.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,7 +35,7 @@ public class SearchController : BaseApiController
     [HttpGet("series-for-mangafile")]
     public async Task<ActionResult<SeriesDto>> GetSeriesForMangaFile(int mangaFileId)
     {
-        return Ok(await _unitOfWork.SeriesRepository.GetSeriesForMangaFile(mangaFileId, User.GetUserId()));
+        return Ok(await _unitOfWork.SeriesRepository.GetSeriesForMangaFile(mangaFileId, UserId));
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public class SearchController : BaseApiController
     [HttpGet("series-for-chapter")]
     public async Task<ActionResult<SeriesDto>> GetSeriesForChapter(int chapterId)
     {
-        return Ok(await _unitOfWork.SeriesRepository.GetSeriesForChapter(chapterId, User.GetUserId()));
+        return Ok(await _unitOfWork.SeriesRepository.GetSeriesForChapter(chapterId, UserId));
     }
 
     /// <summary>
@@ -61,15 +61,12 @@ public class SearchController : BaseApiController
     {
         queryString = Services.Tasks.Scanner.Parser.Parser.CleanQuery(queryString);
 
-        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUsername());
-        if (user == null) return Unauthorized();
+        var libraries = await _unitOfWork.LibraryRepository.GetLibraryIdsForUserIdAsync(UserId, QueryContext.Search);
+        if (libraries.Count == 0) return BadRequest(await _localizationService.Translate(UserId, "libraries-restricted"));
 
-        var libraries = _unitOfWork.LibraryRepository.GetLibraryIdsForUserIdAsync(user.Id, QueryContext.Search).ToList();
-        if (libraries.Count == 0) return BadRequest(await _localizationService.Translate(User.GetUserId(), "libraries-restricted"));
+        var isAdmin = UserContext.HasRole(PolicyConstants.AdminRole);
 
-        var isAdmin = await _unitOfWork.UserRepository.IsUserAdminAsync(user);
-
-        var series = await _unitOfWork.SeriesRepository.SearchSeries(user.Id, isAdmin,
+        var series = await _unitOfWork.SeriesRepository.SearchSeries(UserId, isAdmin,
             libraries, queryString, includeChapterAndFiles);
 
         return Ok(series);

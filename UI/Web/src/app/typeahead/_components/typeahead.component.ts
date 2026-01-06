@@ -1,6 +1,23 @@
 import {animate, state, style, transition, trigger} from '@angular/animations';
 import {AsyncPipe, DOCUMENT, NgClass, NgTemplateOutlet} from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, DestroyRef, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, Renderer2, RendererStyleFlags2, TemplateRef, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ContentChild,
+  DestroyRef,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  inject,
+  Input,
+  OnInit,
+  Output,
+  Renderer2,
+  RendererStyleFlags2,
+  TemplateRef,
+  ViewChild
+} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {Observable, ReplaySubject} from 'rxjs';
 import {auditTime, filter, map, shareReplay, switchMap, take, tap} from 'rxjs/operators';
@@ -67,7 +84,6 @@ export class TypeaheadComponent implements OnInit {
   @Output() lockedChange = new EventEmitter<boolean>();
 
 
-
   @ViewChild('input') inputElem!: ElementRef<HTMLInputElement>;
   @ContentChild('optionItem') optionTemplate!: TemplateRef<any>;
   @ContentChild('badgeItem') badgeTemplate!: TemplateRef<any>;
@@ -103,6 +119,7 @@ export class TypeaheadComponent implements OnInit {
       this.unFocus.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((id: string) => {
         if (this.settings.id !== id) return;
         this.hasFocus = false;
+        this.cdRef.markForCheck();
       });
     }
 
@@ -172,21 +189,22 @@ export class TypeaheadComponent implements OnInit {
       );
 
 
-    if (this.settings.savedData) {
-      if (this.settings.multiple) {
-        this.optionSelection = new SelectionModel<any>(true, this.settings.savedData);
-      }
-       else {
-         const isArray = this.settings.savedData.hasOwnProperty('length');
-         if (isArray) {
-          this.optionSelection = new SelectionModel<any>(true, this.settings.savedData);
-         } else {
-          this.optionSelection = new SelectionModel<any>(true, [this.settings.savedData]);
-         }
-      }
-    } else {
+    if (!this.settings.savedData) {
       this.optionSelection = new SelectionModel<any>();
+      return;
     }
+
+    if (this.settings.multiple) {
+      this.optionSelection = new SelectionModel<any>(true, this.settings.savedData);
+      return;
+    }
+
+    if (Array.isArray(this.settings.savedData)) {
+      this.optionSelection = new SelectionModel<any>(true, this.settings.savedData);
+      return;
+    }
+
+    this.optionSelection = new SelectionModel<any>(true, [this.settings.savedData]);
   }
 
 
@@ -197,6 +215,7 @@ export class TypeaheadComponent implements OnInit {
       return;
     }
     this.hasFocus = false;
+    this.cdRef.markForCheck();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -230,6 +249,7 @@ export class TypeaheadComponent implements OnInit {
 
               (item as HTMLElement).click();
               this.focusedIndex = 0;
+              this.cdRef.markForCheck();
             });
           }
         });
@@ -251,6 +271,7 @@ export class TypeaheadComponent implements OnInit {
         this.hasFocus = false;
         event.stopPropagation();
         event.preventDefault();
+        this.cdRef.markForCheck();
         break;
       default:
         break;

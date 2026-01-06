@@ -61,7 +61,7 @@
             "namedChunks": true,
             "stylePreprocessorOptions": {
               "sass": {
-                "silenceDeprecations": ["mixed-decls", "color-functions", "global-builtin", "import"]
+                "silenceDeprecations": ["color-functions", "global-builtin", "import"]
               },
               "includePaths": ["src"]
             }
@@ -158,6 +158,7 @@
       "typeSeparator": "."
     },
     "@schematics/angular:pipe": {
+      "skipTests": true,
       "typeSeparator": "."
     },
     "@schematics/angular:resolver": {

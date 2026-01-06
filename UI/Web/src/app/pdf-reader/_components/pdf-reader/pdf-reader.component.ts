@@ -2,22 +2,30 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   HostListener,
   inject,
   OnDestroy,
-  OnInit, signal,
+  OnInit,
+  signal,
   ViewChild
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {NgxExtendedPdfViewerModule, pdfDefaultOptions, PageViewModeType, ProgressBarEvent, ScrollModeType} from 'ngx-extended-pdf-viewer';
+import {
+  NgxExtendedPdfViewerModule,
+  PageViewModeType,
+  pdfDefaultOptions,
+  ProgressBarEvent,
+  ScrollModeType
+} from 'ngx-extended-pdf-viewer';
 import {ToastrService} from 'ngx-toastr';
 import {take} from 'rxjs';
 import {BookService} from 'src/app/book-reader/_services/book.service';
-import {Breakpoint, KEY_CODES, UtilityService} from 'src/app/shared/_services/utility.service';
+import {Breakpoint, UtilityService} from 'src/app/shared/_services/utility.service';
 import {Chapter} from 'src/app/_models/chapter';
-import {User} from 'src/app/_models/user';
+import {User} from 'src/app/_models/user/user';
 import {AccountService} from 'src/app/_services/account.service';
 import {NavService} from 'src/app/_services/nav.service';
 import {CHAPTER_ID_DOESNT_EXIST, ReaderService} from 'src/app/_services/reader.service';
@@ -33,9 +41,10 @@ import {PdfSpreadMode} from "../../../_models/preferences/pdf-spread-mode";
 import {SpreadType} from "node_modules/ngx-extended-pdf-viewer/lib/options/spread-type";
 import {PdfScrollModeTypePipe} from "../../_pipe/pdf-scroll-mode.pipe";
 import {PdfSpreadTypePipe} from "../../_pipe/pdf-spread-mode.pipe";
-import {ReadingProfileService} from "../../../_services/reading-profile.service";
 import {ReadingProfile} from "../../../_models/preferences/reading-profiles";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {KeyBindService} from "../../../_services/key-bind.service";
+import {KeyBindTarget} from "../../../_models/preferences/preferences";
 
 @Component({
   selector: 'app-pdf-reader',
@@ -56,11 +65,11 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
   private readonly themeService = inject(ThemeService);
   private readonly cdRef = inject(ChangeDetectorRef);
   public readonly accountService = inject(AccountService);
-  private readonly readingProfileService = inject(ReadingProfileService);
   public readonly readerService = inject(ReaderService);
   public readonly utilityService = inject(UtilityService);
   public readonly destroyRef = inject(DestroyRef);
   public readonly document = inject(DOCUMENT);
+  private readonly keyBindService = inject(KeyBindService);
 
   protected readonly ScrollModeType = ScrollModeType;
   protected readonly Breakpoint = Breakpoint;
@@ -126,22 +135,25 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
   spreadMode: SpreadType = 'off';
   isSearchOpen: boolean = false;
 
+  canDownload = computed(() =>
+    this.accountService.hasDownloadRole(this.accountService.currentUserSignal()!)
+  );
+
   constructor() {
       this.navService.hideNavBar();
       this.themeService.clearThemes();
       this.navService.hideSideNav();
-  }
 
-  @HostListener('window:keyup', ['$event'])
-  handleKeyPress(event: KeyboardEvent) {
-    if (event.key === KEY_CODES.ESC_KEY) {
-      this.closeReader();
-    }
+      this.keyBindService.registerListener(
+        this.destroyRef,
+        () => this.closeReader(),
+        [KeyBindTarget.Escape],
+      );
   }
 
   @HostListener('window:resize', ['$event'])
   @HostListener('window:orientationchange', ['$event'])
-  onResize(){
+  onResize(event: Event){
     // Update the window Height
     this.calcScrollbarNeeded();
   }
@@ -154,6 +166,8 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
     this.navService.showNavBar();
     this.navService.showSideNav();
     this.readerService.disableWakeLock();
+
+    window.removeEventListener('keydown', this.downloadHandler, { capture: true });
   }
 
   ngOnInit(): void {
@@ -190,6 +204,8 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
 
     this.cdRef.markForCheck();
 
+    window.addEventListener('keydown', this.downloadHandler, { capture: true });
+
     this.accountService.currentUser$.pipe(take(1)).subscribe(user => {
       if (user) {
         this.user = user;
@@ -197,6 +213,15 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  private downloadHandler = (event: KeyboardEvent) => {
+    if (event.ctrlKey && event.key.toLowerCase() === 's') {
+      if (!this.accountService.hasDownloadRole(this.accountService.currentUserSignal()!)) {
+        event.preventDefault();
+        event.stopImmediatePropagation(); // Stops ALL other handlers
+      }
+    }
+  };
 
 
   calcScrollbarNeeded() {
@@ -285,7 +310,7 @@ export class PdfReaderComponent implements OnInit, OnDestroy {
 
       if (this.currentPage >= this.maxPages) {
         this.currentPage = this.maxPages - 1;
-        this.saveProgress();
+        // Don't save progress on first load to avoid session creation, wait for a page change event
       }
       this.cdRef.markForCheck();
     });

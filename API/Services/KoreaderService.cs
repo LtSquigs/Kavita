@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using API.Data;
 using API.DTOs.Koreader;
@@ -5,6 +6,7 @@ using API.DTOs.Progress;
 using API.Extensions;
 using API.Helpers;
 using API.Helpers.Builders;
+using API.Services.Reading;
 using Kavita.Common;
 using Microsoft.Extensions.Logging;
 
@@ -58,11 +60,16 @@ public class KoreaderService : IKoreaderService
                 ChapterId = file.ChapterId,
                 VolumeId = chapterDto.VolumeId,
                 SeriesId = volumeDto.SeriesId,
+                PageNum = int.Parse(koreaderBookDto.progress)
             };
         }
         // Update the bookScrollId if possible
+        var reportedProgress = koreaderBookDto.progress;
         KoreaderHelper.UpdateProgressDto(userProgressDto, koreaderBookDto.progress);
+        _logger.LogDebug("Converting KOReader progress from {ReportedProgress} to {ScopedProgress}",
+            reportedProgress.Sanitize(), userProgressDto.BookScrollId?.Sanitize());
 
+        // Normal saving from kavita will be //body/h2[1]
         await _readerService.SaveReadingProgress(userProgressDto, userId);
     }
 
@@ -77,13 +84,20 @@ public class KoreaderService : IKoreaderService
         var settingsDto = await _unitOfWork.SettingsRepository.GetSettingsDtoAsync();
 
         var file = await _unitOfWork.MangaFileRepository.GetByKoreaderHash(bookHash);
-
         if (file == null) throw new KavitaException(await _localizationService.Translate(userId, "file-missing"));
 
         var progressDto = await _unitOfWork.AppUserProgressRepository.GetUserProgressDtoAsync(file.ChapterId, userId);
-        var koreaderProgress = KoreaderHelper.GetKoreaderPosition(progressDto);
+        var originalScrollId = progressDto?.BookScrollId;
 
-        return new KoreaderBookDtoBuilder(bookHash).WithProgress(koreaderProgress)
+        var koreaderProgress = $"{progressDto?.PageNum ?? 0}"; // Non-epubs will just encode as a simple number
+        if (!string.IsNullOrEmpty(originalScrollId))
+        {
+            koreaderProgress = KoreaderHelper.GetKoreaderPosition(progressDto);
+            _logger.LogDebug("Converting KOReader progress from {KavitaProgress} to {KOReaderProgress}", originalScrollId?.Sanitize() ?? string.Empty, progressDto?.BookScrollId?.Sanitize() ?? string.Empty);
+        }
+
+        return new KoreaderBookDtoBuilder(bookHash)
+            .WithProgress(koreaderProgress)
             .WithPercentage(progressDto?.PageNum, file.Pages)
             .WithDeviceId(settingsDto.InstallId, userId)
             .WithTimestamp(progressDto?.LastModifiedUtc)

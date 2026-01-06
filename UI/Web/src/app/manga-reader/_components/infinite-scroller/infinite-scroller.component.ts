@@ -1,5 +1,26 @@
 import {AsyncPipe, DOCUMENT} from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, effect, ElementRef, EventEmitter, inject, Injector, Input, OnChanges, OnDestroy, OnInit, Output, Renderer2, signal, Signal, SimpleChanges, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Injector,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  Renderer2,
+  Signal,
+  SimpleChanges,
+  ViewChild
+} from '@angular/core';
 import {BehaviorSubject, fromEvent, map, Observable, of, ReplaySubject, tap} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import {ScrollService} from 'src/app/_services/scroll.service';
@@ -9,7 +30,7 @@ import {WebtoonImage} from '../../_models/webtoon-image';
 import {MangaReaderService} from '../../_service/manga-reader.service';
 import {takeUntilDestroyed, toSignal} from "@angular/core/rxjs-interop";
 import {TranslocoDirective} from "@jsverse/transloco";
-import {InfiniteScrollModule} from "ngx-infinite-scroll";
+import {InfiniteScrollDirective} from "ngx-infinite-scroll";
 import {ReaderSetting} from "../../_models/reader-setting";
 import {SafeStylePipe} from "../../../_pipes/safe-style.pipe";
 import {UtilityService} from "../../../shared/_services/utility.service";
@@ -60,7 +81,7 @@ const enum DEBUG_MODES {
     templateUrl: './infinite-scroller.component.html',
     styleUrls: ['./infinite-scroller.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [AsyncPipe, TranslocoDirective, InfiniteScrollModule, SafeStylePipe]
+    imports: [AsyncPipe, TranslocoDirective, InfiniteScrollDirective, SafeStylePipe]
 })
 export class InfiniteScrollerComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
   private readonly document = inject<Document>(DOCUMENT);
@@ -224,6 +245,12 @@ export class InfiniteScrollerComponent implements OnInit, OnChanges, OnDestroy, 
    */
   initScrollHandler() {
     const element = this.isFullscreenMode ? this.readerElemRef.nativeElement : this.document.body;
+
+    // Reset any modal-induced overflow lock (this can happen when Starting Over and ngBootstrap modal hasn't completed teardown)
+    if (element === this.document.body) {
+      this.document.body.style.overflow = 'auto';
+      this.document.body.classList.remove('modal-open'); // ngBootstrap adds this
+    }
 
     fromEvent(element, 'scroll')
       .pipe(

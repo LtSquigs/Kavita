@@ -6,7 +6,8 @@ import {
   DestroyRef,
   inject,
   model,
-  OnInit, signal
+  OnInit,
+  signal
 } from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
@@ -17,12 +18,12 @@ import {AccountService, allRoles, Role} from 'src/app/_services/account.service'
 import {SentenceCasePipe} from '../../_pipes/sentence-case.pipe';
 import {RestrictionSelectorComponent} from '../../user-settings/restriction-selector/restriction-selector.component';
 import {AsyncPipe} from '@angular/common';
-import {TranslocoDirective} from "@jsverse/transloco";
+import {translate, TranslocoDirective} from "@jsverse/transloco";
 import {debounceTime, distinctUntilChanged, Observable, startWith, tap} from "rxjs";
 import {map} from "rxjs/operators";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ServerSettings} from "../_models/server-settings";
-import {IdentityProvider, IdentityProviders} from "../../_models/user";
+import {IdentityProvider, IdentityProviders} from "../../_models/user/user";
 import {IdentityProviderPipePipe} from "../../_pipes/identity-provider.pipe";
 import {
   MultiCheckBoxItem,
@@ -72,6 +73,7 @@ export class EditUserComponent implements OnInit {
 
   userForm: FormGroup = new FormGroup({});
   isEmailInvalid$!: Observable<boolean>;
+  readOnlyWarning$!: Observable<string | undefined>;
 
   allowedCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+/';
 
@@ -107,6 +109,14 @@ export class EditUserComponent implements OnInit {
       debounceTime(10),
       map(value => !EmailRegex.test(value)),
       takeUntilDestroyed(this.destroyRef)
+    );
+    this.readOnlyWarning$ = this.userForm.get('roles')!.valueChanges.pipe(
+      startWith(this.member().roles),
+      takeUntilDestroyed(this.destroyRef),
+      distinctUntilChanged(),
+      debounceTime(10),
+      map((roles: string[]) => roles.includes(Role.ReadOnly)),
+      map(readOnlySelected => readOnlySelected ? translate('edit-user.warning-read-only') : undefined),
     );
 
     this.selectedRestriction = this.member().ageRestriction;

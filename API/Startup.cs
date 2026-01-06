@@ -6,12 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using API.Constants;
 using API.Data;
 using API.Data.ManualMigrations;
-using API.Entities;
+using API.DTOs.Internal;
 using API.Entities.Enums;
 using API.Extensions;
 using API.Logging;
@@ -26,22 +25,21 @@ using HtmlAgilityPack;
 using Kavita.Common;
 using Kavita.Common.EnvironmentInfo;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Serilog;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using TaskScheduler = API.Services.TaskScheduler;
 
 namespace API;
@@ -63,7 +61,13 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
+        services.Configure<AppSettingsDto>(_config);
         services.AddApplicationServices(_config, _env);
+
+        // Store keys inside database, such that cookies can be decrypted between container restarts
+        services.AddDataProtection()
+            .PersistKeysToDbContext<DataContext>()
+            .SetApplicationName(BuildInfo.AppName);
 
         services.AddControllers(options =>
         {
@@ -71,40 +75,33 @@ public class Startup
                 new CacheProfile()
                 {
                     Duration = 30,
-                    Location = ResponseCacheLocation.None,
+                    Location = ResponseCacheLocation.Client,
                 });
             options.CacheProfiles.Add(ResponseCacheProfiles.FiveMinute,
                 new CacheProfile()
                 {
                     Duration = 60 * 5,
-                    Location = ResponseCacheLocation.None,
+                    Location = ResponseCacheLocation.Client,
                 });
             options.CacheProfiles.Add(ResponseCacheProfiles.TenMinute,
                 new CacheProfile()
                 {
                     Duration = 60 * 10,
-                    Location = ResponseCacheLocation.None,
+                    Location = ResponseCacheLocation.Client,
                     NoStore = false
                 });
             options.CacheProfiles.Add(ResponseCacheProfiles.Hour,
                 new CacheProfile()
                 {
                     Duration = 60 * 60,
-                    Location = ResponseCacheLocation.None,
+                    Location = ResponseCacheLocation.Client,
                     NoStore = false
                 });
             options.CacheProfiles.Add(ResponseCacheProfiles.Statistics,
                 new CacheProfile()
                 {
-                    Duration = 60 * 60 * 6,
-                    Location = ResponseCacheLocation.None,
-                });
-            options.CacheProfiles.Add(ResponseCacheProfiles.Images,
-                new CacheProfile()
-                {
-                    Duration = 60,
-                    Location = ResponseCacheLocation.None,
-                    NoStore = false
+                    Duration = _env.IsDevelopment() ? 0 : 60 * 60 * 6,
+                    Location = ResponseCacheLocation.Client,
                 });
             options.CacheProfiles.Add(ResponseCacheProfiles.Month,
                 new CacheProfile()
@@ -124,7 +121,7 @@ public class Startup
                 new CacheProfile()
                 {
                     Duration = TimeSpan.FromDays(30).Seconds,
-                    Location = ResponseCacheLocation.Any,
+                    Location = ResponseCacheLocation.Client,
                     NoStore = false
                 });
         });
@@ -137,6 +134,8 @@ public class Startup
         });
         services.AddCors();
         services.AddIdentityServices(_config, _env);
+
+
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo
@@ -153,27 +152,23 @@ public class Startup
 
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var filePath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
             c.IncludeXmlComments(filePath, true);
-            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme {
+
+            c.AddSecurityDefinition("AuthKey", new OpenApiSecurityScheme
+            {
+                Description = "Auth Key authentication. Enter your Auth key from your user settings",
+                Name = Headers.ApiKey,
                 In = ParameterLocation.Header,
-                Description = "Please insert JWT with Bearer into field",
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "ApiKeyScheme"
             });
 
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
+            c.AddSecurityRequirement((document) => new OpenApiSecurityRequirement()
+            {
+                [new OpenApiSecuritySchemeReference("apiKey", document)] = []
             });
+
 
             c.AddServer(new OpenApiServer
             {
@@ -185,21 +180,8 @@ public class Startup
                 }
             });
         });
-        services.AddResponseCompression(options =>
-        {
-            options.Providers.Add<BrotliCompressionProvider>();
-            options.Providers.Add<GzipCompressionProvider>();
-            options.MimeTypes =
-                ResponseCompressionDefaults.MimeTypes.Concat(
-                    new[] { "image/jpeg", "image/jpg", "image/png", "image/avif", "image/gif", "image/webp", "image/tiff" });
-            options.EnableForHttps = true;
-        });
-        services.Configure<BrotliCompressionProviderOptions>(options =>
-        {
-            options.Level = CompressionLevel.Fastest;
-        });
 
-        services.AddResponseCaching();
+        AddCompressionAndCaching(services);
 
         services.AddRateLimiter(options =>
         {
@@ -211,119 +193,61 @@ public class Startup
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UseInMemoryStorage());
-            //.UseSQLiteStorage("config/Hangfire.db")); // UseSQLiteStorage - SQLite has some issues around resuming jobs when aborted (and locking can cause high utilization) (NOTE: There is code to clear jobs on startup a redditor gave me)
+            //.UseSQLiteStorage("config/Hangfire.db"));
+            //// UseSQLiteStorage - SQLite has some issues around resuming jobs when aborted (and locking can cause high utilization)
+            /// (NOTE: There is code to clear jobs on startup a redditor gave me)
 
         // Add the processing server as IHostedService
         services.AddHangfireServer(options =>
         {
-            options.Queues = new[] {TaskScheduler.ScanQueue, TaskScheduler.DefaultQueue};
+            options.Queues = [TaskScheduler.ScanQueue, TaskScheduler.DefaultQueue];
         });
+
         // Add IHostedService for startup tasks
         // Any services that should be bootstrapped go here
         services.AddHostedService<StartupTasksHostedService>();
+        services.AddHostedService<ReadingSessionInitializer>();
+    }
+
+    private static void AddCompressionAndCaching(IServiceCollection services)
+    {
+        services.AddResponseCompression(options =>
+        {
+            options.Providers.Add<BrotliCompressionProvider>();
+            options.Providers.Add<GzipCompressionProvider>();
+            options.MimeTypes =
+                ResponseCompressionDefaults.MimeTypes.Concat(
+                    ["image/jpeg", "image/jpg", "image/png", "image/avif", "image/gif", "image/webp", "image/tiff"]);
+            options.EnableForHttps = true;
+        });
+        services.Configure<BrotliCompressionProviderOptions>(options =>
+        {
+            options.Level = CompressionLevel.Fastest;
+        });
+
+        services.AddResponseCaching();
+        services.AddHybridCache(options =>
+        {
+            options.MaximumPayloadBytes = 1024 * 1024; // 1MB max per entry
+            options.MaximumKeyLength = 512;
+            options.DefaultEntryOptions = new HybridCacheEntryOptions
+            {
+                Expiration = TimeSpan.FromMinutes(10),
+                LocalCacheExpiration = TimeSpan.FromMinutes(10)
+            };
+        });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IBackgroundJobClient backgroundJobs, IWebHostEnvironment env,
-        IHostApplicationLifetime applicationLifetime, IServiceProvider serviceProvider, ICacheService cacheService,
-        IDirectoryService directoryService, IUnitOfWork unitOfWork, IBackupService backupService, IImageService imageService, IVersionUpdaterService versionService)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
+        IHostApplicationLifetime applicationLifetime, IServiceProvider serviceProvider,
+        IDirectoryService directoryService, IUnitOfWork unitOfWork, IVersionUpdaterService versionService)
     {
 
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-        // Apply Migrations
-        try
-        {
-            Task.Run(async () =>
-                {
-                    // Apply all migrations on startup
-                    var dataContext = serviceProvider.GetRequiredService<DataContext>();
-
-                    logger.LogInformation("Running Migrations");
-
-                    #region Migrations
-
-                    // v0.7.9
-                    await MigrateUserLibrarySideNavStream.Migrate(unitOfWork, dataContext, logger);
-
-                    // v0.7.11
-                    await MigrateSmartFilterEncoding.Migrate(unitOfWork, dataContext, logger);
-                    await MigrateLibrariesToHaveAllFileTypes.Migrate(unitOfWork, dataContext, logger);
 
 
-                    // v0.7.14
-                    await MigrateEmailTemplates.Migrate(directoryService, logger);
-                    await MigrateVolumeNumber.Migrate(dataContext, logger);
-                    await MigrateWantToReadImport.Migrate(unitOfWork, dataContext, directoryService, logger);
-                    await MigrateManualHistory.Migrate(dataContext, logger);
-                    await MigrateClearNightlyExternalSeriesRecords.Migrate(dataContext, logger);
-
-                    // v0.8.0
-                    await MigrateVolumeLookupName.Migrate(dataContext, unitOfWork, logger);
-                    await MigrateChapterNumber.Migrate(dataContext, logger);
-                    await MigrateProgressExport.Migrate(dataContext, directoryService, logger);
-                    await MigrateMixedSpecials.Migrate(dataContext, unitOfWork, directoryService, logger);
-                    await MigrateLooseLeafChapters.Migrate(dataContext, unitOfWork, directoryService, logger);
-                    await MigrateChapterFields.Migrate(dataContext, unitOfWork, logger);
-                    await MigrateChapterRange.Migrate(dataContext, unitOfWork, logger);
-                    await MigrateMangaFilePath.Migrate(dataContext, logger);
-                    await MigrateCollectionTagToUserCollections.Migrate(dataContext, unitOfWork, logger);
-
-                    // v0.8.1
-                    await MigrateLowestSeriesFolderPath.Migrate(dataContext, unitOfWork, logger);
-
-                    // v0.8.2
-                    await ManualMigrateThemeDescription.Migrate(dataContext, logger);
-                    await MigrateInitialInstallData.Migrate(dataContext, logger, directoryService);
-                    await MigrateSeriesLowestFolderPath.Migrate(dataContext, logger, directoryService);
-
-                    // v0.8.4
-                    await MigrateLowestSeriesFolderPath2.Migrate(dataContext, unitOfWork, logger);
-                    await ManualMigrateRemovePeople.Migrate(dataContext, logger);
-                    await MigrateDuplicateDarkTheme.Migrate(dataContext, logger);
-                    await ManualMigrateUnscrobbleBookLibraries.Migrate(dataContext, logger);
-
-                    // v0.8.5
-                    await ManualMigrateBlacklistTableToSeries.Migrate(dataContext, logger);
-                    await ManualMigrateInvalidBlacklistSeries.Migrate(dataContext, logger);
-                    await ManualMigrateScrobbleErrors.Migrate(dataContext, logger);
-                    await ManualMigrateNeedsManualMatch.Migrate(dataContext, logger);
-                    await MigrateProgressExportForV085.Migrate(dataContext, directoryService, logger);
-
-                    // v0.8.6
-                    await ManualMigrateScrobbleSpecials.Migrate(dataContext, logger);
-                    await ManualMigrateScrobbleEventGen.Migrate(dataContext, logger);
-
-                    // v0.8.7
-                    await ManualMigrateReadingProfiles.Migrate(dataContext, logger);
-
-                    // v0.8.8
-                    await ManualMigrateEnableMetadataMatchingDefault.Migrate(dataContext, unitOfWork, logger);
-                    await ManualMigrateBookReadingProgress.Migrate(dataContext, unitOfWork, logger);
-
-                    #endregion
-
-                    //  Update the version in the DB after all migrations are run
-                    var installVersion = await unitOfWork.SettingsRepository.GetSettingAsync(ServerSettingKey.InstallVersion);
-                    var isVersionDifferent = installVersion.Value != BuildInfo.Version.ToString();
-                    installVersion.Value = BuildInfo.Version.ToString();
-                    unitOfWork.SettingsRepository.Update(installVersion);
-                    await unitOfWork.CommitAsync();
-
-                    logger.LogInformation("Running Migrations - complete");
-
-                    if (isVersionDifferent)
-                    {
-                        // Clear the Github cache so update stuff shows correctly
-                        versionService.BustGithubCache();
-                    }
-
-                }).GetAwaiter()
-                .GetResult();
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(ex, "An error occurred during migration");
-        }
+        ExecuteMigrations(serviceProvider, directoryService, unitOfWork, versionService, logger);
 
         app.UseMiddleware<ExceptionMiddleware>();
         app.UseMiddleware<SecurityEventMiddleware>();
@@ -391,12 +315,7 @@ public class Startup
 
         app.UseResponseCaching();
 
-        app.UseAuthentication();
-
-        app.UseAuthorization();
-
-        app.UseDefaultFiles();
-
+        // Ensure static files is before our custom middleware stack
         app.UseStaticFiles(new StaticFileOptions
         {
             // bcmap files needed for PDF reader localizations (https://github.com/Kareadita/Kavita/issues/2970)
@@ -413,9 +332,22 @@ public class Startup
             OnPrepareResponse = ctx =>
             {
                 ctx.Context.Response.Headers[HeaderNames.CacheControl] = "public,max-age=" + TimeSpan.FromHours(24);
-                ctx.Context.Response.Headers["X-Robots-Tag"] = "noindex,nofollow";
+                ctx.Context.Response.Headers[Headers.RobotsTag] = "noindex,nofollow";
             }
         });
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        // Must be first after Auth, will set authentication data for the rest of the Controllers/Middleware
+        app.UseMiddleware<UserContextMiddleware>();
+        app.UseMiddleware<ClientInfoMiddleware>();
+        app.UseMiddleware<DeviceTrackingMiddleware>(); // This must be after ClientInfo and Authorization
+        app.UseMiddleware<UpdateUserAsActiveMiddleware>(); // This must be LAST
+
+        app.UseDefaultFiles();
+
+
 
         app.UseSerilogRequestLogging(opts
             =>
@@ -431,9 +363,7 @@ public class Startup
 
         app.Use(async (context, next) =>
         {
-            context.Response.Headers[HeaderNames.Vary] =
-                new[] { "Accept-Encoding" };
-
+            context.Response.Headers[HeaderNames.Vary] = new[] { "Accept-Encoding" };
 
             if (!Configuration.AllowIFraming)
             {
@@ -474,6 +404,124 @@ public class Startup
         });
 
         logger.LogInformation("Starting with base url as {BaseUrl}", basePath);
+    }
+
+    private static void ExecuteMigrations(IServiceProvider serviceProvider, IDirectoryService directoryService,
+        IUnitOfWork unitOfWork, IVersionUpdaterService versionService, ILogger<Program> logger)
+    {
+        try
+        {
+            Task.Run(async () =>
+                {
+                    // Apply all migrations on startup
+                    var dataContext = serviceProvider.GetRequiredService<DataContext>();
+
+                    logger.LogInformation("Running Migrations");
+
+                    #region Migrations
+
+                    #region v0.7.9
+                    await MigrateUserLibrarySideNavStream.Migrate(unitOfWork, dataContext, logger);
+                    #endregion
+
+                    #region v0.7.11
+                    await MigrateSmartFilterEncoding.Migrate(unitOfWork, dataContext, logger);
+                    await new MigrateLibrariesToHaveAllFileTypes().RunAsync(dataContext, logger);
+                    #endregion
+
+                    #region v0.7.14
+                    await MigrateEmailTemplates.Migrate(directoryService, logger);
+                    await MigrateVolumeNumber.Migrate(dataContext, logger);
+                    await MigrateWantToReadImport.Migrate(unitOfWork, dataContext, directoryService, logger);
+                    await MigrateManualHistory.Migrate(dataContext, logger);
+                    await MigrateClearNightlyExternalSeriesRecords.Migrate(dataContext, logger);
+                    #endregion
+
+                    #region v0.8.0
+                    await MigrateVolumeLookupName.Migrate(dataContext, unitOfWork, logger);
+                    await MigrateChapterNumber.Migrate(dataContext, logger);
+                    await MigrateProgressExport.Migrate(dataContext, directoryService, logger);
+                    await MigrateMixedSpecials.Migrate(dataContext, unitOfWork, directoryService, logger);
+                    await MigrateLooseLeafChapters.Migrate(dataContext, unitOfWork, directoryService, logger);
+                    await MigrateChapterFields.Migrate(dataContext, unitOfWork, logger);
+                    await MigrateChapterRange.Migrate(dataContext, unitOfWork, logger);
+                    await MigrateMangaFilePath.Migrate(dataContext, logger);
+                    await MigrateCollectionTagToUserCollections.Migrate(dataContext, unitOfWork, logger);
+                    #endregion
+
+                    #region v0.8.1
+                    await MigrateLowestSeriesFolderPath.Migrate(dataContext, unitOfWork, logger);
+                    #endregion
+
+                    #region v0.8.2
+                    await ManualMigrateThemeDescription.Migrate(dataContext, logger);
+                    await MigrateInitialInstallData.Migrate(dataContext, logger, directoryService);
+                    await MigrateSeriesLowestFolderPath.Migrate(dataContext, logger, directoryService);
+                    #endregion
+
+                    #region v0.8.4
+                    await MigrateLowestSeriesFolderPath2.Migrate(dataContext, unitOfWork, logger);
+                    await ManualMigrateRemovePeople.Migrate(dataContext, logger);
+                    await MigrateDuplicateDarkTheme.Migrate(dataContext, logger);
+                    await ManualMigrateUnscrobbleBookLibraries.Migrate(dataContext, logger);
+                    #endregion
+
+                    #region v0.8.5
+                    await ManualMigrateBlacklistTableToSeries.Migrate(dataContext, logger);
+                    await ManualMigrateInvalidBlacklistSeries.Migrate(dataContext, logger);
+                    await ManualMigrateScrobbleErrors.Migrate(dataContext, logger);
+                    await ManualMigrateNeedsManualMatch.Migrate(dataContext, logger);
+                    await MigrateProgressExportForV085.Migrate(dataContext, directoryService, logger);
+                    #endregion
+
+                    #region v0.8.6
+                    await ManualMigrateScrobbleSpecials.Migrate(dataContext, logger);
+                    await ManualMigrateScrobbleEventGen.Migrate(dataContext, logger);
+                    #endregion
+
+                    #region v0.8.7
+                    await ManualMigrateReadingProfiles.Migrate(dataContext, logger);
+                    #endregion
+
+                    #region v0.8.8
+                    await ManualMigrateEnableMetadataMatchingDefault.Migrate(dataContext, unitOfWork, logger);
+                    await ManualMigrateBookReadingProgress.Migrate(dataContext, unitOfWork, logger);
+                    #endregion
+
+                    #region v0.8.9
+                    await new MigrateProgressToReadingSessions().RunAsync(dataContext, logger);
+                    await new MigrateMissingCreatedUtcDate().RunAsync(dataContext, logger);
+                    await new MigrateTotalReads().RunAsync(dataContext, logger);
+                    await new MigrateToAuthKeys().RunAsync(dataContext, logger);
+                    await new MigrateMissingAppUserRatingDateColumns().RunAsync(dataContext, logger);
+                    await new MigrateFormatToActivityDataV2().RunAsync(dataContext, logger);
+                    await new MigrateIncorrectUtcMidnightRollovers().RunAsync(dataContext, logger);
+                    #endregion
+
+                    #endregion
+
+                    //  Update the version in the DB after all migrations are run
+                    var installVersion = await unitOfWork.SettingsRepository.GetSettingAsync(ServerSettingKey.InstallVersion);
+                    var isVersionDifferent = installVersion.Value != BuildInfo.Version.ToString();
+                    installVersion.Value = BuildInfo.Version.ToString();
+                    unitOfWork.SettingsRepository.Update(installVersion);
+                    await unitOfWork.CommitAsync();
+
+                    logger.LogInformation("Running Migrations - complete");
+
+                    if (isVersionDifferent)
+                    {
+                        // Clear the GitHub cache so update stuff shows correctly
+                        versionService.BustGithubCache();
+                    }
+
+                }).GetAwaiter()
+                .GetResult();
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "An error occurred during migration");
+        }
     }
 
     private static void UpdateBaseUrlInIndex(string baseUrl)

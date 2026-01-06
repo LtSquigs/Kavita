@@ -1,14 +1,15 @@
 <ng-container *transloco="let t; prefix:'manage-oidc-connect'">
-
-  <div class="position-relative">
-    <button type="button" class="btn btn-primary position-absolute custom-position" (click)="save(true)">{{t('save')}}</button>
-  </div>
-
   @if (!loading()) {
     <form [formGroup]="settingsForm">
       <div class="alert alert-warning" role="alert">
         <strong>{{t('notice')}}</strong> {{t('restart-required')}}
       </div>
+
+      @if (autoSavingBlocked()) {
+        <div class="alert alert-warning" role="alert">
+          {{t('auto-save-required')}}
+        </div>
+      }
 
       <h4>{{t('provider-title')}}</h4>
       <div class="text-muted" [innerHtml]="t('provider-tooltip') | safeHtml"></div>
@@ -55,6 +56,9 @@
                     @if (formControl.errors && formControl.errors.requiredIf) {
                       <div>{{t('other-field-required', {name: 'clientId', other: formControl.errors.requiredIf.other})}}</div>
                     }
+                    @if (formControl.errors && formControl.errors.requiredIfOtherInvalid) {
+                      <div>{{t('other-field-invalid', {other: formControl.errors.requiredIfOtherInvalid.other})}}</div>
+                    }
                   </div>
                 }
 
@@ -67,7 +71,7 @@
           @if (settingsForm.get('secret'); as formControl) {
             <app-setting-item [title]="t('secret-label')" [subtitle]="t('secret-tooltip')">
               <ng-template #view>
-                {{formControl.value | defaultValue}}
+                {{formControl.value | slice:0:40 | defaultValue}}
               </ng-template>
               <ng-template #edit>
                 <input id="oid-secret" aria-describedby="oidc-secret-validations" class="form-control"
@@ -79,12 +83,22 @@
                     @if (formControl.errors && formControl.errors.requiredIf) {
                       <div>{{t('other-field-required', {name: 'secret', other: formControl.errors.requiredIf.other})}}</div>
                     }
+                    @if (formControl.errors && formControl.errors.requiredIfOtherInvalid) {
+                      <div>{{t('other-field-invalid', {other: formControl.errors.requiredIfOtherInvalid.other})}}</div>
+                    }
                   </div>
                 }
 
               </ng-template>
             </app-setting-item>
           }
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button type="button" class="btn btn-secondary" [ngbTooltip]="t('reset-tooltip')" (click)="resetIds()">
+            {{t('reset-label')}}
+          </button>
+          <button type="button" class="btn btn-primary ms-2" (click)="save(true)">{{t('save')}}</button>
         </div>
 
       </ng-container>

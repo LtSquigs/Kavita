@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.DTOs.MediaErrors;
 using API.Entities;
-using API.Helpers;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +15,7 @@ public interface IMediaErrorRepository
     void Attach(MediaError error);
     void Remove(MediaError error);
     void Remove(IList<MediaError> errors);
-    Task<MediaError> Find(string filename);
+    Task<MediaError?> Find(string filename);
     IEnumerable<MediaErrorDto> GetAllErrorDtosAsync();
     Task<bool> ExistsAsync(MediaError error);
     Task DeleteAll();

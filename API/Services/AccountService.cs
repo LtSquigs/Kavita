@@ -6,13 +6,11 @@ using System.Threading.Tasks;
 using API.Constants;
 using API.Data;
 using API.Data.Repositories;
-using API.DTOs.Account;
 using API.Entities;
 using API.Entities.Enums;
 using API.Errors;
 using API.Extensions;
 using API.Helpers.Builders;
-using API.SignalR;
 using AutoMapper;
 using Kavita.Common;
 using Microsoft.AspNetCore.Identity;
@@ -186,7 +184,7 @@ public partial class AccountService : IAccountService
         var roles = await _userManager.GetRolesAsync(user);
         if (roles.Contains(PolicyConstants.ReadOnlyRole)) return false;
 
-        return roles.Contains(PolicyConstants.ChangePasswordRole) || roles.Contains(PolicyConstants.AdminRole);
+        return roles.Contains(PolicyConstants.ChangeRestrictionRole) || roles.Contains(PolicyConstants.AdminRole);
     }
 
     public async Task<bool> ChangeIdentityProvider(int actingUserId, AppUser user, IdentityProvider identityProvider)
@@ -194,7 +192,12 @@ public partial class AccountService : IAccountService
         var defaultAdminUser = await _unitOfWork.UserRepository.GetDefaultAdminUser();
         if (user.Id == defaultAdminUser.Id)
         {
-            throw new KavitaException(await _localizationService.Translate(actingUserId, "cannot-change-identity-provider-original-user"));
+            if (identityProvider == IdentityProvider.OpenIdConnect)
+            {
+                throw new KavitaException(await _localizationService.Translate(actingUserId, "cannot-change-identity-provider-original-user"));
+            }
+
+            return false;
         }
 
         // Allow changes if users aren't being synced
@@ -276,6 +279,7 @@ public partial class AccountService : IAccountService
     {
         AddDefaultStreamsToUser(user);
         AddDefaultHighlightSlotsToUser(user);
+        AddAuthKeys(user);
         await AddDefaultReadingProfileToUser(user); // Commits
     }
 
@@ -301,6 +305,14 @@ public partial class AccountService : IAccountService
         if (user.UserPreferences.BookReaderHighlightSlots.Any()) return;
 
         user.UserPreferences.BookReaderHighlightSlots = Seed.DefaultHighlightSlots.ToList();
+        _unitOfWork.UserRepository.Update(user);
+    }
+
+    private void AddAuthKeys(AppUser user)
+    {
+        if (user.AuthKeys.Any()) return;
+
+        user.AuthKeys = Seed.CreateDefaultAuthKeys();
         _unitOfWork.UserRepository.Update(user);
     }
 

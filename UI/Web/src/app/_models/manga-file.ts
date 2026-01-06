@@ -1,4 +1,4 @@
-import { MangaFormat } from './manga-format';
+import {MangaFormat} from './manga-format';
 
 export interface MangaFile {
   id: number;
@@ -12,4 +12,5 @@ export interface MangaFile {
   format: MangaFormat;
   created: string;
   bytes: number;
+  koreaderHash: string;
 }

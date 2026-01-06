@@ -1,4 +1,5 @@
 ﻿using System;
+using API.DTOs.Account;
 using API.DTOs.Reader;
 using API.DTOs.Update;
 using API.Entities.Person;
@@ -13,9 +14,10 @@ public static class MessageFactoryEntityTypes
     public const string Series = "series";
     public const string Volume = "volume";
     public const string Chapter = "chapter";
-    public const string CollectionTag = "collection";
+    public const string Collection = "collection";
     public const string ReadingList = "readingList";
     public const string Person = "person";
+    public const string User = "user";
 }
 public static class MessageFactory
 {
@@ -161,6 +163,18 @@ public static class MessageFactory
     /// Annotation is updated within the reader
     /// </summary>
     public const string AnnotationUpdate = "AnnotationUpdate";
+    /// <summary>
+    /// A Session is closing
+    /// </summary>
+    public const string SessionClose = "SessionClose";
+    /// <summary>
+    /// Auth key has been rotated, created
+    /// </summary>
+    public const string AuthKeyUpdate = nameof(AuthKeyUpdate);
+    /// <summary>
+    /// An Auth key has been deleted
+    /// </summary>
+    public const string AuthKeyDeleted = nameof(AuthKeyDeleted);
 
 
 
@@ -513,21 +527,27 @@ public static class MessageFactory
     /// <param name="libraryName"></param>
     /// <param name="eventType"></param>
     /// <param name="seriesName"></param>
+    /// <param name="leftToProcess"></param>
+    /// <param name="totalToProcess"></param>
     /// <returns></returns>
-    public static SignalRMessage LibraryScanProgressEvent(string libraryName, string eventType, string seriesName = "", int? totalToProcess = null)
+    public static SignalRMessage LibraryScanProgressEvent(string libraryName, string eventType, string seriesName = "", int? leftToProcess = null, int? totalToProcess = null)
     {
+        var hasProgress = totalToProcess.HasValue && leftToProcess.HasValue;
+
         return new SignalRMessage()
         {
             Name = ScanProgress,
             Title = $"Processing {seriesName}",
             SubTitle = seriesName,
             EventType = eventType,
-            Progress = ProgressType.Indeterminate,
+            Progress = hasProgress ?  ProgressType.Determinate : ProgressType.Indeterminate,
             Body = new
             {
                 SeriesName = seriesName,
                 LibraryName = libraryName,
-                LeftToProcess = totalToProcess
+                LeftToProcess = leftToProcess,
+                TotalToProcess = totalToProcess,
+                Progress = hasProgress ? (totalToProcess - leftToProcess) / (float) totalToProcess.Value : null,
             }
         };
     }
@@ -713,6 +733,42 @@ public static class MessageFactory
             {
                 Annotation = dto
             },
+        };
+    }
+
+    public static SignalRMessage SessionCloseEvent(int sessionId)
+    {
+        return new SignalRMessage()
+        {
+            Name = SessionClose,
+            Body = new
+            {
+                SessionId = sessionId
+            }
+        };
+    }
+
+    public static SignalRMessage AuthKeyUpdatedEvent(AuthKeyDto authKey)
+    {
+        return new SignalRMessage
+        {
+            Name = AuthKeyUpdate,
+            Body = new
+            {
+                AuthKey = authKey
+            }
+        };
+    }
+
+    public static SignalRMessage AuthKeyDeletedEvent(int id)
+    {
+        return new SignalRMessage
+        {
+            Name = AuthKeyDeleted,
+            Body = new
+            {
+                Id = id
+            }
         };
     }
 }

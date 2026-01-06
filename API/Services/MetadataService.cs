@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.Comparators;
 using API.Data;
+using API.DTOs.Settings;
 using API.Entities;
 using API.Entities.Enums;
 using API.Entities.Interfaces;
@@ -34,7 +35,7 @@ public interface IMetadataService
     /// <param name="seriesId"></param>
     /// <param name="forceUpdate">Overrides any cache logic and forces execution</param>
 
-    Task GenerateCoversForSeries(int libraryId, int seriesId, bool forceUpdate = true, bool forceColorScape = true);
+    Task GenerateCoversForSeries(ServerSettingDto serverSetting, int libraryId, int seriesId, bool forceUpdate = true, bool forceColorScape = true);
     Task GenerateCoversForSeries(Series series, EncodeFormat encodeFormat, CoverImageSize coverImageSize, bool forceUpdate = false, bool forceColorScape = true);
     Task RemoveAbandonedMetadataKeys();
 }
@@ -216,11 +217,12 @@ public class MetadataService : IMetadataService
     /// <param name="series"></param>
     /// <param name="forceUpdate"></param>
     /// <param name="encodeFormat"></param>
-    private void ProcessSeriesCoverGen(Series series, bool forceUpdate, EncodeFormat encodeFormat, CoverImageSize coverImageSize, bool forceColorScape = false)
+    private async Task ProcessSeriesCoverGen(Series series, bool forceUpdate, EncodeFormat encodeFormat, CoverImageSize coverImageSize, bool forceColorScape = false)
     {
         _logger.LogDebug("[MetadataService] Processing cover image generation for series: {SeriesName}", series.OriginalName);
         try
         {
+            var totalVolumes = series.Volumes.Count;
             var volumeIndex = 0;
             var firstVolumeUpdated = false;
             foreach (var volume in series.Volumes)
@@ -245,6 +247,10 @@ public class MetadataService : IMetadataService
                 {
                     firstVolumeUpdated = true;
                 }
+
+                await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
+                    MessageFactory.CoverUpdateProgressEvent(series.LibraryId, volumeIndex / (float) totalVolumes, ProgressEventType.Started, series.Name));
+
                 volumeIndex++;
             }
 
@@ -314,7 +320,7 @@ public class MetadataService : IMetadataService
 
                 try
                 {
-                    ProcessSeriesCoverGen(series, forceUpdate, encodeFormat, coverImageSize, forceColorScape);
+                    await ProcessSeriesCoverGen(series, forceUpdate, encodeFormat, coverImageSize, forceColorScape);
                 }
                 catch (Exception ex)
                 {
@@ -356,7 +362,7 @@ public class MetadataService : IMetadataService
     /// <param name="seriesId"></param>
     /// <param name="forceUpdate">Overrides any cache logic and forces execution</param>
     /// <param name="forceColorScape">Will ensure that the colorscape is regenerated</param>
-    public async Task GenerateCoversForSeries(int libraryId, int seriesId, bool forceUpdate = true, bool forceColorScape = true)
+    public async Task GenerateCoversForSeries(ServerSettingDto serverSetting, int libraryId, int seriesId, bool forceUpdate = true, bool forceColorScape = true)
     {
         var series = await _unitOfWork.SeriesRepository.GetFullSeriesForSeriesIdAsync(seriesId);
         if (series == null)
@@ -365,10 +371,8 @@ public class MetadataService : IMetadataService
             return;
         }
 
-        // TODO: Cache this because it's called a lot during scans
-        var settings = await _unitOfWork.SettingsRepository.GetSettingsDtoAsync();
-        var encodeFormat = settings.EncodeMediaAs;
-        var coverImageSize = settings.CoverImageSize;
+        var encodeFormat = serverSetting.EncodeMediaAs;
+        var coverImageSize = serverSetting.CoverImageSize;
 
         await GenerateCoversForSeries(series, encodeFormat, coverImageSize, forceUpdate, forceColorScape);
     }
@@ -386,7 +390,7 @@ public class MetadataService : IMetadataService
         await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
             MessageFactory.CoverUpdateProgressEvent(series.LibraryId, 0F, ProgressEventType.Started, series.Name));
 
-        ProcessSeriesCoverGen(series, forceUpdate, encodeFormat, coverImageSize, forceColorScape);
+        await ProcessSeriesCoverGen(series, forceUpdate, encodeFormat, coverImageSize, forceColorScape);
 
 
         if (_unitOfWork.HasChanges())

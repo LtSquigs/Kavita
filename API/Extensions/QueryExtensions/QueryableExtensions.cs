@@ -1,20 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using API.Data.Misc;
 using API.Data.Repositories;
-using API.DTOs;
 using API.DTOs.Annotations;
 using API.DTOs.Filtering;
 using API.DTOs.KavitaPlus.Manage;
-using API.DTOs.Metadata.Browse;
 using API.Entities;
 using API.Entities.Enums;
 using API.Entities.Person;
 using API.Entities.Scrobble;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Extensions.QueryExtensions;
@@ -353,7 +350,7 @@ public static class QueryableExtensions
     /// <param name="keySelector"></param>
     /// <param name="sortOptions"></param>
     /// <returns></returns>
-    public static IQueryable<T> DoOrderBy<T, TKey>(this IQueryable<T> query, Expression<Func<T, TKey>> keySelector, SortOptions sortOptions)
+    public static IOrderedQueryable<T> DoOrderBy<T, TKey>(this IQueryable<T> query, Expression<Func<T, TKey>> keySelector, SortOptions sortOptions)
     {
         return sortOptions.IsAscending ? query.OrderBy(keySelector) : query.OrderByDescending(keySelector);
     }
@@ -373,6 +370,28 @@ public static class QueryableExtensions
             MatchStateOption.DontMatch => query.Where(s => s.DontMatch),
             _ => query
         };
+    }
+
+    /// <summary>
+    /// Filters a sequence to elements where the specified key falls within an inclusive range.
+    /// </summary>
+    /// <param name="keySelector">Expression to extract the comparable key</param>
+    /// <param name="start">Inclusive lower bound</param>
+    /// <param name="end">Inclusive upper bound</param>
+    public static IQueryable<T> Between<T>(
+        this IQueryable<T> source,
+        Expression<Func<T, DateTime>> keySelector,
+        DateTime start,
+        DateTime end)
+    {
+        var parameter = keySelector.Parameters[0];
+        var memberAccess = keySelector.Body;
+
+        var greaterOrEqual = Expression.GreaterThanOrEqual(memberAccess, Expression.Constant(start));
+        var lessOrEqual = Expression.LessThanOrEqual(memberAccess, Expression.Constant(end));
+        var combined = Expression.AndAlso(greaterOrEqual, lessOrEqual);
+
+        return source.Where(Expression.Lambda<Func<T, bool>>(combined, parameter));
     }
 
     public static IQueryable<FullAnnotationDto> OrderFullAnnotation(this IQueryable<FullAnnotationDto> query)

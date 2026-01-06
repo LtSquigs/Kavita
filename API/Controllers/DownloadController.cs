@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using API.Constants;
 using API.Data;
 using API.DTOs.Downloads;
 using API.Entities;
@@ -24,7 +25,7 @@ namespace API.Controllers;
 /// <summary>
 /// All APIs related to downloading entities from the system. Requires Download Role or Admin Role.
 /// </summary>
-[Authorize(Policy="RequireDownloadRole")]
+[Authorize(PolicyGroups.DownloadPolicy)]
 public class DownloadController : BaseApiController
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -95,13 +96,13 @@ public class DownloadController : BaseApiController
     /// </summary>
     /// <param name="volumeId"></param>
     /// <returns></returns>
-    [Authorize(Policy="RequireDownloadRole")]
+    [Authorize(PolicyGroups.DownloadPolicy)]
     [HttpGet("volume")]
     public async Task<ActionResult> DownloadVolume(int volumeId)
     {
-        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(User.GetUserId(), "permission-denied"));
+        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(UserId, "permission-denied"));
         var volume = await _unitOfWork.VolumeRepository.GetVolumeByIdAsync(volumeId);
-        if (volume == null) return BadRequest(await _localizationService.Translate(User.GetUserId(), "volume-doesnt-exist"));
+        if (volume == null) return BadRequest(await _localizationService.Translate(UserId, "volume-doesnt-exist"));
         var files = await _unitOfWork.VolumeRepository.GetFilesForVolume(volumeId);
         // A volume can be made up of extracted chapters, so we group by path
         if (files.Any(f => f.FileMetadata.HasPageRange())) {
@@ -118,7 +119,7 @@ public class DownloadController : BaseApiController
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(volume.SeriesId);
         try
         {
-            return await DownloadFiles(files, $"download_{User.GetUsername()}_v{volumeId}", $"{series!.Name} - Volume {volume.Name}.zip");
+            return await DownloadFiles(files, $"download_{Username!}_v{volumeId}", $"{series!.Name} - Volume {volume.Name}.zip");
         }
         catch (KavitaException ex)
         {
@@ -128,7 +129,7 @@ public class DownloadController : BaseApiController
 
     private async Task<bool> HasDownloadPermission()
     {
-        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUsername());
+        var user = await _unitOfWork.UserRepository.GetUserByUsernameAsync(Username!);
         if (user == null) return false;
         return await _accountService.HasDownloadPermission(user);
     }
@@ -147,15 +148,15 @@ public class DownloadController : BaseApiController
     [HttpGet("chapter")]
     public async Task<ActionResult> DownloadChapter(int chapterId)
     {
-        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(User.GetUserId(), "permission-denied"));
+        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(UserId, "permission-denied"));
         var files = await _unitOfWork.ChapterRepository.GetFilesForChapterAsync(chapterId);
         var chapter = await _unitOfWork.ChapterRepository.GetChapterAsync(chapterId);
-        if (chapter == null) return BadRequest(await _localizationService.Translate(User.GetUserId(), "chapter-doesnt-exist"));
+        if (chapter == null) return BadRequest(await _localizationService.Translate(UserId, "chapter-doesnt-exist"));
         var volume = await _unitOfWork.VolumeRepository.GetVolumeByIdAsync(chapter.VolumeId);
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(volume!.SeriesId);
         try
         {
-            return await DownloadFiles(files, $"download_{User.GetUsername()}_c{chapterId}", $"{series!.Name} - Chapter {chapter.GetNumberTitle()}.zip");
+            return await DownloadFiles(files, $"download_{Username!}_c{chapterId}", $"{series!.Name} - Chapter {chapter.GetNumberTitle()}.zip");
         }
         catch (KavitaException ex)
         {
@@ -165,7 +166,7 @@ public class DownloadController : BaseApiController
 
     private async Task<ActionResult> DownloadFiles(ICollection<MangaFile> files, string tempFolder, string downloadName)
     {
-        var username = User.GetUsername();
+        var username = Username!;
         var filename = Path.GetFileNameWithoutExtension(downloadName);
         try
         {
@@ -200,7 +201,7 @@ public class DownloadController : BaseApiController
         {
             _logger.LogError(ex, "There was an exception when trying to download files");
             await _eventHub.SendMessageAsync(MessageFactory.NotificationProgress,
-                MessageFactory.DownloadProgressEvent(User.GetUsername(),
+                MessageFactory.DownloadProgressEvent(Username!,
                     filename, "Download Complete", 1F, "ended"));
             throw;
         }
@@ -209,7 +210,7 @@ public class DownloadController : BaseApiController
     [HttpGet("series")]
     public async Task<ActionResult> DownloadSeries(int seriesId)
     {
-        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(User.GetUserId(), "permission-denied"));
+        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(UserId, "permission-denied"));
 
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(seriesId);
         if (series == null) return BadRequest("Invalid Series");
@@ -228,7 +229,7 @@ public class DownloadController : BaseApiController
 
         try
         {
-            return await DownloadFiles(files, $"download_{User.GetUsername()}_s{seriesId}", $"{series.Name}.zip");
+            return await DownloadFiles(files, $"download_{Username!}_s{seriesId}", $"{series.Name}.zip");
         }
         catch (KavitaException ex)
         {
@@ -244,12 +245,12 @@ public class DownloadController : BaseApiController
     [HttpPost("bookmarks")]
     public async Task<ActionResult> DownloadBookmarkPages(DownloadBookmarkDto downloadBookmarkDto)
     {
-        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(User.GetUserId(), "permission-denied"));
-        if (!downloadBookmarkDto.Bookmarks.Any()) return BadRequest(await _localizationService.Translate(User.GetUserId(), "bookmarks-empty"));
+        if (!await HasDownloadPermission()) return BadRequest(await _localizationService.Translate(UserId, "permission-denied"));
+        if (!downloadBookmarkDto.Bookmarks.Any()) return BadRequest(await _localizationService.Translate(UserId, "bookmarks-empty"));
 
         // We know that all bookmarks will be for one single seriesId
-        var userId = User.GetUserId()!;
-        var username = User.GetUsername()!;
+        var userId = UserId;
+        var username = Username!;
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(downloadBookmarkDto.Bookmarks.First().SeriesId);
 
         var files = await _bookmarkService.GetBookmarkFilesById(downloadBookmarkDto.Bookmarks.Select(b => b.Id));

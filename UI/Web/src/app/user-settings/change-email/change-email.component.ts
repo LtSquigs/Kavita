@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, injec
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {ToastrService} from 'ngx-toastr';
 import {shareReplay} from 'rxjs';
-import {User} from 'src/app/_models/user';
+import {User} from 'src/app/_models/user/user';
 import {AccountService} from 'src/app/_services/account.service';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ApiKeyComponent} from '../api-key/api-key.component';
@@ -36,8 +36,6 @@ export class ChangeEmailComponent implements OnInit {
 
 
   protected get email() { return this.form.get('email'); }
-
-  makeLink: (val: string) => string = (val: string) => {return this.emailLink};
 
 
   ngOnInit(): void {

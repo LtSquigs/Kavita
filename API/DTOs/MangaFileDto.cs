@@ -26,5 +26,9 @@ public sealed record MangaFileDto
     /// File extension
     /// </summary>
     public string? Extension { get; set; }
+    /// <summary>
+    /// A hash of the document using Koreader's unique hashing algorithm
+    /// </summary>
+    public string? KoreaderHash { get; set; }
 
 }

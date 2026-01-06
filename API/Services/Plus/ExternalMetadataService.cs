@@ -19,7 +19,6 @@ using API.Entities.Enums;
 using API.Entities.Interfaces;
 using API.Entities.Metadata;
 using API.Entities.MetadataMatching;
-using API.Entities.Person;
 using API.Extensions;
 using API.Helpers;
 using API.Helpers.Builders;
@@ -192,14 +191,7 @@ public class ExternalMetadataService : IExternalMetadataService
             _logger.LogDebug("Fetching Kavita+ for MAL Stacks for user {UserName}", user.MalUserName);
 
             var license = (await _unitOfWork.SettingsRepository.GetSettingAsync(ServerSettingKey.LicenseKey)).Value;
-            var result = await _kavitaPlusApiService.GetMalStacks(user.MalUserName, license);
-
-            if (result == null)
-            {
-                return ArraySegment<MalStackDto>.Empty;
-            }
-
-            return result;
+            return await _kavitaPlusApiService.GetMalStacks(user.MalUserName, license);
         }
         catch (Exception ex)
         {
@@ -406,6 +398,7 @@ public class ExternalMetadataService : IExternalMetadataService
     /// Sets a series to Don't Match and removes all previously cached
     /// </summary>
     /// <param name="seriesId"></param>
+    /// <param name="dontMatch"></param>
     public async Task UpdateSeriesDontMatch(int seriesId, bool dontMatch)
     {
         var series = await _unitOfWork.SeriesRepository.GetSeriesByIdAsync(seriesId, SeriesIncludes.ExternalMetadata);
@@ -520,9 +513,10 @@ public class ExternalMetadataService : IExternalMetadataService
             externalSeriesMetadata.AverageExternalRating = extRatings.Count != 0 ? (int) extRatings
                 .Average(r => r.AverageScore) : 0;
 
-            if (result.MalId.HasValue) externalSeriesMetadata.MalId = result.MalId.Value;
-            if (result.AniListId.HasValue) externalSeriesMetadata.AniListId = result.AniListId.Value;
-            if (result.CbrId.HasValue) externalSeriesMetadata.CbrId = result.CbrId.Value;
+            // prefer what was passed in (manual match), fall back to what K+ returned
+            externalSeriesMetadata.MalId = data.MalId ?? result.MalId ?? 0;
+            externalSeriesMetadata.AniListId = data.AniListId ?? result.AniListId ?? 0;
+            externalSeriesMetadata.CbrId = data.CbrId ?? result.CbrId ?? 0;
 
             // If there is metadata and the user has metadata download turned on
             var madeMetadataModification = false;
@@ -691,7 +685,7 @@ public class ExternalMetadataService : IExternalMetadataService
     }
 
     /// <summary>
-    /// Helper method, calls <see cref="ProcessGenreAndTagLists"/>
+    /// Helper method, calls <see cref="GenerateGenreAndTagLists"/>
     /// </summary>
     /// <param name="externalMetadata"></param>
     /// <param name="settings"></param>
@@ -1919,7 +1913,6 @@ public class ExternalMetadataService : IExternalMetadataService
     /// This is to get series information for the recommendation drawer on Kavita
     /// </summary>
     /// <remarks>This uses a different API that series detail</remarks>
-    /// <param name="license"></param>
     /// <param name="aniListId"></param>
     /// <param name="malId"></param>
     /// <param name="seriesId"></param>

@@ -3,15 +3,14 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using API.Errors;
+using Kavita.Common;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace API.Middleware;
 
 public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
 {
-
     private static readonly JsonSerializerOptions ExceptionJsonSerializeOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -22,6 +21,11 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         try
         {
             await next(context); // downstream middlewares or http call
+        }
+        catch (KavitaUnauthenticatedUserException)
+        {
+            context.Response.StatusCode = (int) HttpStatusCode.Unauthorized;
+            await context.Response.CompleteAsync();
         }
         catch (Exception ex)
         {

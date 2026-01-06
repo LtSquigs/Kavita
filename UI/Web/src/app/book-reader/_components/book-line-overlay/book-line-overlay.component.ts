@@ -5,12 +5,11 @@ import {
   DestroyRef,
   ElementRef,
   EventEmitter,
-  HostListener,
   inject,
   Input,
-  model,
   OnInit,
   Output,
+  signal,
 } from '@angular/core';
 import {fromEvent, merge, of} from "rxjs";
 import {catchError, debounceTime, tap} from "rxjs/operators";
@@ -18,11 +17,12 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/
 import {ReaderService} from "../../../_services/reader.service";
 import {ToastrService} from "ngx-toastr";
 import {translate, TranslocoDirective} from "@jsverse/transloco";
-import {KEY_CODES} from "../../../shared/_services/utility.service";
 import {EpubReaderMenuService} from "../../../_services/epub-reader-menu.service";
 import {Annotation} from "../../_models/annotations/annotation";
 import {isMobileChromium} from "../../../_helpers/browser";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {KeyBindService} from "../../../_services/key-bind.service";
+import {KeyBindTarget} from "../../../_models/preferences/preferences";
 
 enum BookLineOverlayMode {
   None = 0,
@@ -55,7 +55,7 @@ export class BookLineOverlayComponent implements OnInit {
   bookmarkForm: FormGroup = new FormGroup({
     name: new FormControl('', [Validators.required]),
   });
-  hasSelectedAnnotation = model<boolean>(false);
+  hasSelectedAnnotation = signal<boolean>(false);
 
 
   private readonly destroyRef = inject(DestroyRef);
@@ -64,18 +64,7 @@ export class BookLineOverlayComponent implements OnInit {
   private readonly toastr = inject(ToastrService);
   private readonly elementRef = inject(ElementRef);
   private readonly epubMenuService = inject(EpubReaderMenuService);
-
-
-  @HostListener('window:keydown', ['$event'])
-  handleKeyPress(event: KeyboardEvent) {
-    if (event.key === KEY_CODES.ESC_KEY) {
-      this.reset();
-      this.cdRef.markForCheck();
-      event.stopPropagation();
-      event.preventDefault();
-      return;
-    }
-  }
+  private readonly keyBindService = inject(KeyBindService);
 
 
   ngOnInit() {
@@ -90,6 +79,12 @@ export class BookLineOverlayComponent implements OnInit {
       // Fallback to mouse/touch events
       this.setupLegacyEventListeners();
     }
+
+    this.keyBindService.registerListener(
+      this.destroyRef,
+      () => this.reset(),
+      [KeyBindTarget.Escape],
+    );
   }
 
   private setupPointerEventListener(): void {

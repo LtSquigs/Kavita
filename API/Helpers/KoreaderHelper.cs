@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using API.Services;
 using API.Services.Tasks.Scanner.Parser;
 
 namespace API.Helpers;
@@ -23,7 +24,7 @@ public static class KoreaderHelper
     /// <param name="filePath">The path to the file to hash</param>
     public static string HashContents(string filePath)
     {
-        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath) || !Parser.IsEpub(filePath))
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
         {
             return null;
         }
@@ -70,15 +71,29 @@ public static class KoreaderHelper
 
     public static void UpdateProgressDto(ProgressDto progress, string koreaderPosition)
     {
+        // #_doc_fragment26
+        string docNumber;
+        if (koreaderPosition.StartsWith("#_doc_fragment"))
+        {
+            docNumber = koreaderPosition.Replace("#_doc_fragment", string.Empty);
+            progress.PageNum = int.Parse(docNumber) - 1;
+            return;
+        }
+
         var path = koreaderPosition.Split('/');
         if (path.Length < 6)
         {
             return;
         }
 
-        var docNumber = path[2].Replace("DocFragment[", string.Empty).Replace("]", string.Empty);
+        docNumber = path[2].Replace("DocFragment[", string.Empty).Replace("]", string.Empty);
         progress.PageNum = int.Parse(docNumber) - 1;
+
+        var lastPart = koreaderPosition.Split("/body/")[^1];
         var lastTag = path[5].ToUpper();
+
+        // If lastPart ends in a .Decimal, remove it as it's not a valid xpath
+        lastPart = lastPart.Split("/text()")[0];
 
         if (lastTag == "A")
         {
@@ -87,27 +102,27 @@ public static class KoreaderHelper
         else
         {
             // The format that Kavita accepts as a progress string. It tells Kavita where Koreader last left off.
-            progress.BookScrollId = $"//html[1]/BODY/APP-ROOT[1]/DIV[1]/DIV[1]/DIV[1]/APP-BOOK-READER[1]/DIV[1]/DIV[2]/DIV[1]/DIV[1]/DIV[1]/{lastTag}";
+            progress.BookScrollId = $"//body/{lastPart}";
         }
     }
 
-
+    /// <summary>
+    /// The format that Koreader accepts as a progress string. It tells Koreader where Kavita last left off.
+    /// </summary>
+    /// <remarks>
+    /// Koreader stores the format as:
+    /// /body/DocFragment[fragment_index]/body/[xpath_to_element]
+    /// fragment_index is the page number for the xhtml files
+    /// </remarks>
+    /// <param name="progressDto"></param>
+    /// <returns></returns>
     public static string GetKoreaderPosition(ProgressDto progressDto)
     {
-        string lastTag;
-        var koreaderPageNumber = progressDto.PageNum + 1;
 
-        if (string.IsNullOrEmpty(progressDto.BookScrollId))
-        {
-            lastTag = "a";
-        }
-        else
-        {
-            var tokens = progressDto.BookScrollId.Split('/');
-            lastTag = tokens[^1].ToLower();
-        }
+        var targetPath = !string.IsNullOrEmpty(progressDto.BookScrollId)
+            ? progressDto.BookScrollId.Replace("//body/", string.Empty, StringComparison.InvariantCultureIgnoreCase)
+            : "p[1]"; // Default to first paragraph if unknown
 
-        // The format that Koreader accepts as a progress string. It tells Koreader where Kavita last left off.
-        return $"/body/DocFragment[{koreaderPageNumber}]/body/div/{lastTag}";
+        return $"/body/DocFragment[{progressDto.PageNum}]/body/{targetPath}";
     }
 }

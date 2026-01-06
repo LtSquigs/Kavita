@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using API.Middleware;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,14 +13,17 @@ public class FallbackController : Controller
 {
     // ReSharper disable once S4487
     // ReSharper disable once NotAccessedField.Local
+#pragma warning disable S4487
     private readonly ITaskScheduler _taskScheduler;
+#pragma warning restore S4487
 
     public FallbackController(ITaskScheduler taskScheduler)
     {
         // This is used to load TaskScheduler on startup without having to navigate to a Controller that uses.
-        _taskScheduler = taskScheduler;
+        _taskScheduler = taskScheduler; // TODO: Validate if this is needed as a DI anymore since we have a HostedStartupService
     }
 
+    [SkipDeviceTracking]
     public IActionResult Index()
     {
         if (HttpContext.Request.Path.StartsWithSegments("/api"))
