@@ -479,13 +479,6 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
                 .HasDatabaseName("IX_Chapter_TitleName");
         });
 
-        // MangaFile indexes (admin search)
-        builder.Entity<MangaFile>(entity =>
-        {
-            entity.HasIndex(f => f.FileMetadata.Path)
-                .HasDatabaseName("IX_MangaFile_FilePath");
-        });
-
         // AppUserBookmark composite for user lookups
         builder.Entity<AppUserBookmark>(entity =>
         {
