@@ -516,35 +516,10 @@ public class SeriesRepository : ISeriesRepository
 
         if (includeChapterAndFiles)
         {
-<<<<<<< HEAD
-            var fileIds = _context.Series
-                .Where(s => seriesIds.Contains(s.Id))
-                .AsSplitQuery()
-                .SelectMany(s => s.Volumes)
-                .SelectMany(v => v.Chapters)
-                .SelectMany(c => c.Files.Select(f => f.Id));
-
-            // Need to check if an admin
-            var user = await _context.AppUser.FirstAsync(u => u.Id == userId);
-            if (await _userManager.IsInRoleAsync(user, PolicyConstants.AdminRole))
-            {
-                result.Files = await _context.MangaFile
-                    .Where(m => EF.Functions.Like(m.FileMetadata.Path, $"%{searchQuery}%") && fileIds.Contains(m.Id))
-                    .AsSplitQuery()
-                    .OrderBy(f => f.FileMetadata.Path)
-                    .Take(maxRecords)
-                    .ProjectTo<MangaFileDto>(_mapper.ConfigurationProvider)
-                    .ToListAsync();
-            }
-
-            result.Chapters = await _context.Chapter
-                .Include(c => c.Files)
-=======
             // Use EXISTS subquery pattern instead of loading IDs
             var chaptersQuery = _context.Chapter
                 .Where(c => c.Volume.Series.LibraryId > 0 && // Ensure navigation works
                             libraryIds.Contains(c.Volume.Series.LibraryId))
->>>>>>> develop
                 .Where(c => EF.Functions.Like(c.TitleName, $"%{searchQuery}%")
                             || EF.Functions.Like(c.ISBN, $"%{searchQuery}%")
                             || EF.Functions.Like(c.Range, $"%{searchQuery}%"));
@@ -563,10 +538,10 @@ public class SeriesRepository : ISeriesRepository
             if (isAdmin)
             {
                 result.Files = await _context.MangaFile
-                    .Where(f => EF.Functions.Like(f.FilePath, $"%{searchQuery}%"))
+                    .Where(f => EF.Functions.Like(f.FileMetadata.Path, $"%{searchQuery}%"))
                     .Where(f => libraryIds.Contains(f.Chapter.Volume.Series.LibraryId))
                     .Where(f => baseSeriesQuery.Any(s => s.Id == f.Chapter.Volume.SeriesId))
-                    .OrderBy(f => f.FilePath)
+                    .OrderBy(f => f.FileMetadata.Path)
                     .Take(maxRecords)
                     .ProjectTo<MangaFileDto>(_mapper.ConfigurationProvider)
                     .ToListAsync();

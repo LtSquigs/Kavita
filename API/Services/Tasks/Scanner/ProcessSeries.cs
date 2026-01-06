@@ -123,7 +123,7 @@ public class ProcessSeries(
             var firstParsedInfo = parsedInfos.FirstOrDefault(p => p.ComicInfo != null, firstInfo);
             var databasePeople = await LoadAndCreateMissingChapterPeople(parsedInfos);
 
-            var progressUpdates = await UpdateVolumes(databasePeople, settings, series, parsedInfos, forceUpdate);
+            var progressUpdates = await UpdateVolumes(databasePeople, settings, series, parsedInfos, args.ForceUpdate);
             series.Pages = series.Volumes.Sum(v => v.Pages);
 
             series.NormalizedName = series.Name.ToNormalized();
@@ -197,8 +197,8 @@ public class ProcessSeries(
                 // Wait until after commit to update read progress, as chapter IDs
                 // may not be available.
                 if (progressUpdates.Count > 0) {
-                    await _unitOfWork.AppUserProgressRepository.UsersUpdateVolumesCompleted(progressUpdates);
-                    await _unitOfWork.CommitAsync();
+                    await unitOfWork.AppUserProgressRepository.UsersUpdateVolumesCompleted(progressUpdates);
+                    await unitOfWork.CommitAsync();
                 }
 
                 // Process reading list after commit as we need to commit per list
@@ -607,8 +607,8 @@ public class ProcessSeries(
             );
 
         if (hasBeenSplit || hasBeenRejoined || rangeHasChanged) {
-            var x = await _unitOfWork.AppUserProgressRepository.GetUsersThatHaveFinishedVolume(volume);
-            _logger.LogInformation("Attempting to persist Reading Progress for {Z} users on volume {X} - {Y}", x.Count(), volume.Series.Name, volume.GetNumberTitle());
+            var x = await unitOfWork.AppUserProgressRepository.GetUsersThatHaveFinishedVolume(volume);
+            logger.LogInformation("Attempting to persist Reading Progress for {Z} users on volume {X} - {Y}", x.Count(), volume.Series.Name, volume.GetNumberTitle());
             return x;
         }
 

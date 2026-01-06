@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using API.DTOs.Progress;
+using API.Entities;
 using API.Entities.Enums;
 using API.Entities.Progress;
 using API.Extensions.QueryExtensions;

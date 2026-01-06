@@ -18,6 +18,7 @@ using Kavita.Common;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
 using SharpCompress.Common;
+using SharpCompress.Writers;
 
 namespace API.Services;
 
