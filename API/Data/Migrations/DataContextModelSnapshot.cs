@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using API.Data;
-using API.Entities.MetadataMatching;
-using API.Entities.Progress;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -256,7 +254,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("AppUserAnnotation");
+                    b.ToTable("AppUserAnnotation", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserBookmark", b =>
@@ -315,7 +313,7 @@ namespace API.Data.Migrations
                     b.HasIndex("AppUserId", "SeriesId")
                         .HasDatabaseName("IX_AppUserBookmark_AppUserId_SeriesId");
 
-                    b.ToTable("AppUserBookmark");
+                    b.ToTable("AppUserBookmark", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserCollection", b =>
@@ -387,7 +385,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("AppUserCollection");
+                    b.ToTable("AppUserCollection", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserDashboardStream", b =>
@@ -427,7 +425,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("Visible");
 
-                    b.ToTable("AppUserDashboardStream");
+                    b.ToTable("AppUserDashboardStream", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserExternalSource", b =>
@@ -452,7 +450,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("AppUserExternalSource");
+                    b.ToTable("AppUserExternalSource", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserOnDeckRemoval", b =>
@@ -473,7 +471,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("AppUserOnDeckRemoval");
+                    b.ToTable("AppUserOnDeckRemoval", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserRating", b =>
@@ -515,7 +513,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("AppUserRating");
+                    b.ToTable("AppUserRating", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserReadingProfile", b =>
@@ -641,7 +639,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("AppUserReadingProfiles");
+                    b.ToTable("AppUserReadingProfiles", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserRole", b =>
@@ -702,7 +700,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("Visible");
 
-                    b.ToTable("AppUserSideNavStream");
+                    b.ToTable("AppUserSideNavStream", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserSmartFilter", b =>
@@ -724,7 +722,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("AppUserSmartFilter");
+                    b.ToTable("AppUserSmartFilter", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserTableOfContent", b =>
@@ -783,7 +781,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("AppUserTableOfContent");
+                    b.ToTable("AppUserTableOfContent", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.AppUserWantToRead", b =>
@@ -804,7 +802,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("AppUserWantToRead");
+                    b.ToTable("AppUserWantToRead", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Chapter", b =>
@@ -1006,7 +1004,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("VolumeId");
 
-                    b.ToTable("Chapter");
+                    b.ToTable("Chapter", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.ClientDeviceHistory", b =>
@@ -1030,7 +1028,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("DeviceId");
 
-                    b.ToTable("ClientDeviceHistory");
+                    b.ToTable("ClientDeviceHistory", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.CollectionTag", b =>
@@ -1065,7 +1063,7 @@ namespace API.Data.Migrations
                     b.HasIndex("Id", "Promoted")
                         .IsUnique();
 
-                    b.ToTable("CollectionTag");
+                    b.ToTable("CollectionTag", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Device", b =>
@@ -1111,7 +1109,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("Device");
+                    b.ToTable("Device", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.EmailHistory", b =>
@@ -1162,7 +1160,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("Sent", "AppUserId", "EmailTemplate", "SendDate");
 
-                    b.ToTable("EmailHistory");
+                    b.ToTable("EmailHistory", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.EpubFont", b =>
@@ -1197,7 +1195,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EpubFont");
+                    b.ToTable("EpubFont", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.FolderPath", b =>
@@ -1219,7 +1217,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("LibraryId");
 
-                    b.ToTable("FolderPath");
+                    b.ToTable("FolderPath", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Genre", b =>
@@ -1239,7 +1237,7 @@ namespace API.Data.Migrations
                     b.HasIndex("NormalizedTitle")
                         .IsUnique();
 
-                    b.ToTable("Genre");
+                    b.ToTable("Genre", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.History.ManualMigrationHistory", b =>
@@ -1259,7 +1257,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ManualMigrationHistory");
+                    b.ToTable("ManualMigrationHistory", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Library", b =>
@@ -1330,9 +1328,6 @@ namespace API.Data.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("ParseChaptersFromVolumes")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("PrimaryColor")
                         .HasColumnType("TEXT");
 
@@ -1347,7 +1342,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Library");
+                    b.ToTable("Library", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.LibraryExcludePattern", b =>
@@ -1366,7 +1361,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("LibraryId");
 
-                    b.ToTable("LibraryExcludePattern");
+                    b.ToTable("LibraryExcludePattern", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.LibraryFileTypeGroup", b =>
@@ -1385,7 +1380,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("LibraryId");
 
-                    b.ToTable("LibraryFileTypeGroup");
+                    b.ToTable("LibraryFileTypeGroup", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.MangaFile", b =>
@@ -1412,6 +1407,9 @@ namespace API.Data.Migrations
                     b.Property<string>("FileName")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FilePath")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Format")
                         .HasColumnType("INTEGER");
 
@@ -1433,28 +1431,14 @@ namespace API.Data.Migrations
                     b.Property<int>("Pages")
                         .HasColumnType("INTEGER");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "FileMetadata", "API.Entities.MangaFile.FileMetadata#FileMetadata", b1 =>
-                        {
-                            b1.IsRequired();
-
-                            b1.Property<int>("CoverIndex")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<long>("FileSize")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<string>("PageRange")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<string>("Path")
-                                .HasColumnType("TEXT");
-                        });
-
                     b.HasKey("Id");
 
                     b.HasIndex("ChapterId");
 
-                    b.ToTable("MangaFile");
+                    b.HasIndex("FilePath")
+                        .HasDatabaseName("IX_MangaFile_FilePath");
+
+                    b.ToTable("MangaFile", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.MediaError", b =>
@@ -1489,7 +1473,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MediaError");
+                    b.ToTable("MediaError", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.ExternalRating", b =>
@@ -1523,7 +1507,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("ChapterId");
 
-                    b.ToTable("ExternalRating");
+                    b.ToTable("ExternalRating", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.ExternalRecommendation", b =>
@@ -1560,7 +1544,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("ExternalRecommendation");
+                    b.ToTable("ExternalRecommendation", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.ExternalReview", b =>
@@ -1612,7 +1596,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("ChapterId");
 
-                    b.ToTable("ExternalReview");
+                    b.ToTable("ExternalReview", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.ExternalSeriesMetadata", b =>
@@ -1647,7 +1631,7 @@ namespace API.Data.Migrations
                     b.HasIndex("SeriesId")
                         .IsUnique();
 
-                    b.ToTable("ExternalSeriesMetadata");
+                    b.ToTable("ExternalSeriesMetadata", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.GenreSeriesMetadata", b =>
@@ -1662,7 +1646,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesMetadatasId");
 
-                    b.ToTable("GenreSeriesMetadata");
+                    b.ToTable("GenreSeriesMetadata", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.SeriesBlacklist", b =>
@@ -1681,7 +1665,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("SeriesBlacklist");
+                    b.ToTable("SeriesBlacklist", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.SeriesMetadata", b =>
@@ -1802,7 +1786,7 @@ namespace API.Data.Migrations
                     b.HasIndex("SeriesId", "AgeRating")
                         .HasDatabaseName("IX_SeriesMetadata_SeriesId_AgeRating");
 
-                    b.ToTable("SeriesMetadata");
+                    b.ToTable("SeriesMetadata", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.SeriesMetadataTag", b =>
@@ -1817,7 +1801,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("TagsId");
 
-                    b.ToTable("SeriesMetadataTag");
+                    b.ToTable("SeriesMetadataTag", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Metadata.SeriesRelation", b =>
@@ -1841,7 +1825,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("TargetSeriesId");
 
-                    b.ToTable("SeriesRelation");
+                    b.ToTable("SeriesRelation", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.MetadataFieldMapping", b =>
@@ -1872,7 +1856,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("MetadataSettingsId");
 
-                    b.ToTable("MetadataFieldMapping");
+                    b.ToTable("MetadataFieldMapping", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.MetadataMatching.MetadataSettings", b =>
@@ -1953,7 +1937,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MetadataSettings");
+                    b.ToTable("MetadataSettings", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Person.ChapterPeople", b =>
@@ -1977,7 +1961,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("PersonId");
 
-                    b.ToTable("ChapterPeople");
+                    b.ToTable("ChapterPeople", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Person.Person", b =>
@@ -2021,7 +2005,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Person");
+                    b.ToTable("Person", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Person.PersonAlias", b =>
@@ -2043,7 +2027,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("PersonId");
 
-                    b.ToTable("PersonAlias");
+                    b.ToTable("PersonAlias", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Person.SeriesMetadataPeople", b =>
@@ -2069,7 +2053,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("PersonId");
 
-                    b.ToTable("SeriesMetadataPeople");
+                    b.ToTable("SeriesMetadataPeople", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Progress.AppUserProgress", b =>
@@ -2122,7 +2106,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("AppUserProgresses");
+                    b.ToTable("AppUserProgresses", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Progress.AppUserReadingHistory", b =>
@@ -2157,7 +2141,7 @@ namespace API.Data.Migrations
                     b.HasIndex("DateUtc")
                         .IsUnique();
 
-                    b.ToTable("AppUserReadingHistory");
+                    b.ToTable("AppUserReadingHistory", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Progress.AppUserReadingSession", b =>
@@ -2204,7 +2188,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("IsActive");
 
-                    b.ToTable("AppUserReadingSession");
+                    b.ToTable("AppUserReadingSession", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Progress.AppUserReadingSessionActivityData", b =>
@@ -2319,7 +2303,7 @@ namespace API.Data.Migrations
                     b.HasIndex("StartTimeUtc", "LibraryId")
                         .HasDatabaseName("IX_ActivityData_StartTimeUtc_LibraryId");
 
-                    b.ToTable("AppUserReadingSessionActivityData");
+                    b.ToTable("AppUserReadingSessionActivityData", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.ReadingList", b =>
@@ -2388,7 +2372,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("ReadingList");
+                    b.ToTable("ReadingList", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.ReadingListItem", b =>
@@ -2422,7 +2406,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("VolumeId");
 
-                    b.ToTable("ReadingListItem");
+                    b.ToTable("ReadingListItem", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Scrobble.ScrobbleError", b =>
@@ -2467,7 +2451,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("ScrobbleError");
+                    b.ToTable("ScrobbleError", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Scrobble.ScrobbleEvent", b =>
@@ -2544,7 +2528,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("ScrobbleEvent");
+                    b.ToTable("ScrobbleEvent", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Scrobble.ScrobbleHold", b =>
@@ -2577,7 +2561,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("ScrobbleHold");
+                    b.ToTable("ScrobbleHold", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Series", b =>
@@ -2687,7 +2671,7 @@ namespace API.Data.Migrations
                     b.HasIndex("NormalizedName")
                         .HasDatabaseName("IX_Series_NormalizedName");
 
-                    b.ToTable("Series");
+                    b.ToTable("Series", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.ServerSetting", b =>
@@ -2704,7 +2688,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Key");
 
-                    b.ToTable("ServerSetting");
+                    b.ToTable("ServerSetting", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.ServerStatistics", b =>
@@ -2742,7 +2726,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ServerStatistics");
+                    b.ToTable("ServerStatistics", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.SiteTheme", b =>
@@ -2798,7 +2782,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SiteTheme");
+                    b.ToTable("SiteTheme", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Tag", b =>
@@ -2818,7 +2802,7 @@ namespace API.Data.Migrations
                     b.HasIndex("NormalizedTitle")
                         .IsUnique();
 
-                    b.ToTable("Tag");
+                    b.ToTable("Tag", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.User.AppUserAuthKey", b =>
@@ -2859,7 +2843,7 @@ namespace API.Data.Migrations
                     b.HasIndex("Key")
                         .IsUnique();
 
-                    b.ToTable("AppUserAuthKey");
+                    b.ToTable("AppUserAuthKey", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.User.AppUserChapterRating", b =>
@@ -2906,7 +2890,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("AppUserChapterRating");
+                    b.ToTable("AppUserChapterRating", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.User.AppUserPreferences", b =>
@@ -3077,7 +3061,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("ThemeId");
 
-                    b.ToTable("AppUserPreferences");
+                    b.ToTable("AppUserPreferences", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.User.ClientDevice", b =>
@@ -3119,7 +3103,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("ClientDevice");
+                    b.ToTable("ClientDevice", (string)null);
                 });
 
             modelBuilder.Entity("API.Entities.Volume", b =>
@@ -3189,7 +3173,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("Volume");
+                    b.ToTable("Volume", (string)null);
                 });
 
             modelBuilder.Entity("AppUserCollectionSeries", b =>
@@ -3204,7 +3188,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("ItemsId");
 
-                    b.ToTable("AppUserCollectionSeries");
+                    b.ToTable("AppUserCollectionSeries", (string)null);
                 });
 
             modelBuilder.Entity("AppUserLibrary", b =>
@@ -3219,7 +3203,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("LibrariesId");
 
-                    b.ToTable("AppUserLibrary");
+                    b.ToTable("AppUserLibrary", (string)null);
                 });
 
             modelBuilder.Entity("ChapterGenre", b =>
@@ -3234,7 +3218,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("GenresId");
 
-                    b.ToTable("ChapterGenre");
+                    b.ToTable("ChapterGenre", (string)null);
                 });
 
             modelBuilder.Entity("ChapterTag", b =>
@@ -3249,7 +3233,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("TagsId");
 
-                    b.ToTable("ChapterTag");
+                    b.ToTable("ChapterTag", (string)null);
                 });
 
             modelBuilder.Entity("CollectionTagSeriesMetadata", b =>
@@ -3264,7 +3248,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("SeriesMetadatasId");
 
-                    b.ToTable("CollectionTagSeriesMetadata");
+                    b.ToTable("CollectionTagSeriesMetadata", (string)null);
                 });
 
             modelBuilder.Entity("ExternalRatingExternalSeriesMetadata", b =>
@@ -3279,7 +3263,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("ExternalSeriesMetadatasId");
 
-                    b.ToTable("ExternalRatingExternalSeriesMetadata");
+                    b.ToTable("ExternalRatingExternalSeriesMetadata", (string)null);
                 });
 
             modelBuilder.Entity("ExternalRecommendationExternalSeriesMetadata", b =>
@@ -3294,7 +3278,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("ExternalSeriesMetadatasId");
 
-                    b.ToTable("ExternalRecommendationExternalSeriesMetadata");
+                    b.ToTable("ExternalRecommendationExternalSeriesMetadata", (string)null);
                 });
 
             modelBuilder.Entity("ExternalReviewExternalSeriesMetadata", b =>
@@ -3309,7 +3293,7 @@ namespace API.Data.Migrations
 
                     b.HasIndex("ExternalSeriesMetadatasId");
 
-                    b.ToTable("ExternalReviewExternalSeriesMetadata");
+                    b.ToTable("ExternalReviewExternalSeriesMetadata", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -3326,7 +3310,7 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DataProtectionKeys");
+                    b.ToTable("DataProtectionKeys", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
