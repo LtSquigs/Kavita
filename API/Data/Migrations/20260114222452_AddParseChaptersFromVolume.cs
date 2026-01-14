@@ -45,11 +45,20 @@ namespace API.Data.Migrations
                 type: "INTEGER",
                 nullable: false,
                 defaultValue: false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MangaFile_FileMetadata_Path",
+                table: "MangaFile",
+                column: "FileMetadata_Path");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropIndex(
+                name: "IX_MangaFile_FileMetadata_Path",
+                table: "MangaFile");
+
             migrationBuilder.DropColumn(
                 name: "FileMetadata_CoverIndex",
                 table: "MangaFile");
