@@ -1,10 +1,10 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit} from '@angular/core';
 import {NavigationEnd, Router} from '@angular/router';
 import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
 import {distinctUntilChanged, filter, map, take, tap} from 'rxjs/operators';
 import {ImageService} from 'src/app/_services/image.service';
 import {EVENTS, MessageHubService} from 'src/app/_services/message-hub.service';
-import {Breakpoint, UtilityService} from '../../../shared/_services/utility.service';
+import {UtilityService} from '../../../shared/_services/utility.service';
 import {Library, LibraryType} from '../../../_models/library/library';
 import {AccountService} from '../../../_services/account.service';
 import {Action, ActionFactoryService, ActionItem} from '../../../_services/action-factory.service';
@@ -28,6 +28,7 @@ import {ToastrService} from "ngx-toastr";
 import {ReadingProfileService} from "../../../_services/reading-profile.service";
 import {KeyBindService} from "../../../_services/key-bind.service";
 import {KeyBindTarget} from "../../../_models/preferences/preferences";
+import {BreakpointService} from "../../../_services/breakpoint.service";
 
 @Component({
   selector: 'app-side-nav',
@@ -43,7 +44,6 @@ export class SideNavComponent implements OnInit {
   protected readonly ItemLimit = 13;
   protected readonly SideNavStreamType = SideNavStreamType;
   protected readonly SettingsTabId = SettingsTabId;
-  protected readonly Breakpoint = Breakpoint;
 
   private readonly router = inject(Router);
   protected readonly utilityService = inject(UtilityService);
@@ -60,6 +60,7 @@ export class SideNavComponent implements OnInit {
   private readonly readingProfilesService = inject(ReadingProfileService);
   private readonly translocoService = inject(TranslocoService);
   private readonly keyBindService = inject(KeyBindService);
+  protected readonly breakpointService = inject(BreakpointService);
 
 
   cachedData: SideNavStream[] | null = null;
@@ -123,31 +124,28 @@ export class SideNavComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef),
     )
   ).pipe(
-      startWith(null),
-      filter(data => data !== null),
-      takeUntilDestroyed(this.destroyRef),
+    startWith(null),
+    filter(data => data !== null),
+    takeUntilDestroyed(this.destroyRef),
   );
 
   collapseSideNavOnMobileNav$ = this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd),
-      takeUntilDestroyed(this.destroyRef),
-      map(evt => evt as NavigationEnd),
-      filter(() => this.utilityService.getActiveBreakpoint() < Breakpoint.Tablet),
-      switchMap(() => this.navService.sideNavCollapsed$),
-      take(1),
-      filter(collapsed => !collapsed)
+    filter(event => event instanceof NavigationEnd),
+    takeUntilDestroyed(this.destroyRef),
+    map(evt => evt as NavigationEnd),
+    filter(() => this.breakpointService.isMobile() && this.navService.sideNavCollapsedSignal()),
+    filter(collapsed => !collapsed)
   );
 
 
   constructor() {
     // Ensure that on mobile, we are collapsed by default
-    if (this.utilityService.getActiveBreakpoint() < Breakpoint.Tablet) {
+    if (this.breakpointService.isMobile()) {
       this.navService.collapseSideNav(true);
     }
 
     this.collapseSideNavOnMobileNav$.subscribe(() => {
-        this.navService.collapseSideNav(false);
-        this.cdRef.markForCheck();
+      this.navService.collapseSideNav(false);
     });
 
     this.keyBindService.registerListener(

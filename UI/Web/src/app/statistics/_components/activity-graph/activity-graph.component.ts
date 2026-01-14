@@ -5,11 +5,10 @@ import {DatePipe, DecimalPipe} from "@angular/common";
 import {NgbTooltip} from "@ng-bootstrap/ng-bootstrap";
 import {MonthLabelPipe} from "../../../_pipes/month-label.pipe";
 import {DayLabelPipe} from "../../../_pipes/day-label.pipe";
-import {UtcToLocalDatePipe} from "../../../_pipes/utc-to-locale-date.pipe";
-import {OrdinalDatePipe} from "../../../_pipes/ordinal-date.pipe";
 import {DurationPipe} from "../../../_pipes/duration.pipe";
 import {LoadingComponent} from "../../../shared/loading/loading.component";
 import {StatsFilter} from "../../_models/stats-filter";
+import {CompactNumberPipe} from "../../../_pipes/compact-number.pipe";
 
 
 export interface ActivityGraphData {
@@ -41,11 +40,10 @@ interface WeekRow {
     DecimalPipe,
     NgbTooltip,
     DayLabelPipe,
-    UtcToLocalDatePipe,
-    OrdinalDatePipe,
     DatePipe,
     DurationPipe,
-    LoadingComponent
+    LoadingComponent,
+    CompactNumberPipe
   ],
   templateUrl: './activity-graph.component.html',
   styleUrl: './activity-graph.component.scss',
@@ -73,6 +71,12 @@ export class ActivityGraphComponent {
     return {};
   });
 
+  protected aggregatedCount = computed(() => Object.values(this.data())
+    .filter(entry => new Date(entry.date).getFullYear() == this.year())
+    .reduce((prev, cur) =>
+      ({totalWords: prev.totalWords + cur.totalWords, totalPages: prev.totalPages + cur.totalPages}),
+      {totalWords: 0, totalPages: 0}));
+
   // Computed values for the grid
   weeks = computed(() => this.generateWeeks());
   months = computed(() => this.generateMonthLabels());
@@ -82,7 +86,6 @@ export class ActivityGraphComponent {
     const year = this.year();
     if (!filter) return year;
 
-    if (filter.timeFilter.startDate == filter.timeFilter.endDate) return translate('activity-graph.all-time');
     return year;
   })
 

@@ -542,7 +542,8 @@ public class ReaderController : BaseApiController
             PageNum = 0,
             ChapterId = chapterId,
             VolumeId = 0,
-            SeriesId = 0
+            SeriesId = 0,
+            LibraryId = 0
         });
         return Ok(progress);
     }
@@ -813,7 +814,7 @@ public class ReaderController : BaseApiController
     /// <param name="volumeId"></param>
     /// <param name="currentChapterId"></param>
     /// <returns>chapter id for next manga</returns>
-    [ResponseCache(CacheProfileName = "Hour", VaryByQueryKeys = ["seriesId", "volumeId", "currentChapterId"])]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Hour, VaryByQueryKeys = ["seriesId", "volumeId", "currentChapterId"])]
     [HttpGet("next-chapter")]
     public async Task<ActionResult<int>> GetNextChapter(int seriesId, int volumeId, int currentChapterId)
     {
@@ -831,7 +832,7 @@ public class ReaderController : BaseApiController
     /// <param name="volumeId"></param>
     /// <param name="currentChapterId"></param>
     /// <returns>chapter id for next manga</returns>
-    [ResponseCache(CacheProfileName = "Hour", VaryByQueryKeys = ["seriesId", "volumeId", "currentChapterId"])]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Hour, VaryByQueryKeys = ["seriesId", "volumeId", "currentChapterId"])]
     [HttpGet("prev-chapter")]
     public async Task<ActionResult<int>> GetPreviousChapter(int seriesId, int volumeId, int currentChapterId)
     {
@@ -886,9 +887,6 @@ public class ReaderController : BaseApiController
         var series = await _unitOfWork.SeriesRepository.GetSeriesDtoByIdAsync(seriesId, userId);
         var chapter = await _unitOfWork.ChapterRepository.GetChapterDtoAsync(chapterId, userId);
         if (series == null || chapter == null) return BadRequest(await _localizationService.Translate(UserId, "generic-error"));
-
-        // Patch in the reading progress
-        await _unitOfWork.ChapterRepository.AddChapterModifiers(UserId, chapter);
 
         if (series.Format == MangaFormat.Epub)
         {

@@ -2,12 +2,12 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.8.21",
+    "description": "Kavita provides a set of APIs that are authenticated by JWT. JWT token can be copied from local storage. Assume all fields of a payload are required. Built against v0.8.9.0",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
     },
-    "version": "0.8.8.21"
+    "version": "0.8.9.0"
   },
   "servers": [
     {
@@ -3195,7 +3195,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/stats/server/top/years": {
@@ -3233,7 +3234,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/stats/reading-count-by-day": {
@@ -3294,7 +3296,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/server/count/year": {
@@ -3332,7 +3335,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/stats/server/top/users": {
@@ -3383,7 +3387,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/reader/all-chapter-progress": {
@@ -3433,7 +3438,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/recommended/quick-reads": {
@@ -3500,7 +3506,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/recommended/quick-catchup-reads": {
@@ -3567,7 +3574,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/recommended/highly-rated": {
@@ -3634,7 +3642,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/recommended/more-in": {
@@ -3710,7 +3719,8 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
       }
     },
     "/api/recommended/rediscover": {
@@ -3777,7 +3787,47 @@
               }
             }
           }
-        }
+        },
+        "deprecated": true
+      }
+    },
+    "/api/users/myself": {
+      "get": {
+        "tags": [
+          "Deprecated"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
       }
     },
     "/api/Device/create": {
@@ -6355,7 +6405,7 @@
           {
             "name": "forceCheck",
             "in": "query",
-            "description": "Force checking the API and skip the 8 hour cache",
+            "description": "Force checking the API and skip the 8-hour cache",
             "schema": {
               "type": "boolean",
               "default": false
@@ -6537,6 +6587,25 @@
           "Manage"
         ],
         "summary": "Returns a list of all Series that is Kavita+ applicable to metadata match and the status of it",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "If set to 0, will set as MaxInt",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -14545,7 +14614,6 @@
           "Series"
         ],
         "summary": "Get the age rating for the API.Entities.Enums.AgeRating enum value",
-        "description": "This is cached for an hour",
         "parameters": [
           {
             "name": "ageRating",
@@ -16499,6 +16567,16 @@
             }
           },
           {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
             "name": "EndDate",
             "in": "query",
             "schema": {
@@ -16628,6 +16706,16 @@
             }
           },
           {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
             "name": "EndDate",
             "in": "query",
             "schema": {
@@ -16748,11 +16836,10 @@
           {
             "name": "userId",
             "in": "query",
-            "description": "If userId is 0 and user is not an admin, API will default to userId",
+            "description": "",
             "schema": {
               "type": "integer",
-              "format": "int32",
-              "default": 0
+              "format": "int32"
             }
           }
         ],
@@ -16799,11 +16886,10 @@
           {
             "name": "userId",
             "in": "query",
-            "description": "If userId is 0 and user is not an admin, API will default to userId",
+            "description": "",
             "schema": {
               "type": "integer",
-              "format": "int32",
-              "default": 0
+              "format": "int32"
             }
           }
         ],
@@ -16913,7 +16999,7 @@
         "tags": [
           "Stats"
         ],
-        "summary": "Desktop vs Mobile spread over last month",
+        "summary": "Desktop vs Mobile spread over this month",
         "responses": {
           "200": {
             "description": "OK",
@@ -16951,6 +17037,16 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
           },
           {
             "name": "EndDate",
@@ -17035,6 +17131,16 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
           },
           {
             "name": "EndDate",
@@ -17122,6 +17228,16 @@
             }
           },
           {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
             "name": "EndDate",
             "in": "query",
             "schema": {
@@ -17188,6 +17304,16 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
           },
           {
             "name": "EndDate",
@@ -17257,6 +17383,16 @@
             }
           },
           {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
             "name": "EndDate",
             "in": "query",
             "schema": {
@@ -17323,6 +17459,16 @@
             }
           },
           {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
             "name": "EndDate",
             "in": "query",
             "schema": {
@@ -17387,6 +17533,16 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
           },
           {
             "name": "EndDate",
@@ -17456,6 +17612,16 @@
             }
           },
           {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
             "name": "EndDate",
             "in": "query",
             "schema": {
@@ -17521,6 +17687,16 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
           },
           {
             "name": "EndDate",
@@ -17642,6 +17818,16 @@
             }
           },
           {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
             "name": "EndDate",
             "in": "query",
             "schema": {
@@ -17725,6 +17911,101 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserReadStatistics"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stats/reading-history": {
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Return a user's reading session history",
+        "parameters": [
+          {
+            "name": "StartDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "TimeZoneId",
+            "in": "query",
+            "description": "Timezone of the user, will zone to this TimeZone",
+            "schema": {
+              "type": "string",
+              "example": "America/Los_Angeles"
+            },
+            "example": "America/Los_Angeles"
+          },
+          {
+            "name": "EndDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Libraries",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "If set to 0, will set as MaxInt",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReadingHistoryItemDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReadingHistoryItemDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReadingHistoryItemDto"
+                  }
                 }
               }
             }
@@ -19152,44 +19433,6 @@
         }
       }
     },
-    "/api/Users/myself": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MemberDto"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MemberDto"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MemberDto"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Users/profile-info": {
       "get": {
         "tags": [
@@ -19230,15 +19473,58 @@
         }
       }
     },
+    "/api/Users/has-profile-shared": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Does the requested user have their profile sharing on",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Users/has-reading-progress": {
       "get": {
         "tags": [
           "Users"
         ],
+        "summary": "Is there any reading progress on this library",
         "parameters": [
           {
             "name": "libraryId",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -19274,10 +19560,12 @@
         "tags": [
           "Users"
         ],
+        "summary": "Does the user have access to this library",
         "parameters": [
           {
             "name": "libraryId",
             "in": "query",
+            "description": "",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -20285,7 +20573,7 @@
             "format": "date-time",
             "nullable": true
           },
-          "lastAccessedAt": {
+          "lastAccessedAtUtc": {
             "type": "string",
             "format": "date-time",
             "nullable": true
@@ -25218,6 +25506,136 @@
             "format": "int32"
           },
           "totalChaptersFullyRead": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReadingHistoryChapterItemDto": {
+        "type": "object",
+        "properties": {
+          "chapterId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "startTimeUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTimeUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pagesRead": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wordsRead": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "endPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReadingHistoryItemDto": {
+        "type": "object",
+        "properties": {
+          "sessionDataIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "sessionId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startTimeUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTimeUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "seriesId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seriesName": {
+            "type": "string",
+            "nullable": true
+          },
+          "seriesFormat": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer",
+            "description": "Represents the format of the file",
+            "format": "int32"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReadingHistoryChapterItemDto"
+            },
+            "nullable": true
+          },
+          "libraryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "libraryName": {
+            "type": "string",
+            "nullable": true
+          },
+          "pagesRead": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wordsRead": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
             "type": "integer",
             "format": "int32"
           }

@@ -27,7 +27,7 @@ public class DeviceTrackingMiddleware(RequestDelegate next, ILogger<DeviceTracki
         var endpoint = context.GetEndpoint();
         var skipTracking = endpoint?.Metadata.GetMetadata<SkipDeviceTrackingAttribute>() != null;
 
-        if (skipTracking)
+        if (skipTracking || context.Request.Path.Equals("/"))
         {
             await next(context);
             return;
@@ -50,6 +50,10 @@ public class DeviceTrackingMiddleware(RequestDelegate next, ILogger<DeviceTracki
                 ClientInfoAccessor.SetDeviceId(deviceId);
                 logger.LogTrace("Device {DeviceId} tracked for user {UserId}", deviceId, userId);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            /* Ignore */
         }
         catch (Exception ex)
         {

@@ -7,9 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.Serialization;
-using API.Archive;
 using API.Data.Metadata;
 using API.Entities;
+using API.DTOs.Archive;
 using API.Entities.Enums;
 using API.Extensions;
 using API.Services.Tasks;
@@ -346,6 +346,7 @@ public class ArchiveService : IArchiveService
                     } else {
                         var entryNames = entries.Where(archiveEntry => !archiveEntry.IsDirectory).Select(e => e.Key).ToList();
                         var entryName = FindCoverImageFilename(archivePath, entryNames);
+                        if (entryName == null) return string.Empty;
                         entry = entries.Single(e => e.Key == entryName);
                     }
 

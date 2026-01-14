@@ -1909,7 +1909,8 @@
         "actions-header": "Actions",
         "pending-tooltip": "This user has not validated their email",
         "identity-provider-oidc-tooltip": "OIDC",
-        "identity-provider-native-tooltip": "Native"
+        "identity-provider-native-tooltip": "Native",
+        "profile-link-alt": "Profile"
     },
 
     "role-localized-pipe": {
@@ -2142,7 +2143,8 @@
         "active-events-title": "Active Events:",
         "no-data": "Not much going on here",
         "left-to-process": "Left to Process: {{leftToProcess}} / {{totalToProcess}}",
-        "download-in-queue": "{{num}} downloads in Queue"
+        "download-in-queue": "{{num}} downloads in Queue",
+        "reading-now": "{{num}} reading now"
     },
 
     "shortcuts-modal": {
@@ -2407,7 +2409,8 @@
         "reading-profile-promoted": "Reading profile promoted",
         "emulate-comic-book-label": "{{manage-reading-profiles.emulate-comic-book-label}}",
         "series-progress": "Series Progress: {{percentage}}",
-        "page-offset-label": "Page Offset"
+        "page-offset-label": "Page Offset",
+        "offset-only-double": "Page Offset can only be used with Double Layout"
     },
 
     "metadata-filter": {
@@ -2685,7 +2688,8 @@
         "not-classified": "Not Classified",
         "total-file-size-title": "Total File Size:",
         "download-file-for-extension-header": "Download Report",
-        "download-file-for-extension-alt": "Download files Report for {{extension}}"
+        "download-file-for-extension-alt": "Download files Report for {{extension}}",
+        "no-data": "{{common.no-data}}"
     },
 
     "reading-activity": {
@@ -2715,8 +2719,9 @@
         "title": "Publication Status",
         "visualisation-label": "Visualisation",
         "data-table-label": "Data Table",
-        "year-header": "Year",
-        "count-header": "Count"
+        "status-header": "{{manage-matched-metadata.status-header}}",
+        "count-header": "Count",
+        "no-data": "{{common.no-data}}"
     },
 
     "series-preview-drawer": {
@@ -2802,6 +2807,7 @@
         "overview-tab": "{{tabs.overview-tab}}",
         "stats-tab": "{{tabs.stats-tab}}",
         "reviews-tab": "{{tabs.reviews-tab}}",
+        "activity-tab": "{{tabs.activity-tab}}",
         "no-reviews": "No Reviews yet",
         "total-reads-badge": "{{reads}} Reads",
         "k+-badge": "K+ Subscriber"
@@ -2833,6 +2839,29 @@
     "profile-image": {
         "edit-image-alt": "Edit Image",
         "reset-image-alt": "Reset Image"
+    },
+
+    "profile-activity": {
+        "time-filter-title": "{{username}}'s activity through",
+        "pages-count": "{{series-detail.pages-count}}",
+        "words-count": "{{series-detail.words-count}}",
+        "no-data": "{{common.no-data}}",
+        "duration": "Duration",
+        "pages-read": "{{reading-pace.pages-read}}",
+        "words-read": "{{reading-pace.words-read}}",
+        "time": "Time",
+        "info-alt": "More Info",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "pagination-label": "Activity pagination",
+        "page-info": "Page {{current}} of {{total}} ({{items}} total records)"
+    },
+
+    "user-stats-info-cards": {
+        "pages-read-by-year-title": "Pages read by year",
+        "pages-count": "{{num}} pages",
+        "words-read-by-year-title": "Words read by year",
+        "words-count": "{{num}} words"
     },
 
     "preferred-format": {
@@ -2905,14 +2934,15 @@
         "reading-time": "Reading Time",
         "pages": "Pages",
         "words": "Words",
-        "chapters": "Chapters",
+        "chapters": "Completed Chapters",
         "no-activity-alt": "No Activity",
         "no-activity-tooltip": "No reading activity on {{date}}.",
         "all-time": "{{time-periods.all-time}}",
         "low-activity-alt": "Low Activity",
         "moderate-activity-alt": "Moderate Activity",
         "good-activity-alt": "Good Activity",
-        "high-activity-alt": "High Activity"
+        "high-activity-alt": "High Activity",
+        "aggregated-count": "You read {{totalPages}} pages and {{totalWords}} words in {{year}}"
     },
 
     "reading-pace": {
@@ -2941,7 +2971,8 @@
         "during-entire-life-server": "since the beginning",
         "during-year": "during {{year}}",
         "during-from-to": "from {{startYear}} to {{endYear}}",
-        "during-select": "Select a time range"
+        "during-select": "Select a time range",
+        "close": "{{common.close}}"
     },
 
     "client-device-type-pipe": {
@@ -2994,17 +3025,6 @@
         "saturday": "Saturday",
         "saturday-short": "Sat"
     },
-
-    "ordinal-date-pipe": {
-        "ordinalFormat": "{{month}} {{day}}",
-        "ordinal": {
-            "st": "st",
-            "nd": "nd",
-            "rd": "rd",
-            "th": "th"
-        }
-    },
-
 
     "errors": {
         "series-doesnt-exist": "This series no longer exists",
@@ -3369,7 +3389,8 @@
         "confirm-delete-font": "Removing this font will delete it from the disk. You can grab it from temp directory before removal.",
         "confirm-force-delete-font": "This font is currently in use. Do you want to force delete it? This will force users back to the Default font.",
         "font-in-use": "Cannot delete as the font is in use by one or more users.",
-        "k+-resend-welcome-email-success": "An email was sent to your Kavita+ email"
+        "k+-resend-welcome-email-success": "An email was sent to your Kavita+ email",
+        "profile-unauthorized": "This user is not sharing their profile"
     },
 
     "read-time-pipe": {
@@ -3602,7 +3623,8 @@
 
         "reading-profile-series-settings-title": "Series",
         "reading-profile-library-settings-title": "Library",
-        "delete": "{{common.delete}}"
+        "delete": "{{common.delete}}",
+        "breakpoint-pipe-never": "{{breakpoint-pipe.never}}"
     },
 
     "list-select-modal": {
@@ -3657,7 +3679,8 @@
         "smart-filters-tab": "Smart Filters",
         "annotations-tab": "Annotations",
         "overview-tab": "Overview",
-        "management-tab": "Management"
+        "management-tab": "Management",
+        "activity-tab": "Activity"
     },
 
     "common": {

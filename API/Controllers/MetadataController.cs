@@ -31,7 +31,7 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
     /// <param name="context">Context from which this API was invoked</param>
     /// <returns></returns>
     [HttpGet("genres")]
-    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Instant, VaryByQueryKeys = ["libraryIds", "context"])]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.FiveMinute, VaryByQueryKeys = ["libraryIds", "context"])]
     public async Task<ActionResult<IList<GenreTagDto>>> GetAllGenres(string? libraryIds, QueryContext context = QueryContext.None)
     {
         var ids = libraryIds?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
@@ -46,7 +46,6 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
     /// </summary>
     /// <returns></returns>
     [HttpPost("genres-with-counts")]
-    [ResponseCache(CacheProfileName = ResponseCacheProfiles.FiveMinute)]
     public async Task<ActionResult<PagedList<BrowseGenreDto>>> GetBrowseGenres(UserParams? userParams = null)
     {
         userParams ??= UserParams.Default;
@@ -63,7 +62,7 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
     /// <param name="role">role</param>
     /// <returns></returns>
     [HttpGet("people-by-role")]
-    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Instant, VaryByQueryKeys = ["role"])]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Minute, VaryByQueryKeys = ["role"])]
     public async Task<ActionResult<IList<PersonDto>>> GetAllPeople(PersonRole? role)
     {
         return role.HasValue ?
@@ -77,7 +76,7 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
     /// <param name="libraryIds">String separated libraryIds or null for all people</param>
     /// <returns></returns>
     [HttpGet("people")]
-    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Instant, VaryByQueryKeys = ["libraryIds"])]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Minute, VaryByQueryKeys = ["libraryIds"])]
     public async Task<ActionResult<IList<PersonDto>>> GetAllPeople(string? libraryIds)
     {
         var ids = libraryIds?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
@@ -95,7 +94,7 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
     /// <param name="libraryIds">String separated libraryIds or null for all tags</param>
     /// <returns></returns>
     [HttpGet("tags")]
-    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Instant, VaryByQueryKeys = ["libraryIds"])]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Minute, VaryByQueryKeys = ["libraryIds"])]
     public async Task<ActionResult<IList<TagDto>>> GetAllTags(string? libraryIds)
     {
         var ids = libraryIds?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
@@ -111,7 +110,6 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
     /// </summary>
     /// <returns></returns>
     [HttpPost("tags-with-counts")]
-    [ResponseCache(CacheProfileName = ResponseCacheProfiles.FiveMinute)]
     public async Task<ActionResult<PagedList<BrowseTagDto>>> GetBrowseTags(UserParams? userParams = null)
     {
         userParams ??= UserParams.Default;
@@ -187,7 +185,7 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
     /// </summary>
     /// <returns></returns>
     [HttpGet("all-languages")]
-    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Hour)]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Month)]
     public IEnumerable<LanguageDto> GetAllValidLanguages()
     {
         return CultureInfo.GetCultures(CultureTypes.AllCultures).Select(c =>
@@ -214,19 +212,6 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
             .Select(c => c.DisplayName)
             .FirstOrDefault();
     }
-
-    /// <summary>
-    /// If this Series is on Kavita+ Blacklist, removes it. If already cached, invalidates it.
-    /// This then attempts to refresh data from Kavita+ for this series.
-    /// </summary>
-    /// <param name="seriesId"></param>
-    /// <returns></returns>
-    // [HttpPost("force-refresh")]
-    // public async Task<ActionResult> ForceRefresh(int seriesId)
-    // {
-    //     await metadataService.ForceKavitaPlusRefresh(seriesId);
-    //     return Ok();
-    // }
 
     /// <summary>
     /// Fetches the details needed from Kavita+ for Series Detail page
@@ -263,16 +248,15 @@ public class MetadataController(IUnitOfWork unitOfWork, IExternalMetadataService
         if (!isAdmin && ret?.Recommendations != null && user != null)
         {
             // Re-obtain owned series and take into account age restriction
+            var seriesIds = ret.Recommendations.OwnedSeries.Select(s => s.Id);
             ret.Recommendations.OwnedSeries =
-                await unitOfWork.SeriesRepository.GetSeriesDtoByIdsAsync(
-                    ret.Recommendations.OwnedSeries.Select(s => s.Id), user);
+                await unitOfWork.SeriesRepository.GetSeriesDtoByIdsAsync(seriesIds, user);
             ret.Recommendations.ExternalSeries = [];
         }
 
         if (ret?.Recommendations != null && user != null)
         {
             ret.Recommendations.OwnedSeries ??= [];
-            await unitOfWork.SeriesRepository.AddSeriesModifiers(user.Id, ret.Recommendations.OwnedSeries);
         }
     }
 }

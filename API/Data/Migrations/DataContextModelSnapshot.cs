@@ -2123,13 +2123,10 @@ namespace API.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("[]");
 
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Data")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
-                        .HasDefaultValue("{\"TotalMinutesRead\":0,\"TotalPagesRead\":0,\"TotalWordsRead\":0,\"LongestSessionMinutes\":0,\"SeriesIds\":null,\"ChapterIds\":null}");
+                        .HasDefaultValue("{\"TotalMinutesRead\":0,\"TotalPagesRead\":0,\"TotalWordsRead\":0,\"LongestSessionMinutes\":0,\"Activities\":[],\"SeriesIds\":null,\"ChapterIds\":null}");
 
                     b.Property<DateTime>("DateUtc")
                         .HasColumnType("TEXT");
@@ -2184,11 +2181,15 @@ namespace API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppUserId");
-
                     b.HasIndex("IsActive");
 
-                    b.ToTable("AppUserReadingSession", (string)null);
+                    b.HasIndex("AppUserId", "IsActive")
+                        .HasDatabaseName("IX_AppUserReadingSession_AppUserId_IsActive");
+
+                    b.HasIndex("IsActive", "LastModifiedUtc")
+                        .HasDatabaseName("IX_AppUserReadingSession_IsActive_LastModifiedUtc");
+
+                    b.ToTable("AppUserReadingSession");
                 });
 
             modelBuilder.Entity("API.Entities.Progress.AppUserReadingSessionActivityData", b =>
@@ -2823,7 +2824,7 @@ namespace API.Data.Migrations
                     b.Property<string>("Key")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("LastAccessedAt")
+                    b.Property<DateTime?>("LastAccessedAtUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")

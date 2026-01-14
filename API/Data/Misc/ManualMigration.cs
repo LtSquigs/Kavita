@@ -14,8 +14,12 @@ public abstract class ManualMigration
     /// </summary>
     protected abstract Task ExecuteAsync(DataContext context, ILogger<Program> logger);
 
+
     public async Task RunAsync(DataContext context, ILogger<Program> logger)
     {
+        // Ensure we clear the ChangeTracker between migration runs, so we are starting fresh
+        context.ChangeTracker.Clear();
+
         // Check if already run
         if (await context.ManualMigrationHistory.AnyAsync(m => m.Name == MigrationName))
         {

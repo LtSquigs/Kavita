@@ -10,7 +10,6 @@ import {ServerStatistics} from '../statistics/_models/server-statistics';
 import {StatCount, StatCountWithFormat} from '../statistics/_models/stat-count';
 import {PublicationStatus} from '../_models/metadata/publication-status';
 import {MangaFormat} from '../_models/manga-format';
-import {TranslocoService} from "@jsverse/transloco";
 import {throttleTime} from "rxjs/operators";
 import {DEBOUNCE_TIME} from "../shared/_services/download.service";
 import {download} from "../shared/_models/download";
@@ -33,6 +32,9 @@ import {Series} from "../_models/series";
 import {Tag} from "../_models/tag";
 import {Person, PersonRole} from "../_models/metadata/person";
 import {ReadingList} from "../_models/reading-list";
+import {ReadingHistoryItem} from "../_models/stats/reading-history-item";
+import {PaginatedResult} from "../_models/pagination";
+import {UtilityService} from "../shared/_services/utility.service";
 
 export enum DayOfWeek
 {
@@ -54,7 +56,7 @@ export class StatisticsService {
 
 
   baseUrl = environment.apiUrl;
-  translocoService = inject(TranslocoService);
+  utilityService = inject(UtilityService);
   publicationStatusPipe = new PublicationStatusPipe();
 
 
@@ -98,14 +100,14 @@ export class StatisticsService {
     return httpResource<StatCountWithFormat<string>[]>(() => this.baseUrl + 'stats/files-added-over-time').asReadonly();
   }
 
-  getPagesPerYear(userId = 0) {
+  getPagesPerYear(userId: number) {
     return this.httpClient.get<StatCount<number>[]>(this.baseUrl + 'stats/pages-per-year?userId=' + userId).pipe(
       map(spreads => spreads.map(spread => {
         return {name: spread.value + '', value: spread.count};
       })));
   }
 
-  getWordsPerYear(userId = 0) {
+  getWordsPerYear(userId: number) {
     return this.httpClient.get<StatCount<number>[]>(this.baseUrl + 'stats/words-per-year?userId=' + userId).pipe(
       map(spreads => spreads.map(spread => {
         return {name: spread.value + '', value: spread.count};
@@ -168,6 +170,23 @@ export class StatisticsService {
     });
   }
 
+  getReadingHistoryItemsResource(statsFilter: () => StatsFilter | undefined, userId: () => number, pageNum: () => number = () => 1, itemsPerPage: () => number = () => 30) {
+    return httpResource<PaginatedResult<ReadingHistoryItem[]>>(() => {
+      const filter = statsFilter();
+      const id = userId();
+      if (!filter || !id) return undefined;
+
+      let params = this.filterHttpParams(filter, id);
+      params = this.utilityService.addPaginationIfExists(params, pageNum(), itemsPerPage());
+      params = params.set('timeZoneId', Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+      return {
+        url: `${this.baseUrl}stats/history/${id}`,
+        params
+      };
+    });
+  }
+
   getDayBreakdown(userId = 0) {
     return this.httpClient.get<Array<StatCount<DayOfWeek>>>(this.baseUrl + 'stats/day-breakdown?userId=' + userId);
   }
@@ -217,6 +236,10 @@ export class StatisticsService {
     }
     if (filter.timeFilter.endDate) {
       params = params.set('endDate', filter.timeFilter.endDate.toISOString());
+    }
+
+    if (filter.timezone) {
+      params = params.set('timeZoneId', filter.timezone);
     }
 
     for (let library of filter.libraries) {
@@ -292,6 +315,44 @@ export class StatisticsService {
 
   getTotalReads(userId: () => number) {
     return httpResource<number>(() => this.baseUrl + `stats/total-reads?userId=${userId()}`).asReadonly();
+  }
+
+  getReadingHistory(
+    filter: StatsFilter,
+    userId: number,
+    pageNum: number = 1,
+    itemsPerPage: number = 30
+  ) {
+    let params = this.filterHttpParams(filter, userId);
+    params = this.utilityService.addPaginationIfExists(params, pageNum, itemsPerPage);
+
+    return this.httpClient.get<ReadingHistoryItem[]>(
+      `${this.baseUrl}stats/reading-history`,
+      { observe: 'response', params }
+    ).pipe(
+      map(response => this.utilityService.createPaginatedResult<ReadingHistoryItem>(response))
+    );
+  }
+
+  getReadingHistoryResource(
+    statsFilter: () => StatsFilter | undefined,
+    userId: () => number,
+    pageNum: () => number = () => 1,
+    itemsPerPage: () => number = () => 30
+  ) {
+    return httpResource<ReadingHistoryItem[]>(() => {
+      const filter = statsFilter();
+      const id = userId();
+      if (!filter || !id) return undefined;
+
+      let params = this.filterHttpParams(filter, id);
+      params = this.utilityService.addPaginationIfExists(params, pageNum(), itemsPerPage());
+
+      return {
+        url: `${this.baseUrl}stats/reading-history`,
+        params
+      };
+    });
   }
 
 }

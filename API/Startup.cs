@@ -71,10 +71,10 @@ public class Startup
 
         services.AddControllers(options =>
         {
-            options.CacheProfiles.Add(ResponseCacheProfiles.Instant,
+            options.CacheProfiles.Add(ResponseCacheProfiles.Minute,
                 new CacheProfile()
                 {
-                    Duration = 30,
+                    Duration = 60 * 1,
                     Location = ResponseCacheLocation.Client,
                 });
             options.CacheProfiles.Add(ResponseCacheProfiles.FiveMinute,
@@ -106,21 +106,14 @@ public class Startup
             options.CacheProfiles.Add(ResponseCacheProfiles.Month,
                 new CacheProfile()
                 {
-                    Duration = TimeSpan.FromDays(30).Seconds,
+                    Duration = (int) TimeSpan.FromDays(30).TotalSeconds,
                     Location = ResponseCacheLocation.Client,
                     NoStore = false
                 });
             options.CacheProfiles.Add(ResponseCacheProfiles.LicenseCache,
                 new CacheProfile()
                 {
-                    Duration = TimeSpan.FromHours(4).Seconds,
-                    Location = ResponseCacheLocation.Client,
-                    NoStore = false
-                });
-            options.CacheProfiles.Add(ResponseCacheProfiles.KavitaPlus,
-                new CacheProfile()
-                {
-                    Duration = TimeSpan.FromDays(30).Seconds,
+                    Duration = (int) TimeSpan.FromHours(4).TotalSeconds,
                     Location = ResponseCacheLocation.Client,
                     NoStore = false
                 });
@@ -238,7 +231,6 @@ public class Startup
         });
     }
 
-    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
         IHostApplicationLifetime applicationLifetime, IServiceProvider serviceProvider,
         IDirectoryService directoryService, IUnitOfWork unitOfWork, IVersionUpdaterService versionService)
@@ -432,7 +424,7 @@ public class Startup
                     #region v0.7.14
                     await MigrateEmailTemplates.Migrate(directoryService, logger);
                     await MigrateVolumeNumber.Migrate(dataContext, logger);
-                    await MigrateWantToReadImport.Migrate(unitOfWork, dataContext, directoryService, logger);
+                    await new MigrateWantToReadImport(unitOfWork, directoryService).RunAsync(dataContext, logger);
                     await MigrateManualHistory.Migrate(dataContext, logger);
                     await MigrateClearNightlyExternalSeriesRecords.Migrate(dataContext, logger);
                     #endregion
@@ -489,13 +481,14 @@ public class Startup
                     #endregion
 
                     #region v0.8.9
+                    await new MigrateBadKoreaderProgress().RunAsync(dataContext, logger);
                     await new MigrateProgressToReadingSessions().RunAsync(dataContext, logger);
                     await new MigrateMissingCreatedUtcDate().RunAsync(dataContext, logger);
                     await new MigrateTotalReads().RunAsync(dataContext, logger);
                     await new MigrateToAuthKeys().RunAsync(dataContext, logger);
                     await new MigrateMissingAppUserRatingDateColumns().RunAsync(dataContext, logger);
                     await new MigrateFormatToActivityDataV2().RunAsync(dataContext, logger);
-                    await new MigrateIncorrectUtcMidnightRollovers().RunAsync(dataContext, logger);
+                    await new MigrateIncorrectUtcTimes().RunAsync(dataContext, logger);
                     #endregion
 
                     #endregion

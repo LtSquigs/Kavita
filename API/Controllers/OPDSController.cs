@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using API.Constants;
 using API.Data;
 using API.DTOs.OPDS;
 using API.DTOs.OPDS.Requests;
@@ -66,6 +67,7 @@ public class OpdsController : BaseApiController
             ApiKey = apiKey,
             Prefix = prefix,
             BaseUrl =  baseUrl,
+            Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
             UserId = UserId
         });
 
@@ -104,6 +106,7 @@ public class OpdsController : BaseApiController
             BaseUrl = baseUrl,
             EntityId = filterId,
             UserId = userId,
+            Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
             PageNumber = pageNumber
         });
 
@@ -131,6 +134,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = userId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber
             });
@@ -162,6 +166,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber
             });
@@ -193,6 +198,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber
             });
@@ -224,6 +230,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber
             });
@@ -256,6 +263,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber,
                 EntityId = collectionId
@@ -288,6 +296,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber
             });
@@ -320,6 +329,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber,
                 EntityId = readingListId
@@ -354,6 +364,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber,
                 EntityId = libraryId
@@ -385,6 +396,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber,
             });
@@ -416,6 +428,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber,
                 EntityId = genreId
@@ -447,6 +460,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber,
             });
@@ -477,6 +491,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 PageNumber = pageNumber,
             });
@@ -507,6 +522,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 Query = query,
             });
@@ -562,6 +578,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 EntityId = seriesId
             });
@@ -594,6 +611,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 SeriesId = seriesId,
                 VolumeId = volumeId
@@ -628,6 +646,7 @@ public class OpdsController : BaseApiController
                 BaseUrl = baseUrl,
                 Prefix = prefix,
                 UserId = UserId,
+                Preferences = await _unitOfWork.UserRepository.GetOpdsPreferences(UserId),
                 ApiKey = apiKey,
                 SeriesId = seriesId,
                 VolumeId = volumeId,
@@ -743,7 +762,7 @@ public class OpdsController : BaseApiController
     }
 
     [HttpGet("{apiKey}/favicon")]
-    [ResponseCache(Duration = 60 * 60, Location = ResponseCacheLocation.Client, NoStore = false)]
+    [ResponseCache(CacheProfileName = ResponseCacheProfiles.Month)]
     public async Task<ActionResult> GetFavicon(string apiKey)
     {
         var files = _directoryService.GetFilesWithExtension(Path.Join(Directory.GetCurrentDirectory(), ".."), @"\.ico");
